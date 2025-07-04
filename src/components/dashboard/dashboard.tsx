@@ -242,9 +242,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Project Highlights */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Project Highlights */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -285,6 +286,36 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Weekly Snapshot */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Weekly Snapshot</h2>
+              </div>
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Current Week Performance</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Entries</p>
+                    <p className="text-2xl font-semibold text-gray-900">{weeklyStats.totalEntries}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Work Hours</p>
+                    <p className="text-2xl font-semibold text-gray-900">{weeklyStats.workHours}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">OT Hours</p>
+                    <p className="text-2xl font-semibold text-gray-900">{weeklyStats.otHours}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Active Employees</p>
+                    <p className="text-2xl font-semibold text-gray-900">{weeklyStats.activeEmployees}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Column */}
@@ -298,23 +329,32 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </h2>
               </div>
               <div className="p-6">
-                <div className="space-y-4">
-                  {timesheetActivity.map((value, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="w-16 text-xs text-gray-600">{dayLabels[index]}</div>
-                      <div className="flex-1 bg-gray-200 rounded-full h-6">
+                <div className="relative h-64">
+                  <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-xs text-gray-500">
+                    <span>120</span>
+                    <span>90</span>
+                    <span>60</span>
+                    <span>30</span>
+                    <span>0</span>
+                  </div>
+                  <div className="ml-10 h-full flex items-end justify-between space-x-2">
+                    {timesheetActivity.map((value, index) => (
+                      <div key={index} className="flex flex-col items-center flex-1">
                         <div 
-                          className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2"
-                          style={{ width: `${(value / maxActivity) * 100}%` }}
+                          className="w-full bg-blue-500 rounded-t-sm flex items-end justify-center pb-1"
+                          style={{ height: `${(value / 120) * 100}%`, minHeight: '20px' }}
                         >
                           <span className="text-xs text-white font-medium">{value}</span>
                         </div>
+                        <div className="text-xs text-gray-600 mt-2 text-center">
+                          {dayLabels[index].slice(0, 3)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
                 <div className="mt-4 text-xs text-gray-500">
-                  <span className="inline-block w-3 h-3 bg-blue-600 rounded mr-1"></span>
+                  <span className="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>
                   Work Hours
                 </div>
               </div>
@@ -344,38 +384,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                       <ChevronRightIcon className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Weekly Snapshot */}
-        <div className="mt-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Weekly Snapshot</h2>
-            </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <h3 className="font-medium text-gray-900 mb-2">Current Week Performance</h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600">Total Entries</p>
-                  <p className="text-2xl font-semibold text-gray-900">{weeklyStats.totalEntries}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Work Hours</p>
-                  <p className="text-2xl font-semibold text-gray-900">{weeklyStats.workHours}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">OT Hours</p>
-                  <p className="text-2xl font-semibold text-gray-900">{weeklyStats.otHours}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Active Employees</p>
-                  <p className="text-2xl font-semibold text-gray-900">{weeklyStats.activeEmployees}</p>
                 </div>
               </div>
             </div>

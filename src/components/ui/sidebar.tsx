@@ -87,9 +87,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
   };
 
   return (
-    <div className={`bg-blue-600 text-white min-h-screen w-64 flex flex-col ${className}`}>
+    <div className={`bg-blue-800 text-white min-h-screen w-64 flex flex-col ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-blue-500">
+      <div className="p-6 border-b border-blue-700">
         <h1 className="text-xl font-semibold">Timesheet Admin</h1>
       </div>
 
@@ -101,11 +101,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
             const isActive = pathname === item.href;
             
             return (
-              <li key={item.id}>
+              <li key={item.id} className="mx-4">
                 <Link 
                   href={item.href}
-                  className={`flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 hover:bg-opacity-50 ${
-                    isActive ? 'bg-blue-500 bg-opacity-50 border-r-2 border-white' : ''
+                  className={`flex items-center px-4 py-3 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                    isActive 
+                      ? 'bg-blue-600 bg-opacity-80' 
+                      : 'hover:bg-blue-700 hover:bg-opacity-50'
                   }`}
                   onClick={() => handleItemClick(item.id)}
                 >
@@ -119,10 +121,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-blue-500">
+      <div className="p-4 border-t border-blue-700">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 hover:bg-opacity-50 rounded-md"
+          className="flex items-center w-full px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-700 hover:bg-opacity-50 rounded-lg mx-0"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
           Logout
