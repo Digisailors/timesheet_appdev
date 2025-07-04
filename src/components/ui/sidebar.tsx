@@ -1,0 +1,135 @@
+"use client";
+// components/Sidebar.tsx
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  HomeIcon,
+  UsersIcon,
+  UserGroupIcon,
+  FolderIcon,
+  DocumentTextIcon,
+  ChartBarIcon,
+  CogIcon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
+
+interface MenuItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface SidebarProps {
+  className?: string;
+  onItemClick?: (itemId: string) => void;
+}
+
+const menuItems: MenuItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: HomeIcon
+  },
+  {
+    id: 'employee-management',
+    label: 'Employee Management',
+    href: '/employees',
+    icon: UsersIcon
+  },
+  {
+    id: 'supervisor-management',
+    label: 'Supervisor Management',
+    href: '/supervisors',
+    icon: UserGroupIcon
+  },
+  {
+    id: 'project-management',
+    label: 'Project Management',
+    href: '/projects',
+    icon: FolderIcon
+  },
+  {
+    id: 'timesheets',
+    label: 'Time-sheets',
+    href: '/timesheets',
+    icon: DocumentTextIcon
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    href: '/reports',
+    icon: ChartBarIcon
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    href: '/settings',
+    icon: CogIcon
+  }
+];
+
+const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
+  const pathname = usePathname();
+
+  const handleItemClick = (itemId: string) => {
+    if (onItemClick) {
+      onItemClick(itemId);
+    }
+  };
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    console.log('Logout clicked');
+    // Example: router.push('/login');
+  };
+
+  return (
+    <div className={`bg-blue-600 text-white min-h-screen w-64 flex flex-col ${className}`}>
+      {/* Header */}
+      <div className="p-6 border-b border-blue-500">
+        <h1 className="text-xl font-semibold">Timesheet Admin</h1>
+      </div>
+
+      {/* Navigation Menu */}
+      <nav className="flex-1 py-4">
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            
+            return (
+              <li key={item.id}>
+                <Link 
+                  href={item.href}
+                  className={`flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 hover:bg-opacity-50 ${
+                    isActive ? 'bg-blue-500 bg-opacity-50 border-r-2 border-white' : ''
+                  }`}
+                  onClick={() => handleItemClick(item.id)}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-blue-500">
+        <button
+          onClick={handleLogout}
+          className="flex items-center w-full px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 hover:bg-opacity-50 rounded-md"
+        >
+          <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
