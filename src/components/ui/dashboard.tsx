@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
   ChevronRightIcon,
   EyeIcon,
-  ChartBarIcon // <-- Add
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface StatCardProps {
@@ -159,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'checkin':
-        return <CheckIcon className="w-4 h-4 text-green-500" />; // <-- changed
+        return <CheckIcon className="w-4 h-4 text-green-500" />;
       case 'checkout':
         return <ClockIcon className="w-4 h-4 text-blue-500" />;
       case 'timesheet':
@@ -175,21 +175,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className={`flex-1 bg-gray-50 min-h-screen ${className}`}>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">Admin User</span>
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">A</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="p-6">
         {/* Stats Grid */}
@@ -230,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             title="Checked-in Today"
             value={stats.checkedInToday}
             subtitle="Today"
-            icon={CheckIcon} // <-- changed
+            icon={CheckIcon}
             color="green"
           />
           <StatCard

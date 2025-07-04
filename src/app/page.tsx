@@ -1,12 +1,15 @@
 import Sidebar from "@/components/ui/sidebar";
-import Dashboard from "@/components/ui/dashboard"; // <-- Add this line
-
+import Navbar from "@/components/ui/navbar";
+import Dashboard from "@/components/ui/dashboard";
 
 export default function Page() {
   return (
-   <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <Dashboard />
+      <div className="flex-1 flex flex-col">
+        <Navbar title="Dashboard" userName="Admin User" userInitial="A" />
+        <Dashboard />
+      </div>
     </div>
   );
 }
