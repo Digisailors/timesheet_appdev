@@ -44,10 +44,10 @@ const TimesheetActivity: React.FC<TimesheetActivityProps> = ({ timesheetActivity
             ))}
           </div>
         </div>
-        <div className="mt-4 text-xs text-gray-500">
-          <span className="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>
-          Work Hours
-        </div>
+       <div className="mt-4 text-xs text-blue-600 flex justify-center items-center">
+  <span className="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>
+  Work Hours
+</div>
       </div>
     </div>
   );
