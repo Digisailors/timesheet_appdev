@@ -86,7 +86,7 @@ const ProjectCard: React.FC<{
         )}
       </div>
       
-      <div className="flex space-x-2">
+      <div className="flex space-x-2 justify-end mt-auto">
         <button
           onClick={() => onViewDetails?.(project)}
           className="flex items-center border border-gray-200 rounded-lg px-3 py-1 text-sm text-black-600 hover:text-blue-600 transition-colors"
@@ -268,7 +268,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
               <p className="text-gray-500">No projects found matching your criteria.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
