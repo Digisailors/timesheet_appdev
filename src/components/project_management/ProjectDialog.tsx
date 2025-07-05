@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 
 export interface ProjectFormData {
@@ -19,6 +19,7 @@ export interface ProjectDialogProps {
   initialData?: Partial<ProjectFormData>;
   title?: string;
   submitLabel?: string;
+  isViewMode?: boolean; // New prop to determine if dialog is in view mode
 }
 
 const ProjectDialog: React.FC<ProjectDialogProps> = ({
@@ -27,7 +28,8 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   onSubmit,
   initialData = {},
   title = 'Create New Project',
-  submitLabel = 'Create Project'
+  submitLabel = 'Create Project',
+  isViewMode = false // Default to false for backward compatibility
 }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     name: initialData.name || '',
@@ -41,6 +43,23 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   });
 
   const [errors, setErrors] = useState<Partial<ProjectFormData>>({});
+
+  // Update form data when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: initialData.name || '',
+        code: initialData.code || '',
+        location: initialData.location || '',
+        description: initialData.description || '',
+        startDate: initialData.startDate || '',
+        endDate: initialData.endDate || '',
+        budget: initialData.budget || '',
+        status: initialData.status || 'active'
+      });
+      setErrors({});
+    }
+  }, [isOpen]); // Only depend on isOpen
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ProjectFormData> = {};
@@ -116,10 +135,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4 border border-gray-200 shadow-lg">
+    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 ">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           <button
             onClick={handleClose}
@@ -130,7 +149,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         </div>
 
         {/* Form Content */}
-        <div className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Project Name & Code */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -142,11 +161,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter project name"
+                disabled={isViewMode}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               />
-              {errors.name && (
+              {errors.name && !isViewMode && (
                 <p className="text-red-500 text-sm mt-1">{errors.name}</p>
               )}
             </div>
@@ -160,11 +180,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.code}
                 onChange={(e) => handleInputChange('code', e.target.value)}
                 placeholder="e.g., HBC-2024-001"
+                disabled={isViewMode}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.code ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               />
-              {errors.code && (
+              {errors.code && !isViewMode && (
                 <p className="text-red-500 text-sm mt-1">{errors.code}</p>
               )}
             </div>
@@ -180,11 +201,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               value={formData.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
               placeholder="Enter project location"
+              disabled={isViewMode}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.location ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
             />
-            {errors.location && (
+            {errors.location && !isViewMode && (
               <p className="text-red-500 text-sm mt-1">{errors.location}</p>
             )}
           </div>
@@ -199,7 +221,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Enter project description"
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isViewMode}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''
+              }`}
             />
           </div>
 
@@ -214,13 +239,14 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
+                  disabled={isViewMode}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.startDate ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
-              {errors.startDate && (
+              {errors.startDate && !isViewMode && (
                 <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
               )}
             </div>
@@ -234,13 +260,14 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
+                  disabled={isViewMode}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.endDate ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
-              {errors.endDate && (
+              {errors.endDate && !isViewMode && (
                 <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
               )}
             </div>
@@ -257,11 +284,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.budget}
                 onChange={(e) => handleInputChange('budget', e.target.value)}
                 placeholder="Enter budget amount"
+                disabled={isViewMode}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.budget ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               />
-              {errors.budget && (
+              {errors.budget && !isViewMode && (
                 <p className="text-red-500 text-sm mt-1">{errors.budget}</p>
               )}
             </div>
@@ -273,7 +301,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isViewMode}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
               >
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -284,23 +315,24 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={handleClose}
               className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
             >
-              Cancel
+              {isViewMode ? 'Close' : 'Cancel'}
             </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              {submitLabel}
-            </button>
+            {!isViewMode && (
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {submitLabel}
+              </button>
+            )}
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

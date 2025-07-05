@@ -52,6 +52,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [viewingProject, setViewingProject] = useState<Project | null>(null); // New state for viewing
 
   // Generate unique project ID
   const generateProjectId = () => {
@@ -61,17 +62,19 @@ export default function ProjectsPage() {
   // Event handlers
   const handleCreateProject = () => {
     setEditingProject(null);
+    setViewingProject(null);
     setIsDialogOpen(true);
   };
 
   const handleViewDetails = (project: Project) => {
-    console.log('View details for:', project);
-    // Implement your view details logic here
-    // You could open a different dialog or navigate to a details page
+    setViewingProject(project);
+    setEditingProject(null);
+    setIsDialogOpen(true);
   };
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
+    setViewingProject(null);
     setIsDialogOpen(true);
   };
 
@@ -123,7 +126,54 @@ export default function ProjectsPage() {
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setEditingProject(null);
+    setViewingProject(null);
   };
+
+  // Determine dialog props based on current mode
+  const getDialogProps = () => {
+    if (viewingProject) {
+      return {
+        initialData: {
+          name: viewingProject.name,
+          code: viewingProject.code,
+          location: viewingProject.location,
+          startDate: viewingProject.startDate,
+          status: viewingProject.status,
+          description: '', // Add description field to Project type if needed
+          endDate: '', // Add endDate field to Project type if needed
+          budget: '', // Add budget field to Project type if needed
+        },
+        title: `View Project Details - ${viewingProject.name}`,
+        submitLabel: '',
+        isViewMode: true
+      };
+    } else if (editingProject) {
+      return {
+        initialData: {
+          name: editingProject.name,
+          code: editingProject.code,
+          location: editingProject.location,
+          startDate: editingProject.startDate,
+          status: editingProject.status,
+          description: '', // Add description field to Project type if needed
+          endDate: '', // Add endDate field to Project type if needed
+          budget: '', // Add budget field to Project type if needed
+        },
+        title: 'Edit Project',
+        submitLabel: 'Update Project',
+        isViewMode: false
+      };
+    } else {
+      return {
+        initialData: undefined,
+        title: 'Create New Project',
+        submitLabel: 'Create Project',
+        isViewMode: false
+      };
+    }
+  };
+
+  const dialogProps = getDialogProps();
 
   return (
     <div>
@@ -142,18 +192,10 @@ export default function ProjectsPage() {
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
           onSubmit={handleDialogSubmit}
-          initialData={editingProject ? {
-            name: editingProject.name,
-            code: editingProject.code,
-            location: editingProject.location,
-            startDate: editingProject.startDate,
-            status: editingProject.status,
-            description: '', // Add description field to Project type if needed
-            endDate: '', // Add endDate field to Project type if needed
-            budget: '', // Add budget field to Project type if needed
-          } : undefined}
-          title={editingProject ? 'Edit Project' : 'Create New Project'}
-          submitLabel={editingProject ? 'Update Project' : 'Create Project'}
+          initialData={dialogProps.initialData}
+          title={dialogProps.title}
+          submitLabel={dialogProps.submitLabel}
+          isViewMode={dialogProps.isViewMode}
         />
       </div>
     </div>
