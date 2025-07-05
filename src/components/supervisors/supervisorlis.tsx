@@ -1,4 +1,3 @@
-
 import { Users } from 'lucide-react';
 import SupervisorCard from './supervisorcard';
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Plus, Eye, Edit, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
+import SupervisorDialog from './dialog';
 
 // Types
 interface Supervisor {
@@ -58,6 +59,9 @@ const supervisors: Supervisor[] = [
 export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
+  const [showDialog, setShowDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
 
   const filteredSupervisors = supervisors.filter(supervisor =>
     supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,8 +70,22 @@ export default function SupervisorPage() {
   );
 
   const handleAction = (action: string, supervisor: Supervisor) => {
-    console.log(`${action} action for ${supervisor.name}`);
-    // Implement your action logic here
+    if (action === 'view') {
+      setSelectedSupervisor(supervisor);
+      setShowViewDialog(true);
+    } else {
+      console.log(`${action} action for ${supervisor.name}`);
+      // Implement your other action logic here
+    }
+  };
+
+  const handleAddSupervisor = () => {
+    setShowDialog(true);
+  };
+
+  const closeViewDialog = () => {
+    setShowViewDialog(false);
+    setSelectedSupervisor(null);
   };
 
   return (
@@ -82,9 +100,12 @@ export default function SupervisorPage() {
             <Users className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-semibold text-gray-900">Supervisor Management</h2>
           </div>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleAddSupervisor}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
-            <span>Add Supervisor</span>
+            <span>Add Employee</span>
           </button>
         </div>
 
@@ -191,6 +212,80 @@ export default function SupervisorPage() {
           </div>
         )}
       </div>
+
+      {/* Add Supervisor Dialog Component */}
+      <SupervisorDialog 
+        isOpen={showDialog} 
+        onClose={() => setShowDialog(false)} 
+      />
+
+      {/* View Supervisor Dialog */}
+      {showViewDialog && selectedSupervisor && (
+        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            {/* Dialog Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Supervisor Profile</h3>
+              <button
+                onClick={closeViewDialog}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Dialog Content */}
+            <div className="p-6">
+              {/* Profile Header */}
+              <div className="flex items-center space-x-4 mb-8">
+                <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
+                  {selectedSupervisor.initials}
+                </div>
+                <div>
+                  <h4 className="text-xl font-semibold text-gray-900">{selectedSupervisor.name}</h4>
+                  <p className="text-gray-500 text-sm">SUP-{selectedSupervisor.id.padStart(3, '0')}</p>
+                </div>
+              </div>
+
+              {/* Profile Details */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Join Date</p>
+                    <p className="text-gray-900 font-medium">2023-11-15</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Experience</p>
+                    <p className="text-gray-900 font-medium">5 Years</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Phone Number</p>
+                    <p className="text-gray-900 font-medium">98765 43210</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Email ID</p>
+                    <p className="text-blue-600 font-medium">{selectedSupervisor.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Current Project</p>
+                    <p className="text-gray-900 font-medium">{selectedSupervisor.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Specialization</p>
+                    <p className="text-gray-900 font-medium">{selectedSupervisor.department}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
