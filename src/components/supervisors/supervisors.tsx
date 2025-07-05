@@ -16,13 +16,24 @@ interface Supervisor {
   avatar?: string;
 }
 
+interface SupervisorData {
+  fullName: string;
+  specialization: string;
+  phoneNumber: string;
+  emailAddress: string;
+  address: string;
+  dateOfJoining: string;
+  experience: string;
+  assignedProject: string;
+}
+
 // Sample data
 const supervisors: Supervisor[] = [
   {
     id: '1',
     name: 'Robert Martinez',
     email: 'robert.martinez@company.com',
-    initials: 'JS',
+    initials: 'RM',
     backgroundColor: 'bg-blue-500',
     department: 'Construction Management',
     location: 'Highway Bridge'
@@ -31,7 +42,7 @@ const supervisors: Supervisor[] = [
     id: '2',
     name: 'Maria Garcia',
     email: 'maria.garcia@company.com',
-    initials: 'SW',
+    initials: 'MG',
     backgroundColor: 'bg-blue-600',
     department: 'Site Management',
     location: 'Downtown Plaza'
@@ -40,7 +51,7 @@ const supervisors: Supervisor[] = [
     id: '3',
     name: 'James Wilson',
     email: 'james.wilson@company.com',
-    initials: 'MJ',
+    initials: 'JW',
     backgroundColor: 'bg-blue-700',
     department: 'Industrial Construction',
     location: 'Factory Building'
@@ -49,7 +60,7 @@ const supervisors: Supervisor[] = [
     id: '4',
     name: 'Anna Thompson',
     email: 'anna.thompson@company.com',
-    initials: 'LC',
+    initials: 'AT',
     backgroundColor: 'bg-blue-800',
     department: 'Quality Control',
     location: 'Office Complex'
@@ -62,30 +73,90 @@ export default function SupervisorPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [supervisorList, setSupervisorList] = useState<Supervisor[]>(supervisors);
 
-  const filteredSupervisors = supervisors.filter(supervisor =>
+  const filteredSupervisors = supervisorList.filter(supervisor =>
     supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Helper function to convert Supervisor to SupervisorData
+  const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
+    fullName: supervisor.name,
+    specialization: supervisor.department,
+    phoneNumber: '98765 43210', // Default phone number
+    emailAddress: supervisor.email,
+    address: '123 Main St, City, State', // Default address
+    dateOfJoining: '2023-11-15', // Default date
+    experience: '5 Years', // Default experience
+    assignedProject: supervisor.location
+  });
+
+  // Helper function to convert SupervisorData to Supervisor
+  const formDataToSupervisor = (formData: SupervisorData, id?: string): Supervisor => {
+    const nameParts = formData.fullName.split(' ');
+    const initials = nameParts.map(part => part.charAt(0)).join('').toUpperCase();
+    
+    return {
+      id: id || Date.now().toString(),
+      name: formData.fullName,
+      email: formData.emailAddress,
+      initials: initials,
+      backgroundColor: 'bg-blue-500',
+      department: formData.specialization,
+      location: formData.assignedProject
+    };
+  };
+
   const handleAction = (action: string, supervisor: Supervisor) => {
     if (action === 'view') {
       setSelectedSupervisor(supervisor);
       setShowViewDialog(true);
-    } else {
-      console.log(`${action} action for ${supervisor.name}`);
-      // Implement your other action logic here
+    } else if (action === 'edit') {
+      setSelectedSupervisor(supervisor);
+      setDialogMode('edit');
+      setShowDialog(true);
+    } else if (action === 'delete') {
+      // Handle delete action
+      setSupervisorList(prev => prev.filter(s => s.id !== supervisor.id));
+      console.log(`Deleted supervisor: ${supervisor.name}`);
     }
   };
 
   const handleAddSupervisor = () => {
+    setSelectedSupervisor(null);
+    setDialogMode('add');
     setShowDialog(true);
   };
 
   const closeViewDialog = () => {
     setShowViewDialog(false);
     setSelectedSupervisor(null);
+  };
+
+  const closeDialog = () => {
+    setShowDialog(false);
+    setSelectedSupervisor(null);
+  };
+
+  const handleFormSubmit = (formData: SupervisorData, mode: 'add' | 'edit') => {
+    if (mode === 'add') {
+      // Add new supervisor
+      const newSupervisor = formDataToSupervisor(formData);
+      setSupervisorList(prev => [...prev, newSupervisor]);
+      console.log('Added new supervisor:', newSupervisor);
+    } else if (mode === 'edit' && selectedSupervisor) {
+      // Update existing supervisor
+      const updatedSupervisor = formDataToSupervisor(formData, selectedSupervisor.id);
+      setSupervisorList(prev => 
+        prev.map(supervisor => 
+          supervisor.id === selectedSupervisor.id ? updatedSupervisor : supervisor
+        )
+      );
+      console.log('Updated supervisor:', updatedSupervisor);
+    }
   };
 
   return (
@@ -213,10 +284,13 @@ export default function SupervisorPage() {
         )}
       </div>
 
-      {/* Add Supervisor Dialog Component */}
+      {/* Add/Edit Supervisor Dialog Component */}
       <SupervisorDialog 
         isOpen={showDialog} 
-        onClose={() => setShowDialog(false)} 
+        onClose={closeDialog}
+        mode={dialogMode}
+        initialData={selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined}
+        onSubmit={handleFormSubmit}
       />
 
       {/* View Supervisor Dialog */}
