@@ -8,6 +8,15 @@ import EmployeeRow, { Employee } from "./EmployeeRow";
 import EmployeeProfileModal from "./EmployeeProfileModal";
 import AddEmployeeModal from "./AddEmployeeModalProps";
 
+// Define the interface for employee form data
+interface EmployeeFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  designationType: string;
+  designation: string;
+}
+
 // Initial employees data
 const initialEmployees: Employee[] = [
   {
@@ -133,7 +142,7 @@ const EmployeesPage: React.FC = () => {
     setIsAddModalOpen(true);
   };
   
-  const handleAddEmployeeSubmit = (employeeData: any) => {
+  const handleAddEmployeeSubmit = (employeeData: EmployeeFormData) => {
     if (editingEmployee) {
       // Update existing employee
       const updatedEmployee: Employee = {

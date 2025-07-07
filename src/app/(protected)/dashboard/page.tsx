@@ -2,7 +2,7 @@ import Sidebar from "@/components/ui/sidebar";
 import Navbar from "@/components/ui/navbar";
 import Dashboard from "@/components/dashboard/dashboard";
 
-export default function () {
+export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />

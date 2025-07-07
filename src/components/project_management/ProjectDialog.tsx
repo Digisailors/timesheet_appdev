@@ -59,7 +59,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       });
       setErrors({});
     }
-  }, [isOpen]); // Only depend on isOpen
+  }, [isOpen, initialData.name, initialData.code, initialData.location, initialData.description, initialData.startDate, initialData.endDate, initialData.budget, initialData.status]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ProjectFormData> = {};
@@ -300,7 +300,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value as any)}
+                onChange={(e) => handleInputChange('status', e.target.value as string)}
                 disabled={isViewMode}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''

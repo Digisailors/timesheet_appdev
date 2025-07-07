@@ -7,7 +7,6 @@ import {
   UsersIcon,
   MapPinIcon,
   CalendarDaysIcon,
-  CheckIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
@@ -32,6 +31,9 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     totalOvertimeHours: 21.0,
     missingEntries: 0
   });
+ 
+ //for debugging purposes
+  console.log(setStats);
 
   // Move other data to state if you want them dynamic as well
   const [projects, setProjects] = useState([
@@ -63,6 +65,12 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       lastUpdated: '5/21/2025'
     }
   ]);
+//for debugging purposes
+
+  
+ 
+  console.log(setProjects);
+
   const [timesheetActivity, setTimesheetActivity] = useState([65, 72, 88, 105, 108, 58, 95]);
   // Add a new state for the cloned chart
   const [timesheetActivity2, setTimesheetActivity2] = useState([55, 60, 70, 90, 100, 40, 80]);
@@ -73,13 +81,19 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
     { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' }
   ]);
+ //for debugging purposes
+  console.log(timesheetActivity);
+  console.log(setTimesheetActivity);
+  console.log(setTimesheetActivity2);
+  console.log(setRecentActivity);
   const [weeklyStats, setWeeklyStats] = useState({
     totalEntries: 127,
     workHours: 1024,
     otHours: 86,
     activeEmployees: 42
   });
-
+//for debugging purposes
+ console.log(setWeeklyStats);
   // Placeholder for future API integration
   useEffect(() => {
     // Example: fetch('/api/dashboard').then(res => res.json()).then(data => {
@@ -155,7 +169,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
             color="red"
           />
         </div>
-
+     
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}

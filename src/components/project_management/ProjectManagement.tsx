@@ -123,7 +123,7 @@ const FilterDropdown: React.FC<{
   onChange: (value: string) => void;
 }> = ({ label, value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-
+console.log(label, value, options, onChange);
   return (
     <div className="relative">
       <button

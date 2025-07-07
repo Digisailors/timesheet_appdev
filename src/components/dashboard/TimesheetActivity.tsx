@@ -13,7 +13,7 @@ const TimesheetActivity: React.FC<TimesheetActivityProps> = ({ timesheetActivity
     const gridLines = [0, 30, 60, 90, 120];
 
     return (
-        <div >
+        <>
             <div>
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                     <ChartBarIcon className="w-5 h-5 mr-2" />
@@ -30,20 +30,23 @@ const TimesheetActivity: React.FC<TimesheetActivityProps> = ({ timesheetActivity
                         <span>30</span>
                         <span>0</span>
                     </div>
-                    
+
                     {/* Grid lines - behind everything */}
                     <div className="absolute left-8 right-0 top-0  border-l bottom-0 z-0">
                         {/* Horizontal grid lines */}
-                        {gridLines.map((value, index) => (
-                            <div
-                                key={`h-${value}`}
-                                className="absolute left-0 right-0 border-t border-gray-500 border-dashed"
-                                style={{ 
-                                    bottom: `${(value / 120) * 100}%`,
-                                    opacity: 0.3
-                                }}
-                            />
-                        ))}
+                        {gridLines.map((value, index) => {
+                            console.log('Horizontal grid line index:', index);
+                            return (
+                                <div
+                                    key={`h-${value}`}
+                                    className="absolute left-0 right-0 border-t border-gray-500 border-dashed"
+                                    style={{ 
+                                        bottom: `${(value / 120) * 100}%`,
+                                        opacity: 0.3
+                                    }}
+                                />
+                            );
+                        })}
                         
                         {/* Vertical grid lines */}
                         {dayLabels.map((_, index) => (
@@ -57,7 +60,7 @@ const TimesheetActivity: React.FC<TimesheetActivityProps> = ({ timesheetActivity
                             />
                         ))}
                     </div>
-                    
+
                     {/* Chart bars */}
                     <div className="ml-10 h-full flex items-end justify-between space-x-2 relative z-10">
                         {timesheetActivity.map((value, index) => (
@@ -86,7 +89,7 @@ const TimesheetActivity: React.FC<TimesheetActivityProps> = ({ timesheetActivity
                     Work Hours
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

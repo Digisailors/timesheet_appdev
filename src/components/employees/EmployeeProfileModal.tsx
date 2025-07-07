@@ -86,18 +86,21 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     label: string; 
     isActive: boolean;
     onClick: () => void;
-  }> = ({ tab, label, isActive, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`px-8 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center ${
-        isActive
-          ? 'text-gray-900 bg-white rounded-lg shadow-sm'
-          : 'text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
+  }> = ({ tab, label, isActive, onClick }) => {
+    console.log('TabButton tab:', tab);
+    return (
+      <button
+        onClick={onClick}
+        className={`px-8 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center ${
+          isActive
+            ? 'text-gray-900 bg-white rounded-lg shadow-sm'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {label}
+      </button>
+    );
+  };
 
   const OverviewTab = () => (
     <div className="bg-gray-50">
