@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Plus, Users, Search } from 'lucide-react';
-import SupervisorList from './supervisorlist';
-
+import SupervisorList from './supervisorlis';
+import SupervisorDialog from './dialog';
 
 interface Supervisor {
   id: string;
@@ -16,13 +16,24 @@ interface Supervisor {
   avatar?: string;
 }
 
+interface SupervisorFormData {
+  fullName: string;
+  specialization: string;
+  phoneNumber: string;
+  emailAddress: string;
+  address: string;
+  dateOfJoining: string;
+  experience: string;
+  assignedProject: string;
+}
+
 // Sample data
 const supervisors: Supervisor[] = [
   {
     id: '1',
     name: 'Robert Martinez',
     email: 'robert.martinez@company.com',
-    initials: 'JS',
+    initials: 'RM',
     backgroundColor: 'bg-blue-500',
     department: 'Construction Management',
     location: 'Highway Bridge'
@@ -31,7 +42,7 @@ const supervisors: Supervisor[] = [
     id: '2',
     name: 'Maria Garcia',
     email: 'maria.garcia@company.com',
-    initials: 'SW',
+    initials: 'MG',
     backgroundColor: 'bg-blue-600',
     department: 'Site Management',
     location: 'Downtown Plaza'
@@ -40,7 +51,7 @@ const supervisors: Supervisor[] = [
     id: '3',
     name: 'James Wilson',
     email: 'james.wilson@company.com',
-    initials: 'MJ',
+    initials: 'JW',
     backgroundColor: 'bg-blue-700',
     department: 'Industrial Construction',
     location: 'Factory Building'
@@ -49,27 +60,64 @@ const supervisors: Supervisor[] = [
     id: '4',
     name: 'Anna Thompson',
     email: 'anna.thompson@company.com',
-    initials: 'LC',
+    initials: 'AT',
     backgroundColor: 'bg-blue-800',
     department: 'Quality Control',
     location: 'Office Complex'
   }
 ];
 
-export default function SupervisorManagement() {
+export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
 
   const filteredSupervisors = supervisors.filter(supervisor =>
-    (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (selectedProject === 'All Projects' || supervisor.location === selectedProject)
+    supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Convert supervisor to form data format
+  const supervisorToFormData = (supervisor: Supervisor): SupervisorFormData => {
+    return {
+      fullName: supervisor.name,
+      specialization: supervisor.department,
+      phoneNumber: '98765 43210', // Mock data - you'd get this from your actual data
+      emailAddress: supervisor.email,
+      address: '123 Main Street, City, State 12345', // Mock data
+      dateOfJoining: '2023-11-15', // Mock data
+      experience: '5 years', // Mock data
+      assignedProject: supervisor.location
+    };
+  };
+
   const handleAction = (action: string, supervisor: Supervisor) => {
-    console.log(`${action} action for ${supervisor.name}`);
-    // Implement your action logic here
+    if (action === 'view') {
+      setSelectedSupervisor(supervisor);
+      // You can implement view logic here
+      console.log('Viewing supervisor:', supervisor);
+    } else if (action === 'edit') {
+      setSelectedSupervisor(supervisor);
+      setDialogMode('edit');
+      setShowDialog(true);
+    } else if (action === 'delete') {
+      console.log('Deleting supervisor:', supervisor);
+      // Implement delete logic here
+    }
+  };
+
+  const handleAddSupervisor = () => {
+    setSelectedSupervisor(null);
+    setDialogMode('add');
+    setShowDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setSelectedSupervisor(null);
   };
 
   return (
@@ -79,11 +127,15 @@ export default function SupervisorManagement() {
           <Users className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-900">Supervisor Management</h2>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={handleAddSupervisor}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           <span>Add Supervisor</span>
         </button>
       </div>
+
       {/* Search and Filter */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center justify-between space-x-4">
@@ -110,7 +162,16 @@ export default function SupervisorManagement() {
           </select>
         </div>
       </div>
+
       <SupervisorList supervisors={filteredSupervisors} onAction={handleAction} />
+
+      {/* Dialog Component */}
+      <SupervisorDialog
+        isOpen={showDialog}
+        onClose={handleCloseDialog}
+        mode={dialogMode}
+        initialData={selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined}
+      />
     </div>
   );
 }

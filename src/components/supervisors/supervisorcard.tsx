@@ -21,9 +21,14 @@ export default function SupervisorCard({ supervisor, onAction }: Props) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          {/* Avatar */}
           <div className={`w-12 h-12 rounded-full ${supervisor.backgroundColor} flex items-center justify-center`}>
-            <span className="text-white font-medium text-lg">{supervisor.initials}</span>
+            <span className="text-white font-medium text-lg">
+              {supervisor.initials}
+            </span>
           </div>
+          
+          {/* Info */}
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900 text-lg">{supervisor.name}</h4>
             <p className="text-sm text-gray-600 mb-2">{supervisor.email}</p>
@@ -37,14 +42,28 @@ export default function SupervisorCard({ supervisor, onAction }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Action Buttons */}
         <div className="flex items-center space-x-2">
-          <button onClick={() => onAction('view', supervisor)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View">
+          <button
+            onClick={() => onAction('view', supervisor)}
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="View"
+          >
             <Eye className="w-4 h-4" />
           </button>
-          <button onClick={() => onAction('edit', supervisor)} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Edit">
+          <button
+            onClick={() => onAction('edit', supervisor)}
+            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            title="Edit"
+          >
             <Edit className="w-4 h-4" />
           </button>
-          <button onClick={() => onAction('delete', supervisor)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+          <button
+            onClick={() => onAction('delete', supervisor)}
+            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete"
+          >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
