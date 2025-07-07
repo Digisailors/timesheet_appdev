@@ -16,7 +16,7 @@ interface ActivityItem {
   user: string;
   action: string;
   time: string;
-  type: 'checkin' | 'checkout' | 'timesheet' | 'edit' | 'project';
+  type: string; // 'checkin', 'checkout', 'timesheet', 'edit', 'project'
 }
 
 interface RecentActivityProps {

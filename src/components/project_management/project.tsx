@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Sidebar from "@/components/ui/sidebar";
-import Navbar from "@/components/ui/navbar";
+
+
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
 import { Project } from "@/components/project_management/ProjectManagement";
