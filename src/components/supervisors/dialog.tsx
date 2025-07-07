@@ -10,6 +10,7 @@ interface SupervisorData {
   dateOfJoining: string;
   experience: string;
   assignedProject: string;
+  password: string;
 }
 
 interface SupervisorDialogProps {
@@ -28,7 +29,8 @@ const defaultFormData: SupervisorData = {
   address: '',
   dateOfJoining: '',
   experience: '',
-  assignedProject: ''
+  assignedProject: '',
+  password: ''
 };
 
 export default function SupervisorDialog({ 
@@ -95,6 +97,11 @@ export default function SupervisorDialog({
     }
     if (!formData.assignedProject.trim()) {
       newErrors.assignedProject = 'Assigned project is required';
+    }
+    if (!formData.password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
     }
 
     setErrors(newErrors);
@@ -231,6 +238,24 @@ export default function SupervisorDialog({
                 />
                 {errors.emailAddress && <p className="text-red-500 text-sm mt-1">{errors.emailAddress}</p>}
               </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter password (minimum 6 characters)"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                }`}
+              />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
 
             {/* Address */}

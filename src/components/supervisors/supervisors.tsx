@@ -15,6 +15,7 @@ interface Supervisor {
   location: string;
   phoneNumber: string;
   dateOfJoining: string; // Added dateOfJoining field
+  password: string; // Added password field
   avatar?: string;
 }
 
@@ -27,6 +28,7 @@ interface SupervisorData {
   dateOfJoining: string;
   experience: string;
   assignedProject: string;
+  password: string; // Added password field
 }
 
 // Sample data
@@ -40,7 +42,8 @@ const supervisors: Supervisor[] = [
     department: 'Construction Management',
     location: 'Highway Bridge',
     phoneNumber: '98765 43210',
-    dateOfJoining: '2023-01-15' // Custom join date
+    dateOfJoining: '2023-01-15', // Custom join date
+    password: 'password123' // Default password
   },
   {
     id: '2',
@@ -51,7 +54,8 @@ const supervisors: Supervisor[] = [
     department: 'Site Management',
     location: 'Downtown Plaza',
     phoneNumber: '98765 43211',
-    dateOfJoining: '2022-08-20' // Custom join date
+    dateOfJoining: '2022-08-20', // Custom join date
+    password: 'password123' // Default password
   },
   {
     id: '3',
@@ -62,7 +66,8 @@ const supervisors: Supervisor[] = [
     department: 'Industrial Construction',
     location: 'Factory Building',
     phoneNumber: '98765 43212',
-    dateOfJoining: '2023-05-10' // Custom join date
+    dateOfJoining: '2023-05-10', // Custom join date
+    password: 'password123' // Default password
   },
   {
     id: '4',
@@ -73,7 +78,8 @@ const supervisors: Supervisor[] = [
     department: 'Quality Control',
     location: 'Office Complex',
     phoneNumber: '98765 43213',
-    dateOfJoining: '2023-03-25' // Custom join date
+    dateOfJoining: '2023-03-25', // Custom join date
+    password: 'password123' // Default password
   }
 ];
 
@@ -86,12 +92,18 @@ export default function SupervisorPage() {
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [supervisorList, setSupervisorList] = useState<Supervisor[]>(supervisors);
 
-  const filteredSupervisors = supervisorList.filter(supervisor =>
+ const filteredSupervisors = supervisorList.filter(supervisor => {
+  const matchesSearch = 
     supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+    supervisor.department.toLowerCase().includes(searchTerm.toLowerCase());
+  
+  const matchesProject = 
+    selectedProject === 'All Projects' || 
+    supervisor.location === selectedProject;
+  
+  return matchesSearch && matchesProject;
+});
   // Helper function to convert Supervisor to SupervisorData
   const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
     fullName: supervisor.name,
@@ -101,7 +113,8 @@ export default function SupervisorPage() {
     address: '123 Main St, City, State', // Default address
     dateOfJoining: supervisor.dateOfJoining, // Use actual join date from supervisor
     experience: '5 Years', // Default experience
-    assignedProject: supervisor.location
+    assignedProject: supervisor.location,
+    password: supervisor.password // Include password
   });
 
   // Helper function to convert SupervisorData to Supervisor
@@ -118,7 +131,8 @@ export default function SupervisorPage() {
       department: formData.specialization,
       location: formData.assignedProject,
       phoneNumber: formData.phoneNumber,
-      dateOfJoining: formData.dateOfJoining // Use join date from form data
+      dateOfJoining: formData.dateOfJoining, // Use join date from form data
+      password: formData.password // Include password
     };
   };
 
