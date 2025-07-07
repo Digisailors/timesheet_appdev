@@ -10,6 +10,7 @@ interface SupervisorData {
   dateOfJoining: string;
   experience: string;
   assignedProject: string;
+  password: string;
 }
 
 interface SupervisorDialogProps {
@@ -28,7 +29,8 @@ const defaultFormData: SupervisorData = {
   address: '',
   dateOfJoining: '',
   experience: '',
-  assignedProject: ''
+  assignedProject: '',
+  password: ''
 };
 
 export default function SupervisorDialog({ 
@@ -95,6 +97,11 @@ export default function SupervisorDialog({
     }
     if (!formData.assignedProject.trim()) {
       newErrors.assignedProject = 'Assigned project is required';
+    }
+    if (!formData.password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
     }
 
     setErrors(newErrors);
@@ -212,7 +219,7 @@ export default function SupervisorDialog({
               />
               {errors.phoneNumber && <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>}
             </div>
-            <div>
+     <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address <span className="text-red-500">*</span>
               </label>
