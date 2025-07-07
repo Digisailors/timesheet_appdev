@@ -13,8 +13,6 @@ interface Supervisor {
   backgroundColor: string;
   department: string;
   location: string;
-  phoneNumber: string;
-  dateOfJoining: string; // Added dateOfJoining field
   avatar?: string;
 }
 
@@ -38,9 +36,7 @@ const supervisors: Supervisor[] = [
     initials: 'RM',
     backgroundColor: 'bg-blue-500',
     department: 'Construction Management',
-    location: 'Highway Bridge',
-    phoneNumber: '98765 43210',
-    dateOfJoining: '2023-01-15' // Custom join date
+    location: 'Highway Bridge'
   },
   {
     id: '2',
@@ -49,9 +45,7 @@ const supervisors: Supervisor[] = [
     initials: 'MG',
     backgroundColor: 'bg-blue-600',
     department: 'Site Management',
-    location: 'Downtown Plaza',
-    phoneNumber: '98765 43211',
-    dateOfJoining: '2022-08-20' // Custom join date
+    location: 'Downtown Plaza'
   },
   {
     id: '3',
@@ -60,9 +54,7 @@ const supervisors: Supervisor[] = [
     initials: 'JW',
     backgroundColor: 'bg-blue-700',
     department: 'Industrial Construction',
-    location: 'Factory Building',
-    phoneNumber: '98765 43212',
-    dateOfJoining: '2023-05-10' // Custom join date
+    location: 'Factory Building'
   },
   {
     id: '4',
@@ -71,9 +63,7 @@ const supervisors: Supervisor[] = [
     initials: 'AT',
     backgroundColor: 'bg-blue-800',
     department: 'Quality Control',
-    location: 'Office Complex',
-    phoneNumber: '98765 43213',
-    dateOfJoining: '2023-03-25' // Custom join date
+    location: 'Office Complex'
   }
 ];
 
@@ -96,10 +86,10 @@ export default function SupervisorPage() {
   const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
     fullName: supervisor.name,
     specialization: supervisor.department,
-    phoneNumber: supervisor.phoneNumber,
+    phoneNumber: '98765 43210', // Default phone number
     emailAddress: supervisor.email,
     address: '123 Main St, City, State', // Default address
-    dateOfJoining: supervisor.dateOfJoining, // Use actual join date from supervisor
+    dateOfJoining: '2023-11-15', // Default date
     experience: '5 Years', // Default experience
     assignedProject: supervisor.location
   });
@@ -116,9 +106,7 @@ export default function SupervisorPage() {
       initials: initials,
       backgroundColor: 'bg-blue-500',
       department: formData.specialization,
-      location: formData.assignedProject,
-      phoneNumber: formData.phoneNumber,
-      dateOfJoining: formData.dateOfJoining // Use join date from form data
+      location: formData.assignedProject
     };
   };
 
@@ -188,7 +176,7 @@ export default function SupervisorPage() {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Add supervisor</span>
+            <span>Add Employee</span>
           </button>
         </div>
 
@@ -338,7 +326,7 @@ export default function SupervisorPage() {
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Join Date</p>
-                    <p className="text-gray-900 font-medium">{selectedSupervisor.dateOfJoining}</p>
+                    <p className="text-gray-900 font-medium">2023-11-15</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Experience</p>
@@ -349,7 +337,7 @@ export default function SupervisorPage() {
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Phone Number</p>
-                    <p className="text-gray-900 font-medium">{selectedSupervisor.phoneNumber}</p>
+                    <p className="text-gray-900 font-medium">98765 43210</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Email ID</p>
