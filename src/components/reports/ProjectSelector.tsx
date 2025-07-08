@@ -47,14 +47,15 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     <div className="flex flex-wrap gap-70 items-end">
   {/* Project Dropdown */}
   <div>
-    <label className="block text-sm font-semibold text-gray-800 mb-3">
+    <label className="block text-sm font-semibold text-gray-800 mb-9">
       Select Project
     </label>
-    <select
-      value={selectedProject}
-      onChange={(e) => onProjectChange(e.target.value)}
-      className="border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-900 min-w-[13rem] shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-    >
+   <select
+  value={selectedProject}
+  onChange={(e) => onProjectChange(e.target.value)}
+  className="border-2 border-gray-400 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-900 w-72 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+>
+
       {projects.map((proj) => (
         <option key={proj} value={proj} title={proj} className="text-gray-900 font-medium">
           {proj}
@@ -68,18 +69,18 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     <label className="block text-sm font-semibold text-gray-800 mb-2">
       Date Range
     </label>
-    <div className="relative">
-      <DatePicker
-        selectsRange
-        startDate={startDate}
-        endDate={endDate}
-        onChange={handleDateChange}
-        isClearable
-        placeholderText="Select date range"
-        value={dateRange}
-        className="border-2 border-gray-400 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 w-52 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder-gray-600"
-      />
-      <CalendarDaysIcon className="w-5 h-5 text-gray-700 absolute top-3 right-3 pointer-events-none" />
+   <div className="relative">
+  <DatePicker
+    selectsRange
+    startDate={startDate}
+    endDate={endDate}
+    onChange={handleDateChange}
+    isClearable
+    placeholderText="Select date range"
+    value={dateRange}
+    className="border-2 border-gray-400 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 w-80 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder-gray-600"
+  />
+<CalendarDaysIcon className="w-5 h-5 text-gray-700 absolute top-3 right-3 pointer-events-none" />
     </div>
   </div>
 </div>

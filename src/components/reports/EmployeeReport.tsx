@@ -44,9 +44,10 @@ const EmployeeReport = () => {
 
         {/* Export Buttons */}
         <div className="flex gap-3">
-          <button className="px-5 py-2.5 text-sm font-semibold text-black bg-white-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md">
-            📊 Export Excel
-          </button>
+          <button className="px-5 py-2.5 text-sm font-semibold text-black bg-white hover:bg-gray-200 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md">
+  📊 Export Excel
+</button>
+
           <button className="px-5 py-2.5 text-sm font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md">
             📄 Export PDF
           </button>
