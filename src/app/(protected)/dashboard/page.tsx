@@ -7,7 +7,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Navbar title="Dashboard" userName="Admin User" userInitial="A" />
+        <Navbar title="Dashboard" userName="Admin User" userRole="Site Manager" userInitial="A" />
         <Dashboard />
       </div>
     </div>

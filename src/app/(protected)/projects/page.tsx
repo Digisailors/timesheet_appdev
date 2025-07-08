@@ -7,7 +7,7 @@ export default function SupervisorPage() {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Navbar title="Project" userName="Admin User" userInitial="A" />
+        <Navbar title="Project" userName="Admin User" userRole="Site Manager" userInitial="A" />
         <ProjectsPage />
       </div>
     </div>

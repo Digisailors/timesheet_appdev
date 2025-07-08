@@ -7,7 +7,7 @@ export default function Employee() {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Navbar title="Employees" userName="Admin User" userInitial="A" />
+        <Navbar title="Employees" userName="Admin User" userRole="Site Manager" userInitial="A" />
         <EmployeesPage />
       </div>
     </div>
