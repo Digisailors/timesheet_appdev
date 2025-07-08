@@ -1,18 +1,7 @@
 import { ColumnDef } from '@tanstack/react-table';
+import { TimeSheet } from '../../types/TimeSheet';
 
-export type TimeSheet = {
-  employee: string;
-  checkIn: string;
-  checkOut: string;
-  hours: number;
-  otHours: number;
-  travelTime: string;
-  location: string;
-  project: string;
-  status: string;
-};
-
-export const columns: ColumnDef<TimeSheet>[] = [
+export const getColumns = (): ColumnDef<TimeSheet>[] => [
   {
     accessorKey: 'employee',
     header: 'Employee',
@@ -48,6 +37,27 @@ export const columns: ColumnDef<TimeSheet>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
+    cell: ({ getValue }) => {
+      const status = getValue() as string;
+      const getStatusStyle = () => {
+        switch (status) {
+          case 'Complete':
+            return 'bg-green-200 text-green-800';
+          case 'Pending':
+            return 'bg-orange-200 text-orange-800';
+          case 'In Progress':
+            return 'bg-blue-200 text-blue-800';
+          default:
+            return 'bg-gray-200 text-gray-800';
+        }
+      };
+
+      return (
+        <span className={`px-2 py-1 rounded-full ${getStatusStyle()}`}>
+          {status}
+        </span>
+      );
+    },
   },
 ];
 
@@ -60,51 +70,30 @@ export const mockData: TimeSheet[] = [
     otHours: 1,
     travelTime: '00:00',
     location: 'Site A',
-    project: 'Project Alpha (PA001)',
+    project: 'Project Alpha',
     status: 'Complete',
   },
   {
     employee: 'Jane Smith',
-    checkIn: '07:15',
-    checkOut: '16:15',
-    hours: 8,
+    checkIn: '08:00',
+    checkOut: '17:30',
+    hours: 9,
     otHours: 1,
-    travelTime: '00:00',
-    location: 'Site A',
-    project: 'Project Alpha (PA001)',
-    status: 'Complete',
+    travelTime: '00:30',
+    location: 'Site B',
+    project: 'Project Beta',
+    status: 'In Progress',
   },
   {
     employee: 'Bob Johnson',
-    checkIn: '07:30',
-    checkOut: '15:30',
-    hours: 8,
+    checkIn: '09:00',
+    checkOut: '18:00',
+    hours: 9,
     otHours: 0,
-    travelTime: '00:00',
-    location: 'Site A',
-    project: 'Project Alpha (PA001)',
-    status: 'Complete',
+    travelTime: '00:45',
+    location: 'Site C',
+    project: 'Project Gamma',
+    status: 'Pending',
   },
-  {
-    employee: 'Jane Smith',
-    checkIn: '09:30',
-    checkOut: '17:00',
-    hours: 8,
-    otHours: 0,
-    travelTime: '00:00',
-    location: 'Site B',
-    project: 'Project Beta (PB002)',
-    status: 'Complete',
-  },
-  {
-    employee: 'Bob Johnson',
-    checkIn: '08:30',
-    checkOut: '16:15',
-    hours: 8,
-    otHours: 0,
-    travelTime: '01:00',
-    location: 'Site B',
-    project: 'Project Beta (PB002)',
-    status: 'Complete',
-  },
+  // Add more mock data as needed
 ];
