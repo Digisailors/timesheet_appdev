@@ -1,38 +1,90 @@
 "use client";
 import React from 'react';
 
-const ProjectHoursChart = () => {
+const ProjectHoursChart: React.FC = () => {
+  const monthsData = [
+    { month: '01/01', regular: 9, overtime: 2 },
+    { month: '02/01', regular: 11, overtime: 3 },
+    { month: '03/01', regular: 6, overtime: 3 },
+    { month: '04/01', regular: 7, overtime: 2 },
+    { month: '05/01', regular: 7, overtime: 2 },
+    { month: '06/01', regular: 12, overtime: 4 },
+    { month: '07/01', regular: 11, overtime: 5 },
+    { month: '08/01', regular: 9, overtime: 2 },
+    { month: '09/01', regular: 9, overtime: 2 },
+    { month: '10/01', regular: 10, overtime: 5 },
+    { month: '11/01', regular: 10, overtime: 4 },
+    { month: '12/01', regular: 11, overtime: 6 },
+  ];
+
   return (
-    <div className="mt-6 max-w-md mx-auto bg-white shadow-md border border-gray-200 rounded-xl p-6">
-      <div className="text-lg font-semibold text-gray-800 mb-4">Project Hours (Monthly)</div>
-      
-      <div className="flex justify-between items-end h-56 bg-gray-50 rounded-md px-4 py-4 gap-8">
-        {['Jan', 'Feb', 'Mar', 'Apr','may','june','july','aug','sep','nov','dec'].map((month, index) => (
-          <div key={index} className="flex flex-col items-center">
-            {/* Bars */}
-            <div className="flex items-end gap-1">
-              <div
-                className="bg-blue-500 w-3 rounded-md transition-all"
-                style={{ height: `${90 + index * 10}px` }} // Regular Hours
-              ></div>
-              <div
-                className="bg-orange-400 w-3 rounded-md transition-all"
-                style={{ height: `${40 + index * 5}px` }} // Overtime Hours
-              ></div>
-            </div>
-            {/* Label */}
-            <div className="text-xs mt-2 text-gray-600 font-medium">{month}</div>
+    <div className="mt-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">Project Hours Chart</h3>
+        {/* Legend moved to top right */}
+        <div className="flex gap-6 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-blue-500 inline-block"></span> Regular
           </div>
-        ))}
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-orange-400 inline-block"></span> Overtime
+          </div>
+        </div>
       </div>
       
-      {/* Legend */}
-      <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-blue-500 inline-block rounded-sm"></span> Regular Hours
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-orange-400 inline-block rounded-sm"></span> Overtime Hours
+      <div className="bg-white border border-gray-200 rounded-md p-6">
+        <div className="flex">
+          {/* Y-axis labels */}
+          <div className="flex flex-col justify-between h-60 w-8 mr-4">
+            <span className="text-sm text-gray-600">12</span>
+            <span className="text-sm text-gray-600">9</span>
+            <span className="text-sm text-gray-600">6</span>
+            <span className="text-sm text-gray-600">3</span>
+            <span className="text-sm text-gray-600">0</span>
+          </div>
+          
+          {/* Chart area */}
+          <div className="flex-1">
+            {/* Horizontal grid lines */}
+            <div className="relative h-60">
+              <div className="absolute inset-0 flex flex-col justify-between">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="border-t border-gray-200 w-full"></div>
+                ))}
+              </div>
+              
+              {/* Bars */}
+              <div className="absolute inset-0 flex justify-between items-end px-2">
+                {monthsData.map((data, index) => (
+                  <div key={index} className="flex items-end gap-1">
+                    {/* Regular hours bar */}
+                    <div
+                      className="bg-blue-500 w-4"
+                      style={{ 
+                        height: `${(data.regular / 12) * 240}px`,
+                      }}
+                    ></div>
+                    {/* Overtime hours bar */}
+                    <div
+                      className="bg-orange-400 w-4"
+                      style={{ 
+                        height: `${(data.overtime / 12) * 240}px`,
+                      }}
+                    ></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* X-axis labels */}
+            <div className="flex justify-between mt-2 px-2">
+              {monthsData.map((data, index) => (
+                <div key={index} className="text-xs text-gray-600 font-medium w-9 text-center">
+                  {data.month}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,36 +1,63 @@
 import React from 'react';
 
-const TimesheetTable = () => {
+const TimesheetTable: React.FC = () => {
+  const timesheetData: TimesheetEntry[] = [
+    {
+      date: "5/18/2025",
+      location: "Downtown Office",
+      checkIn: "07:15",
+      checkOut: "15:10",
+      regularHours: 8,
+      otHours: 0,
+      travelTime: "00:30",
+      remarks: ""
+    }
+  ];
+
   return (
-    <div className="mx-auto mt-6 px-6 py-4 max-w-5xl bg-white shadow-md border border-gray-300 rounded-lg">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Detailed Timesheet</h2>
-      
-      <table className="w-full text-sm border border-gray-300">
-        <thead className="bg-gray-100 text-gray-700">
-          <tr>
-            <th className="p-3 border">Date</th>
-            <th className="p-3 border">Project</th>
-            <th className="p-3 border">Regular Hours</th>
-            <th className="p-3 border">Overtime</th>
-          </tr>
-        </thead>
-        <tbody className="text-gray-600">
-          <tr>
-            <td className="p-3 border">01 Jan</td>
-            <td className="p-3 border">Project A</td>
-            <td className="p-3 border">8</td>
-            <td className="p-3 border">2</td>
-          </tr>
-          <tr className="bg-gray-50">
-            <td className="p-3 border">02 Jan</td>
-            <td className="p-3 border">Project A</td>
-            <td className="p-3 border">7</td>
-            <td className="p-3 border">1</td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="mt-6">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Location</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Check In</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Check Out</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Regular Hours</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">OT Hours</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Travel Time</th>
+              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {timesheetData.map((entry, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.date}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.location}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.checkIn}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.checkOut}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.regularHours}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.otHours}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.travelTime}</td>
+                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.remarks}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
+interface TimesheetEntry {
+  date: string;
+  location: string;
+  checkIn: string;
+  checkOut: string;
+  regularHours: number;
+  otHours: number;
+  travelTime: string;
+  remarks: string;
+}
 
 export default TimesheetTable;
