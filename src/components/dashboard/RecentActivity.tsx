@@ -16,7 +16,7 @@ interface ActivityItem {
   user: string;
   action: string;
   time: string;
-  type: 'checkin' | 'checkout' | 'timesheet' | 'edit' | 'project';
+  type: string; // 'checkin', 'checkout', 'timesheet', 'edit', 'project'
 }
 
 interface RecentActivityProps {
@@ -42,14 +42,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ recentActivity }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
+    <div >
+      <div >
         <h2 className="text-lg font-semibold text-gray-900 flex items-center">
           <ClipboardDocumentListIcon className="w-5 h-5 mr-2" />
           Recent Activity
         </h2>
       </div>
-      <div className="p-6">
+      <div className="border border-gray-200 rounded-lg p-4 bg-white mt-3 p-6">
         <div className="space-y-4">
           {recentActivity.map((activity) => (
             <div key={activity.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer group">

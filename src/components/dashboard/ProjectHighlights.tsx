@@ -20,8 +20,8 @@ interface ProjectHighlightsProps {
 
 const ProjectHighlights: React.FC<ProjectHighlightsProps> = ({ projects }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
+    <div >
+      <div >
         <h2 className="text-lg font-semibold text-gray-900 flex items-center">
           <ChartBarIcon className="w-5 h-5 mr-2" />
           Project Highlights
@@ -30,7 +30,7 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = ({ projects }) => {
       <div className="p-6">
         <div className="space-y-6">
           {projects.map((project, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="font-medium text-gray-900">{project.name}</h3>

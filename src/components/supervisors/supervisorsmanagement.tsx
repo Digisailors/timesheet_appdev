@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Users, Search } from 'lucide-react';
-import SupervisorList from './supervisorlist';
+
+import { useRouter } from 'next/router';
+import SupervisorList from './supervisorlis';
 
 
 interface Supervisor {
@@ -56,20 +58,30 @@ const supervisors: Supervisor[] = [
   }
 ];
 
-export default function SupervisorManagement() {
+export default function SupervisorPage() {
+  const router = useRouter(); // Initialize the router
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
+  const [showDialog, setShowDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
 
   const filteredSupervisors = supervisors.filter(supervisor =>
-    (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (selectedProject === 'All Projects' || supervisor.location === selectedProject)
+    supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAction = (action: string, supervisor: Supervisor) => {
-    console.log(`${action} action for ${supervisor.name}`);
-    // Implement your action logic here
+    if (action === 'edit') {
+      router.push(`/supervisorsmanagement/${supervisor.id}`);
+    } else {
+      console.log(`${action} action for ${supervisor.name}`);
+    }
+  };
+
+  const handleAddSupervisor = () => {
+    router.push('/supervisorsmanagement/new');
   };
 
   return (

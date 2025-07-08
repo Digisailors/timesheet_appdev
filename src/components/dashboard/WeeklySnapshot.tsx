@@ -16,11 +16,11 @@ interface WeeklySnapshotProps {
 
 const WeeklySnapshot: React.FC<WeeklySnapshotProps> = ({ weeklyStats }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div >
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Weekly Snapshot</h2>
       </div>
-      <div className="p-6">
+      <div className="border border-gray-200 rounded-lg p-4 bg-white p-6">
         <div className="mb-4">
           <h3 className="font-medium text-gray-900 mb-2">Current Week Performance</h3>
         </div>

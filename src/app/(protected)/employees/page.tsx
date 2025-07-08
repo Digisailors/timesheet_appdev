@@ -2,12 +2,12 @@ import EmployeesPage from "@/components/employees/employees";
 import Navbar from "@/components/ui/navbar";
 import Sidebar from "@/components/ui/sidebar";
 
-export default function () {
+export default function Employee() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Navbar title="Employees" userName="Admin User" userInitial="A" />
+        <Navbar title="Employees" userName="Admin User" userRole="Site Manager" userInitial="A" />
         <EmployeesPage />
       </div>
     </div>
