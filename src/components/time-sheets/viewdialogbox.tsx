@@ -1,5 +1,4 @@
 "use client";
-
 import React from 'react';
 
 interface ViewDialogBoxProps {
@@ -69,23 +68,24 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <p className="font-bold">{employee.checkOut}</p>
             </div>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+            <h3 className="text-lg font-bold text-center mb-2">Hours Breakdown</h3>
             <div className="grid grid-cols-4 gap-4 text-center">
               <div>
                 <p className="text-sm text-gray-500">Total Hours</p>
-                <p className={`font-bold ${employee.totalHours === '08:00' ? 'text-blue-500' : ''}`}>{employee.totalHours}</p>
+                <p className={`font-bold text-blue-500`}>{employee.totalHours}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Overtime</p>
-                <p className={`font-bold ${employee.overtime === '00:00' ? 'text-red-500' : ''}`}>{employee.overtime}</p>
+                <p className={`font-bold text-red-500`}>{employee.overtime}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Travel Time</p>
-                <p className={`font-bold ${employee.travelTime === '01:00' ? 'text-purple-500' : ''}`}>{employee.travelTime}</p>
+                <p className={`font-bold text-purple-500`}>{employee.travelTime}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Break Time</p>
-                <p className="font-bold">{employee.breakTime}</p>
+                <p className="font-bold text-gray-500">{employee.breakTime}</p>
               </div>
             </div>
           </div>

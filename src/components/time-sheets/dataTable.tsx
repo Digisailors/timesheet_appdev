@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -9,51 +8,49 @@ import {
   getPaginationRowModel,
   Row,
 } from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ViewDialogBox } from "./viewdialogbox";
+import { getColumns, mockData } from './columns';
+import { TimeSheet } from '../../types/TimeSheet';
 
-interface TimeSheet {
-  employee: string;
-  checkIn: string;
-  checkOut: string;
-  hours: number;
-  otHours: number;
-  travelTime: string;
-  location: string;
-  project: string;
-  status: string;
-}
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-}
-
-export function DataTable<TData extends TimeSheet, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
+  const [filters, setFilters] = useState({
+    searchTerm: '',
+    selectedEmployee: 'all',
+    selectedProject: 'all',
+    selectedLocation: 'all',
+    selectedStatus: 'all'
+  });
+
+  const columns = useMemo(() => getColumns(), []);
 
   const handleViewClick = (employee: TimeSheet) => {
     setSelectedEmployee(employee);
     setIsDialogOpen(true);
   };
 
-  const getActionColumn = React.useCallback((): ColumnDef<TData> => {
+  const filteredData = useMemo(() =>
+    mockData.filter((item) => {
+      return (
+        (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
+        (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
+        (filters.selectedLocation === 'all' || item.location === filters.selectedLocation) &&
+        (filters.selectedStatus === 'all' || item.status === filters.selectedStatus) &&
+        (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+         item.project.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+      );
+    }), [filters]);
+
+  const getActionColumn = React.useCallback((): ColumnDef<TimeSheet> => {
     return {
       id: 'actions',
-      cell: ({ row }: { row: Row<TData> }) => (
+      cell: ({ row }: { row: Row<TimeSheet> }) => (
         <div className="flex space-x-2">
           <button
             onClick={() => handleViewClick(row.original)}
-            className="px-3 py-1 rounded border hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            style={{ 
+            className="px-3 py-1 rounded border hover:bg-gray-50"
+            style={{
               borderColor: '#020817',
               backgroundColor: 'white',
               color: '#020817',
@@ -69,8 +66,8 @@ export function DataTable<TData extends TimeSheet, TValue>({ columns, data }: Da
             View
           </button>
           <button
-            className="px-3 py-1 rounded border hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            style={{ 
+            className="px-3 py-1 rounded border hover:bg-gray-50"
+            style={{
               borderColor: '#020817',
               backgroundColor: 'white',
               color: '#020817',
@@ -92,11 +89,10 @@ export function DataTable<TData extends TimeSheet, TValue>({ columns, data }: Da
   }, []);
 
   const actionColumn = getActionColumn();
-
-  const tableColumns = React.useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
+  const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns: tableColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -105,88 +101,78 @@ export function DataTable<TData extends TimeSheet, TValue>({ columns, data }: Da
   return (
     <div className="bg-white p-4 rounded-md">
       <div className="flex items-center py-4 space-x-4">
-        <input placeholder="Search..." className="max-w-sm border rounded px-3 py-2" />
-        <select className="w-[180px] border rounded px-3 py-2">
+        <input
+          placeholder="Search..."
+          className="max-w-sm border rounded px-3 py-2"
+          value={filters.searchTerm}
+          onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
+        />
+        <select
+          className="w-[180px] border rounded px-3 py-2"
+          value={filters.selectedEmployee}
+          onChange={(e) => setFilters({...filters, selectedEmployee: e.target.value})}
+        >
           <option value="all">All Employees</option>
-          <option value="john">John Doe</option>
-          <option value="jane">Jane Smith</option>
-          <option value="bob">Bob Johnson</option>
+          <option value="John Doe">John Doe</option>
+          <option value="Jane Smith">Jane Smith</option>
+          <option value="Bob Johnson">Bob Johnson</option>
         </select>
-        <select className="w-[180px] border rounded px-3 py-2">
+        <select
+          className="w-[180px] border rounded px-3 py-2"
+          value={filters.selectedProject}
+          onChange={(e) => setFilters({...filters, selectedProject: e.target.value})}
+        >
           <option value="all">All Projects</option>
-          <option value="alpha">Project Alpha</option>
-          <option value="beta">Project Beta</option>
+          <option value="Project Alpha">Project Alpha</option>
+          <option value="Project Beta">Project Beta</option>
+          <option value="Project Gamma">Project Gamma</option>
         </select>
-        <select className="w-[180px] border rounded px-3 py-2">
+        <select
+          className="w-[180px] border rounded px-3 py-2"
+          value={filters.selectedLocation}
+          onChange={(e) => setFilters({...filters, selectedLocation: e.target.value})}
+        >
           <option value="all">All Locations</option>
-          <option value="siteA">Site A</option>
-          <option value="siteB">Site B</option>
+          <option value="Site A">Site A</option>
+          <option value="Site B">Site B</option>
+          <option value="Site C">Site C</option>
         </select>
-        <select className="w-[180px] border rounded px-3 py-2">
+        <select
+          className="w-[180px] border rounded px-3 py-2"
+          value={filters.selectedStatus}
+          onChange={(e) => setFilters({...filters, selectedStatus: e.target.value})}
+        >
           <option value="all">All Statuses</option>
-          <option value="complete">Complete</option>
+          <option value="Complete">Complete</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Pending">Pending</option>
         </select>
       </div>
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <table className="w-full">
+          <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-gray-400">
+                  <th key={header.id} className="text-left p-2 border-b text-gray-400">
                     {flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
+                  </th>
                 ))}
-              </TableRow>
+              </tr>
             ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={
-                        cell.column.id === 'status'
-                          ? 'text-black'
-                          : ''
-                      }
-                      style={
-                        cell.column.id === 'status'
-                          ? { color: 'black' }
-                          : cell.column.id === 'employee'
-                          ? { 
-                              color: '#020817',
-                              fontFamily: 'Segoe UI',
-                              fontWeight: 600,
-                              fontSize: '14px',
-                              lineHeight: '20px',
-                              letterSpacing: '0%'
-                            }
-                          : { color: '#020817' }
-                      }
-                    >
-                      {cell.column.id === 'status' ? (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </span>
-                      ) : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center text-black">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="p-2 border-b text-black">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {selectedEmployee && (
         <ViewDialogBox
@@ -200,9 +186,9 @@ export function DataTable<TData extends TimeSheet, TValue>({ columns, data }: Da
             date: "29-05-2025",
             checkIn: selectedEmployee.checkIn,
             checkOut: selectedEmployee.checkOut,
-            totalHours: "08:00",
-            overtime: "00:00",
-            travelTime: "01:00",
+            totalHours: `${selectedEmployee.hours}:00`,
+            overtime: `${selectedEmployee.otHours}:00`,
+            travelTime: selectedEmployee.travelTime,
             breakTime: "01:00",
           }}
         />
