@@ -1,5 +1,6 @@
 // CompanyForm.tsx
 import React, { useState } from 'react';
+import { FileText } from 'lucide-react'; // ✅ Imported icon
 
 type CompanyData = {
   companyName: string;
@@ -32,6 +33,23 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: keyof CompanyData, value: string) => {
+    if (field === 'phoneNumber') {
+      const numbersOnly = value.replace(/[^0-9]/g, '');
+      setFormData(prev => ({
+        ...prev,
+        [field]: numbersOnly
+      }));
+      return;
+    }
+
+    if (field === 'email') {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -52,9 +70,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center mb-6">
-        <div className="w-5 h-5 bg-gray-800 rounded mr-3 flex items-center justify-center">
-          <div className="w-3 h-3 bg-white rounded-sm"></div>
-        </div>
+        <FileText className="w-6 h-6 mr-3 text-gray-700" /> {/* ✅ Replaced icon */}
         <h3 className="text-lg font-semibold text-gray-900">Company Information</h3>
       </div>
 
@@ -68,7 +84,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="text"
             value={formData.companyName}
             onChange={(e) => handleInputChange('companyName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter company name"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -81,7 +98,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="text"
             value={formData.registrationNumber}
             onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter registration number"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -93,8 +111,9 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           <textarea
             value={formData.address}
             onChange={(e) => handleInputChange('address', e.target.value)}
+            placeholder="Enter address"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           />
         </div>
 
@@ -107,7 +126,10 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="text"
             value={formData.phoneNumber}
             onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter phone number (numbers only)"
+            pattern="[0-9]*"
+            inputMode="numeric"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -120,7 +142,9 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter email (example@domain.com)"
+            pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -133,7 +157,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="text"
             value={formData.website}
             onChange={(e) => handleInputChange('website', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter website"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -146,14 +171,15 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             type="text"
             value={formData.taxId}
             onChange={(e) => handleInputChange('taxId', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter tax ID"
+            className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Save Button */}
       <div className="mt-6 flex justify-end">
-        <button 
+        <button
           onClick={handleSave}
           disabled={isLoading}
           className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"

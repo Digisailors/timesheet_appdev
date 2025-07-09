@@ -24,15 +24,15 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({ activeTab: propActiveTab = 
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-8 border-b border-gray-200">
+      <div className="flex bg-gray-100 rounded-lg p-1">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => handleTabClick(tab)}
-            className={`py-3 px-1 text-sm font-medium transition-colors duration-200 ${
+            className={`flex-1 py-2 px-4 text-sm font-medium transition-all duration-200 rounded-md ${
               activeTab === tab
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
             {tab}
