@@ -23,6 +23,7 @@ interface EmployeeFormData {
   address: string;
   experience: string;
   dateOfJoining: string;
+  specialization: string;
 }
 
 interface AddEmployeeModalProps {
@@ -47,7 +48,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     email: "",
     address: "",
     experience: "",
-    dateOfJoining: ""
+    dateOfJoining: "",
+    specialization: ""
   });
 
   React.useEffect(() => {
@@ -65,7 +67,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         email: editingEmployee.email,
         address: "",
         experience: "",
-        dateOfJoining: ""
+        dateOfJoining: "",
+        specialization: ""
       });
     } else {
       setFormData({
@@ -77,12 +80,13 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         email: "",
         address: "",
         experience: "",
-        dateOfJoining: ""
+        dateOfJoining: "",
+        specialization: ""
       });
     }
   }, [editingEmployee]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -208,16 +212,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 />
               </div>
 
-              {/* Address - Full Width */}
+              {/* Address - Full Width with Larger Height */}
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Address</label>
-                <input
-                  type="text"
+                <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="Address Details"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]"
                   required
                 />
               </div>
@@ -244,6 +248,20 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   value={formData.experience}
                   onChange={handleChange}
                   placeholder="e.g., 5 years"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Specialization - Left Side Only */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Specialization</label>
+                <input
+                  type="text"
+                  name="specialization"
+                  value={formData.specialization}
+                  onChange={handleChange}
+                  placeholder="Enter Skills"
                   className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />

@@ -87,14 +87,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
   };
 
   return (
-    <div className={`bg-blue-800 text-white min-h-screen w-64 flex flex-col ${className}`}>
+    <div className={`bg-blue-800 text-white h-screen w-64 flex flex-col fixed left-0 top-0 z-40 ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-blue-700">
+      <div className="p-6 border-b border-blue-700 flex-shrink-0">
         <h1 className="text-xl font-semibold">Timesheet Admin</h1>
       </div>
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 py-4">
+      {/* Navigation Menu - Scrollable */}
+      <nav className="flex-1 py-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-blue-700">
+      <div className="p-4 border-t border-blue-700 flex-shrink-0">
         <button
           onClick={handleLogout}
           className="flex items-center w-full px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-700 hover:bg-opacity-50 rounded-lg mx-0"
