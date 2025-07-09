@@ -1,12 +1,25 @@
-"use client";
-import React from 'react';
+import Sidebar from "@/components/ui/sidebar";
+import Navbar from "@/components/ui/navbar";
+import SettingsPage from "@/components/settings/settingspage";
 
-// ✅ Import with correct filename casing
-import Settingspage from '../../../components/settings/settingspage';
-
-const Settings = () => {
-  // ✅ Use the same case here
-  return <Settingspage />;
-};
-
-export default Settings;
+export default function DashboardPage() {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Fixed Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      <div className="ml-64 flex flex-col min-h-screen">
+        {/* Fixed Navbar */}
+        <div className="sticky top-0 z-30">
+          <Navbar title="Settings" userName="Admin User" userRole="Site Manager" userInitial="A" />
+        </div>
+        
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          <SettingsPage />
+        </div>
+      </div>
+    </div>
+  );
+}
