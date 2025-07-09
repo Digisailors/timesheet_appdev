@@ -289,7 +289,7 @@ export default function SupervisorPage() {
                   </button>
                   <button
                     onClick={() => handleAction('delete', supervisor)}
-                    className="p-2 border border-gray-500 rounded-lg p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 border border-red-500 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
