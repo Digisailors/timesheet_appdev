@@ -41,12 +41,7 @@ const SettingsPage: React.FC = () => {
       <Sidebar onItemClick={handleMenuClick} />
 
       <div className="flex-1 flex flex-col">
-        <Navbar 
-          title="Settings"
-          userName="Admin User"
-          userInitial="A"
-        />
-
+        
         <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
           <SettingsTabs 
             activeTab={activeTab}
