@@ -1,16 +1,25 @@
 "use client";
-
-import ReportsPage from "@/components/reports/reports"; // ✅ Check path, spelling & case
-import Navbar from "@/components/ui/navbar";
 import Sidebar from "@/components/ui/sidebar";
+import Navbar from "@/components/ui/navbar";
+import ReportsPage from "@/components/reports/reports";
 
-export default function Reports() {
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100">
+      {/* Fixed Sidebar */}
       <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar title="Reports" userName="Admin User" userInitial="A" />
-        <ReportsPage /> {/* ✅ This must match the import name exactly */}
+      
+      {/* Main Content Area */}
+      <div className="ml-64 flex flex-col min-h-screen">
+        {/* Fixed Navbar */}
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200">
+          <Navbar title="Reports" userName="Admin User" userRole="Site Manager" userInitial="A" />
+        </div>
+        
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-100">
+          <ReportsPage />
+        </div>
       </div>
     </div>
   );
