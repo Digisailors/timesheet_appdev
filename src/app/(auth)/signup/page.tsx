@@ -21,6 +21,7 @@ export default function SignUpPage() {
     confirmPassword: "",
     agreeToTerms: false,
   });
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,8 +29,9 @@ export default function SignUpPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
       return;
@@ -38,7 +40,37 @@ export default function SignUpPage() {
       alert("Please agree to the terms and conditions");
       return;
     }
-    router.push("/login");
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: `${formData.firstName} ${formData.lastName}`,
+          phoneNumber: "", // You can add a phone number field if needed
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert("Account created successfully!");
+        router.push("/login");
+      } else {
+        alert(data.message || "Something went wrong. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating account:", error);
+      alert("Network error. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -110,6 +142,7 @@ export default function SignUpPage() {
                     onChange={handleInputChange}
                     className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -129,6 +162,7 @@ export default function SignUpPage() {
                   onChange={handleInputChange}
                   className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -152,6 +186,7 @@ export default function SignUpPage() {
                   onChange={handleInputChange}
                   className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -175,6 +210,7 @@ export default function SignUpPage() {
                   onChange={handleInputChange}
                   className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -197,6 +233,7 @@ export default function SignUpPage() {
                   onChange={handleInputChange}
                   className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -212,12 +249,10 @@ export default function SignUpPage() {
                     agreeToTerms: checked as boolean,
                   }))
                 }
+                disabled={isLoading}
               />
               <Label htmlFor="terms" className="text-sm text-gray-600">
-                I agree to the{" "}
-                <Link href="/terms" className="text-blue-600 hover:underline">
-                  Terms and Conditions
-                </Link>
+                I agree to the Terms and Conditions
               </Label>
             </div>
 
@@ -225,8 +260,9 @@ export default function SignUpPage() {
             <Button
               type="submit"
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+              disabled={isLoading}
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
 
             {/* Sign in link */}

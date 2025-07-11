@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,25 +9,66 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      router.push("/dashboard");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        localStorage.setItem("user", JSON.stringify(data.data));
+        router.push("/dashboard");
+      } else {
+        const errorMessage = data.message || "Login failed. Please try again.";
+        setError(errorMessage);
+        
+        if (errorMessage.toLowerCase().includes("email")) {
+          toast.error("Incorrect email");
+        } else if (errorMessage.toLowerCase().includes("password")) {
+          toast.error("Incorrect password");
+        } else {
+          toast.error(errorMessage);
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+       const errorMessage = "The email or password is incorrect. Please check your credentials and try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Left side - Image and branding */}
+      {/* Left side - Image */}
       <div className="hidden lg:flex lg:w-1/2 justify-center items-center">
         <Image
           src="/assets/auth/login.png"
@@ -36,31 +76,6 @@ export default function LoginPage() {
           height={600}
           alt="Login Image"
         />
-        {/* Logo overlay */}
-        {/* <div className="absolute top-6 left-6 z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-              <div className="w-4 h-4 bg-white transform rotate-45"></div>
-            </div>
-            <span className="text-blue-600 font-bold text-xl">GAMBIT</span>
-          </div>
-          <p className="text-gray-600 text-sm">
-            Engineering Consultancies Pvt Ltd
-          </p>
-        </div> */}
-
-        {/* Bottom text overlay */}
-        {/* <div className="absolute bottom-8 left-6 z-10 text-white max-w-md">
-          <h2 className="text-3xl font-bold mb-4 leading-tight">
-            Streamline your workday with
-            <br />
-            Timesheet App
-          </h2>
-          <p className="text-white/90 leading-relaxed">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sem
-            magna, sollicitudin id vehicula eu, mattis a leo. Nam ut egestas ex.
-          </p>
-        </div> */}
       </div>
 
       {/* Right side - Login form */}
@@ -98,6 +113,13 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email field */}
             <div>
@@ -117,11 +139,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
 
-            {/* Password field */}
+            {/* Password field with single eye icon toggle */}
             <div>
               <Label
                 htmlFor="password"
@@ -133,13 +156,21 @@ export default function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 pr-10"
                   required
+                  disabled={isLoading}
                 />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <Eye className={`w-5 h-5 ${showPassword ? 'text-blue-500' : ''}`} />
+                </button>
               </div>
             </div>
 
@@ -147,8 +178,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+              disabled={isLoading}
             >
-              Login
+              {isLoading ? "Signing in..." : "Login"}
             </Button>
 
             {/* Remember me and Forgot password */}
