@@ -1,7 +1,7 @@
 // src/components/project_management/ProjectManagement.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, MapPin, Users, Calendar, Eye, Edit, Trash2, Plus, ChevronDown, DollarSign, Folder } from 'lucide-react';
 
 // Types
@@ -19,12 +19,20 @@ export interface Project {
 }
 
 export interface ProjectManagementProps {
-  projects: Project[];
+  projects?: Project[]; // Made optional since we'll fetch from API
   onCreateProject?: () => void;
   onViewDetails?: (project: Project) => void;
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (project: Project) => void;
   className?: string;
+}
+
+// API Response interface
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: any[];
+  total: number;
 }
 
 // Status color mapping
@@ -96,7 +104,6 @@ const ProjectCard: React.FC<{
         </button>
   
 
-
         <button
           onClick={() => onEditProject?.(project)}
           className="flex items-center border border-gray-200 rounded-lg px-2 py-1 text-sm text-black-600 hover:text-blue-600 transition-colors"
@@ -156,7 +163,7 @@ console.log(label, value, options, onChange);
 
 // Main Project Management Component
 const ProjectManagement: React.FC<ProjectManagementProps> = ({
-  projects = [],
+  projects: propProjects = [], // Renamed to avoid confusion
   onCreateProject,
   onViewDetails,
   onEditProject,
@@ -167,6 +174,62 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const [selectedProject, setSelectedProject] = useState('All Projects');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [selectedStatus, setSelectedStatus] = useState('Status');
+  
+  // New state for API data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Function to fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const apiResponse: ApiResponse = await response.json();
+      
+      if (apiResponse.success) {
+        // Transform API data to match our Project interface
+        const transformedProjects: Project[] = apiResponse.data.map((project: any) => ({
+          id: project.id,
+          name: project.name,
+          code: project.code,
+          location: project.location,
+          employees: 0, // Default value since API doesn't provide this
+          startDate: project.startDate,
+          endDate: project.endDate,
+          budget: project.budget,
+          description: project.description,
+          status: project.status as 'active' | 'completed' | 'pending' | 'cancelled'
+        }));
+        
+        setProjects(transformedProjects);
+      } else {
+        throw new Error(apiResponse.message || 'Failed to fetch projects');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching projects');
+      console.error('Error fetching projects:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch projects on component mount
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   // Get unique values for filters
   const uniqueProjects = useMemo(() => {
@@ -195,6 +258,76 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       return matchesSearch && matchesProject && matchesLocation && matchesStatus;
     });
   }, [projects, searchTerm, selectedProject, selectedLocation, selectedStatus]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className={`bg-gray-50 flex-1 ${className}`}>
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center">
+                <Folder className="w-5 h-5 text-blue-600" />
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900">Project Management</h1>
+            </div>
+            
+            <button
+              onClick={onCreateProject}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </button>
+          </div>
+        </div>
+        
+        <div className="m-2 px-4 py-4 bg-white rounded-lg shadow-sm border border-gray-200 shadow-md">
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading projects...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={`bg-gray-50 flex-1 ${className}`}>
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center">
+                <Folder className="w-5 h-5 text-blue-600" />
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900">Project Management</h1>
+            </div>
+            
+            <button
+              onClick={onCreateProject}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </button>
+          </div>
+        </div>
+        
+        <div className="m-2 px-4 py-4 bg-white rounded-lg shadow-sm border border-gray-200 shadow-md">
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">Error: {error}</p>
+            <button
+              onClick={fetchProjects}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-gray-50 flex-1 ${className}`}>

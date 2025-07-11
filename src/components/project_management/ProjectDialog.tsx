@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Search, Users, MapPin, CheckCircle } from 'lucide-react';
 
+
 export interface ProjectFormData {
   name: string;
   code: string;
@@ -88,6 +89,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   const [viewMode, setViewMode] = useState('Day View');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update form data when dialog opens
   useEffect(() => {
@@ -139,11 +141,52 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        // Prepare the request body
+        const requestBody = {
+          name: formData.name,
+          code: formData.code,
+          location: formData.location,
+          description: formData.description,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          budget: formData.budget,
+          status: formData.status
+        };
+
+        // Make the API call
+       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Call the original onSubmit callback with the form data
+          onSubmit(formData);
+          // Close the dialog
+          handleClose();
+        } else {
+          throw new Error(result.message || 'Failed to create project');
+        }
+      } catch (error) {
+        console.error('Error creating project:', error);
+        alert(error instanceof Error ? error.message : 'Failed to create project. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -210,7 +253,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   // If not in view mode, show the original form
   if (!isViewMode) {
     return (
-      <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
+<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -218,6 +261,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={isSubmitting}
             >
               <X className="w-6 h-6" />
             </button>
@@ -236,9 +280,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter project name"
+                  disabled={isSubmitting}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.name ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {errors.name && (
                   <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -254,9 +299,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   value={formData.code}
                   onChange={(e) => handleInputChange('code', e.target.value)}
                   placeholder="e.g., HBC-2024-001"
+                  disabled={isSubmitting}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.code ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {errors.code && (
                   <p className="text-red-500 text-sm mt-1">{errors.code}</p>
@@ -274,9 +320,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
                 placeholder="Enter project location"
+                disabled={isSubmitting}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
               {errors.location && (
                 <p className="text-red-500 text-sm mt-1">{errors.location}</p>
@@ -293,7 +340,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter project description"
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               />
             </div>
 
@@ -308,9 +358,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
+                    disabled={isSubmitting}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.startDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 </div>
@@ -328,9 +379,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleInputChange('endDate', e.target.value)}
+                    disabled={isSubmitting}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.endDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 </div>
@@ -351,9 +403,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   value={formData.budget}
                   onChange={(e) => handleInputChange('budget', e.target.value)}
                   placeholder="Enter budget amount"
+                  disabled={isSubmitting}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.budget ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {errors.budget && (
                   <p className="text-red-500 text-sm mt-1">{errors.budget}</p>
@@ -367,7 +420,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value as string)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
                   <option value="active">Active</option>
                   <option value="pending">Pending</option>
@@ -382,15 +438,21 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                disabled={isSubmitting}
+                className={`px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting}
+                className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                {submitLabel}
+                {isSubmitting ? 'Creating...' : submitLabel}
               </button>
             </div>
           </form>
@@ -401,7 +463,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
   // View mode - show the work progress timeline UI
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
+<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
