@@ -102,7 +102,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const isEditing = !!editingEmployee;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-30 backdrop-blur-sm p-4">
+<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="relative w-full max-w-3xl mx-4 md:mx-auto max-h-[95vh] bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
         
         {/* Header */}
