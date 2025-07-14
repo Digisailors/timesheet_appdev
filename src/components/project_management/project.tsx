@@ -1,65 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-
+import { toast } from 'sonner';
 
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
 import { Project } from "@/components/project_management/ProjectManagement";
 import { ProjectFormData } from "@/components/project_management/ProjectDialog";
 
-// Sample data - replace with your actual data source
-const sampleProjects: Project[] = [
-  {
-    id: 'HBC-2024-001',
-    name: 'Highway Bridge Construction',
-    code: 'HBC-2024-001',
-    location: 'North District, Highway 1',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'active',
-  },
-  {
-    id: 'HBC-2024-002',
-    name: 'Highway Bridge Construction',
-    code: 'HBC-2024-002',
-    location: 'North District, Highway 1',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'active',
-  },
-  {
-    id: 'RCP-2023-005',
-    name: 'Residential Complex Phase 1',
-    code: 'RCP-2023-005',
-    location: 'Suburban Area, Green Valley',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'completed',
-  },
-  {
-    id: 'HBC-2024-003',
-    name: 'Highway Bridge Construction',
-    code: 'HBC-2024-003',
-    location: 'North District, Highway 1',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'active',
-  },
-];
-
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
+const ProjectsPage = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [viewingProject, setViewingProject] = useState<Project | null>(null); // New state for viewing
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
 
-  // Generate unique project ID
-  const generateProjectId = () => {
-    return `PRJ-${Date.now()}`;
-  };
+  const generateProjectId = () => `PRJ-${Date.now()}`;
 
-  // Event handlers
   const handleCreateProject = () => {
     setEditingProject(null);
     setViewingProject(null);
@@ -78,48 +34,68 @@ export default function ProjectsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteProject = (project: Project) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the project "${project.name}"?`
-    );
-    
+  const handleDeleteProject = async (project: Project) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${project.name}"?`);
     if (confirmed) {
-      setProjects(prev => prev.filter(p => p.id !== project.id));
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/delete/${project.id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Failed to delete project');
+
+        setProjects(prev => prev.filter(p => p.id !== project.id));
+        toast.success("Project deleted successfully");
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete project.");
+      }
     }
   };
 
-  const handleDialogSubmit = (formData: ProjectFormData) => {
+  const handleDialogSubmit = async (formData: ProjectFormData) => {
     if (editingProject) {
-      // Update existing project
-      setProjects(prev => 
-        prev.map(p => 
-          p.id === editingProject.id 
-            ? {
-                ...p,
-                name: formData.name,
-                code: formData.code,
-                location: formData.location,
-                startDate: formData.startDate,
-                status: formData.status,
-                // Note: employees count would need to be handled separately
-                // or you could add it to the form
-              }
-            : p
-        )
-      );
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/update/${editingProject.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error('Failed to update project');
+
+        const updatedProject = await response.json();
+
+        setProjects(prev =>
+          prev.map(p =>
+            p.id === editingProject.id
+              ? { ...p, ...formData, id: editingProject.id, employees: p.employees }
+              : p
+          )
+        );
+        toast.success("Project updated successfully");
+        handleDialogClose();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to update project.");
+      }
     } else {
-      // Create new project
       const newProject: Project = {
         id: generateProjectId(),
         name: formData.name,
         code: formData.code,
         location: formData.location,
-        employees: 0, // Default value, you might want to add this to the form
+        employees: 0,
         startDate: formData.startDate,
         status: formData.status,
+        budget: formData.budget,
+        endDate: formData.endDate,
+        description: formData.description,
       };
-      
+
       setProjects(prev => [...prev, newProject]);
+      toast.success("Project created successfully");
+      handleDialogClose();
     }
   };
 
@@ -129,7 +105,6 @@ export default function ProjectsPage() {
     setViewingProject(null);
   };
 
-  // Determine dialog props based on current mode
   const getDialogProps = () => {
     if (viewingProject) {
       return {
@@ -139,13 +114,15 @@ export default function ProjectsPage() {
           location: viewingProject.location,
           startDate: viewingProject.startDate,
           status: viewingProject.status,
-          description: '', // Add description field to Project type if needed
-          endDate: '', // Add endDate field to Project type if needed
-          budget: '', // Add budget field to Project type if needed
+          description: viewingProject.description || '',
+          endDate: viewingProject.endDate || '',
+          budget: viewingProject.budget || '',
         },
         title: `View Project Details - ${viewingProject.name}`,
         submitLabel: '',
-        isViewMode: true
+        isViewMode: true,
+        isUpdateMode: false,
+        projectId: undefined,
       };
     } else if (editingProject) {
       return {
@@ -155,49 +132,62 @@ export default function ProjectsPage() {
           location: editingProject.location,
           startDate: editingProject.startDate,
           status: editingProject.status,
-          description: '', // Add description field to Project type if needed
-          endDate: '', // Add endDate field to Project type if needed
-          budget: '', // Add budget field to Project type if needed
+          description: editingProject.description || '',
+          endDate: editingProject.endDate || '',
+          budget: editingProject.budget || '',
         },
         title: 'Edit Project',
         submitLabel: 'Update Project',
-        isViewMode: false
-      };
-    } else {
-      return {
-        initialData: undefined,
-        title: 'Create New Project',
-        submitLabel: 'Create Project',
-        isViewMode: false
+        isViewMode: false,
+        isUpdateMode: true,
+        projectId: editingProject.id,
       };
     }
+
+    return {
+      initialData: {
+        name: '',
+        code: '',
+        location: '',
+        startDate: '',
+        status: 'pending' as const,
+        description: '',
+        endDate: '',
+        budget: '',
+      },
+      title: 'Create New Project',
+      submitLabel: 'Create Project',
+      isViewMode: false,
+      isUpdateMode: false,
+      projectId: undefined,
+    };
   };
 
   const dialogProps = getDialogProps();
 
   return (
     <div>
-      
-      <div>
-        <ProjectManagement
-          projects={projects}
-          onCreateProject={handleCreateProject}
-          onViewDetails={handleViewDetails}
-          onEditProject={handleEditProject}
-          onDeleteProject={handleDeleteProject}
-        />
-        
-        {/* Project Dialog */}
-        <ProjectDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          onSubmit={handleDialogSubmit}
-          initialData={dialogProps.initialData}
-          title={dialogProps.title}
-          submitLabel={dialogProps.submitLabel}
-          isViewMode={dialogProps.isViewMode}
-        />
-      </div>
+      <ProjectManagement
+        projects={projects}
+        onCreateProject={handleCreateProject}
+        onViewDetails={handleViewDetails}
+        onEditProject={handleEditProject}
+        onDeleteProject={handleDeleteProject}
+      />
+
+      <ProjectDialog
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+        onSubmit={handleDialogSubmit}
+        initialData={dialogProps.initialData}
+        title={dialogProps.title}
+        submitLabel={dialogProps.submitLabel}
+        isViewMode={dialogProps.isViewMode}
+        isUpdateMode={dialogProps.isUpdateMode}
+        projectId={dialogProps.projectId}
+      />
     </div>
   );
-}
+};
+
+export default ProjectsPage;
