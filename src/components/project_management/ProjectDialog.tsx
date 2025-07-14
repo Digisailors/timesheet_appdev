@@ -21,6 +21,8 @@ export interface ProjectDialogProps {
   title?: string;
   submitLabel?: string;
   isViewMode?: boolean;
+  projectId?: string; // Add this prop for update operations
+  isUpdateMode?: boolean; // Add this prop to determine if it's update mode
 }
 
 // Sample work progress data
@@ -70,7 +72,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   initialData = {},
   title = 'Create New Project',
   submitLabel = 'Create Project',
-  isViewMode = false
+  isViewMode = false,
+  projectId, // Add this prop
+  isUpdateMode = false // Add this prop with default value
 }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     name: initialData.name || '',
@@ -158,32 +162,62 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
           status: formData.status
         };
 
-        // Make the API call
-       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        });
+        // Get base URL - handle both with and without trailing slash
+      // Get base URL - handle both with and without trailing slash
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+
+      // Determine API endpoint and method based on mode
+      const apiEndpoint = isUpdateMode 
+        ? `${cleanBaseUrl}/api/projects/${projectId}`
+        : `${cleanBaseUrl}/api/projects`;
+      
+      const method = isUpdateMode ? 'PUT' : 'POST';
+
+      console.log('Making API request to:', apiEndpoint);
+      console.log('Method:', method);
+      console.log('Request body:', requestBody);
+
+      // Make the API call
+      const response = await fetch(apiEndpoint, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Try to get error message from response
+          let errorMessage = `HTTP error! status: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If response is not JSON, use the status text
+            errorMessage = `${response.status} ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
+        console.log('API Response:', result);
         
-        if (result.success) {
-          // Call the original onSubmit callback with the form data
-          onSubmit(formData);
+        if (result.success !== false) { // Accept if success is true or undefined
+          // Call the original onSubmit callback with the updated/created data
+          // Pass the data from the API response which includes the updated information
+          onSubmit(result.data || formData);
           // Close the dialog
           handleClose();
         } else {
-          throw new Error(result.message || 'Failed to create project');
+          throw new Error(result.message || `Failed to ${isUpdateMode ? 'update' : 'create'} project`);
         }
       } catch (error) {
-        console.error('Error creating project:', error);
-        alert(error instanceof Error ? error.message : 'Failed to create project. Please try again.');
+        console.error(`Error ${isUpdateMode ? 'updating' : 'creating'} project:`, error);
+        alert(error instanceof Error ? error.message : `Failed to ${isUpdateMode ? 'update' : 'create'} project. Please try again.`);
       } finally {
         setIsSubmitting(false);
       }
@@ -452,7 +486,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isSubmitting ? 'Creating...' : submitLabel}
+                {isSubmitting ? `${isUpdateMode ? 'Updating' : 'Creating'}...` : submitLabel}
               </button>
             </div>
           </form>
