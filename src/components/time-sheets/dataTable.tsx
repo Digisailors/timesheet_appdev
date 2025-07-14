@@ -9,8 +9,44 @@ import {
   Row,
 } from '@tanstack/react-table';
 import { ViewDialogBox } from "./viewdialogbox";
-import { getColumns, mockData } from './columns';
+import { getColumns } from './columns';
 import { TimeSheet } from '../../types/TimeSheet';
+
+const mockData: TimeSheet[] = [
+  {
+    employee: 'John Doe',
+    checkIn: '07:00',
+    checkOut: '16:45',
+    hours: 8,
+    otHours: 1,
+    travelTime: '00:00',
+    location: 'Site A',
+    project: 'Project Alpha',
+    status: 'Complete',
+  },
+  {
+    employee: 'Jane Smith',
+    checkIn: '08:00',
+    checkOut: '17:30',
+    hours: 9,
+    otHours: 1,
+    travelTime: '00:30',
+    location: 'Site B',
+    project: 'Project Beta',
+    status: 'In Progress',
+  },
+  {
+    employee: 'Bob Johnson',
+    checkIn: '09:00',
+    checkOut: '18:00',
+    hours: 9,
+    otHours: 0,
+    travelTime: '00:45',
+    location: 'Site C',
+    project: 'Project Gamma',
+    status: 'Pending',
+  }
+];
 
 export function DataTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,46 +81,22 @@ export function DataTable() {
   const getActionColumn = React.useCallback((): ColumnDef<TimeSheet> => {
     return {
       id: 'actions',
+      header: 'Actions',
       cell: ({ row }: { row: Row<TimeSheet> }) => (
         <div className="flex space-x-2">
           <button
             onClick={() => handleViewClick(row.original)}
-            className="px-3 py-1 rounded border hover:bg-gray-50"
-            style={{
-              borderColor: '#020817',
-              backgroundColor: 'white',
-              color: '#020817',
-              fontFamily: 'Segoe UI',
-              fontWeight: 600,
-              fontSize: '14px',
-              lineHeight: '20px',
-              letterSpacing: '0%',
-              textAlign: 'center',
-              verticalAlign: 'middle'
-            }}
+            className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             View
           </button>
           <button
-            className="px-3 py-1 rounded border hover:bg-gray-50"
-            style={{
-              borderColor: '#020817',
-              backgroundColor: 'white',
-              color: '#020817',
-              fontFamily: 'Segoe UI',
-              fontWeight: 600,
-              fontSize: '14px',
-              lineHeight: '20px',
-              letterSpacing: '0%',
-              textAlign: 'center',
-              verticalAlign: 'middle'
-            }}
+            className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             Edit
           </button>
         </div>
-      ),
-      header: 'Actions',
+      )
     };
   }, []);
 
@@ -99,18 +111,18 @@ export function DataTable() {
   });
 
   return (
-    <div className="bg-white p-4 rounded-md">
-      <div className="flex items-center py-4 space-x-4">
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-md shadow">
+      <div className="flex flex-wrap items-center py-4 gap-4">
         <input
           placeholder="Search..."
-          className="max-w-sm border rounded px-3 py-2"
+          className="max-w-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
           value={filters.searchTerm}
-          onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
+          onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
         />
         <select
-          className="w-[180px] border rounded px-3 py-2"
+          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
           value={filters.selectedEmployee}
-          onChange={(e) => setFilters({...filters, selectedEmployee: e.target.value})}
+          onChange={(e) => setFilters({ ...filters, selectedEmployee: e.target.value })}
         >
           <option value="all">All Employees</option>
           <option value="John Doe">John Doe</option>
@@ -118,9 +130,9 @@ export function DataTable() {
           <option value="Bob Johnson">Bob Johnson</option>
         </select>
         <select
-          className="w-[180px] border rounded px-3 py-2"
+          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
           value={filters.selectedProject}
-          onChange={(e) => setFilters({...filters, selectedProject: e.target.value})}
+          onChange={(e) => setFilters({ ...filters, selectedProject: e.target.value })}
         >
           <option value="all">All Projects</option>
           <option value="Project Alpha">Project Alpha</option>
@@ -128,9 +140,9 @@ export function DataTable() {
           <option value="Project Gamma">Project Gamma</option>
         </select>
         <select
-          className="w-[180px] border rounded px-3 py-2"
+          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
           value={filters.selectedLocation}
-          onChange={(e) => setFilters({...filters, selectedLocation: e.target.value})}
+          onChange={(e) => setFilters({ ...filters, selectedLocation: e.target.value })}
         >
           <option value="all">All Locations</option>
           <option value="Site A">Site A</option>
@@ -138,9 +150,9 @@ export function DataTable() {
           <option value="Site C">Site C</option>
         </select>
         <select
-          className="w-[180px] border rounded px-3 py-2"
+          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
           value={filters.selectedStatus}
-          onChange={(e) => setFilters({...filters, selectedStatus: e.target.value})}
+          onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
         >
           <option value="all">All Statuses</option>
           <option value="Complete">Complete</option>
@@ -148,13 +160,13 @@ export function DataTable() {
           <option value="Pending">Pending</option>
         </select>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
         <table className="w-full">
-          <thead>
+          <thead className="bg-gray-100 dark:bg-gray-800">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="text-left p-2 border-b text-gray-400">
+                  <th key={header.id} className="text-left p-2 text-gray-600 dark:text-gray-300 border-b dark:border-gray-700">
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -163,9 +175,9 @@ export function DataTable() {
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
+              <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-2 border-b text-black">
+                  <td key={cell.id} className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

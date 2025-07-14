@@ -1,28 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-
-
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
 import { Project } from "@/components/project_management/ProjectManagement";
 import { ProjectFormData } from "@/components/project_management/ProjectDialog";
 
-// Sample data - replace with your actual data source
+// Sample data
 const sampleProjects: Project[] = [
   {
     id: 'HBC-2024-001',
     name: 'Highway Bridge Construction',
     code: 'HBC-2024-001',
-    location: 'North District, Highway 1',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'active',
-  },
-  {
-    id: 'HBC-2024-002',
-    name: 'Highway Bridge Construction',
-    code: 'HBC-2024-002',
     location: 'North District, Highway 1',
     employees: 32,
     startDate: '2024-01-15',
@@ -36,30 +25,19 @@ const sampleProjects: Project[] = [
     employees: 32,
     startDate: '2024-01-15',
     status: 'completed',
-  },
-  {
-    id: 'HBC-2024-003',
-    name: 'Highway Bridge Construction',
-    code: 'HBC-2024-003',
-    location: 'North District, Highway 1',
-    employees: 32,
-    startDate: '2024-01-15',
-    status: 'active',
-  },
+  }
 ];
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [viewingProject, setViewingProject] = useState<Project | null>(null); // New state for viewing
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
 
-  // Generate unique project ID
-  const generateProjectId = () => {
-    return `PRJ-${Date.now()}`;
-  };
+  // ID generator
+  const generateProjectId = () => `PRJ-${Date.now()}`;
 
-  // Event handlers
+  // Actions
   const handleCreateProject = () => {
     setEditingProject(null);
     setViewingProject(null);
@@ -79,46 +57,40 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = (project: Project) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the project "${project.name}"?`
-    );
-    
-    if (confirmed) {
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${project.name}"?`);
+    if (confirmDelete) {
       setProjects(prev => prev.filter(p => p.id !== project.id));
     }
   };
 
   const handleDialogSubmit = (formData: ProjectFormData) => {
     if (editingProject) {
-      // Update existing project
-      setProjects(prev => 
-        prev.map(p => 
-          p.id === editingProject.id 
+      // Update
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === editingProject.id
             ? {
                 ...p,
                 name: formData.name,
                 code: formData.code,
                 location: formData.location,
                 startDate: formData.startDate,
-                status: formData.status,
-                // Note: employees count would need to be handled separately
-                // or you could add it to the form
+                status: formData.status
               }
             : p
         )
       );
     } else {
-      // Create new project
+      // Create
       const newProject: Project = {
         id: generateProjectId(),
         name: formData.name,
         code: formData.code,
         location: formData.location,
-        employees: 0, // Default value, you might want to add this to the form
+        employees: 0, // Default
         startDate: formData.startDate,
-        status: formData.status,
+        status: formData.status
       };
-      
       setProjects(prev => [...prev, newProject]);
     }
   };
@@ -129,36 +101,29 @@ export default function ProjectsPage() {
     setViewingProject(null);
   };
 
-  // Determine dialog props based on current mode
+  // Dialog setup
   const getDialogProps = () => {
+    const commonFields = (project: Project) => ({
+      name: project.name,
+      code: project.code,
+      location: project.location,
+      startDate: project.startDate,
+      status: project.status,
+      description: '',
+      endDate: '',
+      budget: ''
+    });
+
     if (viewingProject) {
       return {
-        initialData: {
-          name: viewingProject.name,
-          code: viewingProject.code,
-          location: viewingProject.location,
-          startDate: viewingProject.startDate,
-          status: viewingProject.status,
-          description: '', // Add description field to Project type if needed
-          endDate: '', // Add endDate field to Project type if needed
-          budget: '', // Add budget field to Project type if needed
-        },
-        title: `View Project Details - ${viewingProject.name}`,
+        initialData: commonFields(viewingProject),
+        title: `View Project - ${viewingProject.name}`,
         submitLabel: '',
         isViewMode: true
       };
     } else if (editingProject) {
       return {
-        initialData: {
-          name: editingProject.name,
-          code: editingProject.code,
-          location: editingProject.location,
-          startDate: editingProject.startDate,
-          status: editingProject.status,
-          description: '', // Add description field to Project type if needed
-          endDate: '', // Add endDate field to Project type if needed
-          budget: '', // Add budget field to Project type if needed
-        },
+        initialData: commonFields(editingProject),
         title: 'Edit Project',
         submitLabel: 'Update Project',
         isViewMode: false
@@ -176,9 +141,8 @@ export default function ProjectsPage() {
   const dialogProps = getDialogProps();
 
   return (
-    <div>
-      
-      <div>
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
         <ProjectManagement
           projects={projects}
           onCreateProject={handleCreateProject}
@@ -186,8 +150,7 @@ export default function ProjectsPage() {
           onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
         />
-        
-        {/* Project Dialog */}
+
         <ProjectDialog
           isOpen={isDialogOpen}
           onClose={handleDialogClose}

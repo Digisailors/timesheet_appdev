@@ -57,7 +57,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       const nameParts = editingEmployee.name.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
-      
+
       setFormData({
         firstName,
         lastName,
@@ -86,7 +86,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     }
   }, [editingEmployee]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -102,77 +104,60 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const isEditing = !!editingEmployee;
 
   return (
-<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-      <div className="relative w-full max-w-3xl mx-4 md:mx-auto max-h-[95vh] bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
-        
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/50">
+      <div className="relative w-full max-w-3xl mx-4 md:mx-auto max-h-[95vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
+
         {/* Header */}
-        <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+        <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-0 z-10">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
             {isEditing ? 'Edit Employee' : 'Add New Employee'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Scrollable Form Content */}
+        {/* Form Body */}
         <div className="overflow-y-auto px-4 sm:px-6 py-4 flex-1">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-
-              {/* First Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="Enter First name"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Last Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Enter Last name"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Designation */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Designation</label>
-                <input
-                  type="text"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  placeholder="Enter your Designation"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
+              {[
+                { label: "First Name", name: "firstName", type: "text", placeholder: "Enter First name" },
+                { label: "Last Name", name: "lastName", type: "text", placeholder: "Enter Last name" },
+                { label: "Designation", name: "designation", type: "text", placeholder: "Enter Designation" },
+                { label: "Phone Number", name: "phoneNumber", type: "tel", placeholder: "+1234567890" },
+                { label: "Email Address", name: "email", type: "email", placeholder: "Enter Email Address" },
+                { label: "Date of Joining", name: "dateOfJoining", type: "date" },
+                { label: "Experience", name: "experience", type: "text", placeholder: "e.g., 5 years" },
+                { label: "Specialization", name: "specialization", type: "text", placeholder: "Enter Skills" }
+              ].map(field => (
+                <div className="space-y-2" key={field.name}>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {field.label}
+                  </label>
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={(formData as any)[field.name]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              ))}
 
               {/* Designation Type */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Designation Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
                 <select
                   name="designationType"
                   value={formData.designationType}
                   onChange={handleChange}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   <option value="">Select Designation Type</option>
@@ -184,99 +169,29 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 </select>
               </div>
 
-              {/* Phone Number */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="+1234567890"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Email Address */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter Email Address"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Address - Full Width with Larger Height */}
+              {/* Address */}
               <div className="col-span-1 md:col-span-2 space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Address</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
                 <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="Address Details"
                   rows={3}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]"
+                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]"
                   required
                 />
               </div>
-
-              {/* Date of Joining */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Date of Joining</label>
-                <input
-                  type="date"
-                  name="dateOfJoining"
-                  value={formData.dateOfJoining}
-                  onChange={handleChange}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Experience */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Experience</label>
-                <input
-                  type="text"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleChange}
-                  placeholder="e.g., 5 years"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Specialization - Left Side Only */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Specialization</label>
-                <input
-                  type="text"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  placeholder="Enter Skills"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
             </div>
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0 z-10">
+        {/* Footer */}
+        <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full sm:w-auto"
           >
             Cancel
           </button>

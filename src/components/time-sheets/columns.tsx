@@ -39,61 +39,25 @@ export const getColumns = (): ColumnDef<TimeSheet>[] => [
     header: 'Status',
     cell: ({ getValue }) => {
       const status = getValue() as string;
+
       const getStatusStyle = () => {
         switch (status) {
           case 'Complete':
-            return 'bg-green-200 text-green-800';
+            return 'bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200';
           case 'Pending':
-            return 'bg-orange-200 text-orange-800';
+            return 'bg-orange-200 text-orange-800 dark:bg-orange-700 dark:text-orange-200';
           case 'In Progress':
-            return 'bg-blue-200 text-blue-800';
+            return 'bg-blue-200 text-blue-800 dark:bg-blue-700 dark:text-blue-200';
           default:
-            return 'bg-gray-200 text-gray-800';
+            return 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
         }
       };
 
       return (
-        <span className={`px-2 py-1 rounded-full ${getStatusStyle()}`}>
+        <span className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusStyle()}`}>
           {status}
         </span>
       );
     },
   },
-];
-
-export const mockData: TimeSheet[] = [
-  {
-    employee: 'John Doe',
-    checkIn: '07:00',
-    checkOut: '16:45',
-    hours: 8,
-    otHours: 1,
-    travelTime: '00:00',
-    location: 'Site A',
-    project: 'Project Alpha',
-    status: 'Complete',
-  },
-  {
-    employee: 'Jane Smith',
-    checkIn: '08:00',
-    checkOut: '17:30',
-    hours: 9,
-    otHours: 1,
-    travelTime: '00:30',
-    location: 'Site B',
-    project: 'Project Beta',
-    status: 'In Progress',
-  },
-  {
-    employee: 'Bob Johnson',
-    checkIn: '09:00',
-    checkOut: '18:00',
-    hours: 9,
-    otHours: 0,
-    travelTime: '00:45',
-    location: 'Site C',
-    project: 'Project Gamma',
-    status: 'Pending',
-  },
-  // Add more mock data as needed
 ];

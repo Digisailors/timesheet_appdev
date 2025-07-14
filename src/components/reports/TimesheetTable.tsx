@@ -17,30 +17,30 @@ const TimesheetTable: React.FC = () => {
   return (
     <div className="mt-6">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
+        <table className="w-full border-collapse border border-gray-300 dark:border-gray-700">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Location</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Check In</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Check Out</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Regular Hours</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">OT Hours</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Travel Time</th>
-              <th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-700">Remarks</th>
+            <tr className="bg-gray-100 dark:bg-gray-800">
+              {["Date", "Location", "Check In", "Check Out", "Regular Hours", "OT Hours", "Travel Time", "Remarks"].map((header, index) => (
+                <th
+                  key={index}
+                  className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {timesheetData.map((entry, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.date}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.location}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.checkIn}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.checkOut}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.regularHours}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.otHours}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.travelTime}</td>
-                <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">{entry.remarks}</td>
+              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.date}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.location}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.checkIn}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.checkOut}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.regularHours}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.otHours}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.travelTime}</td>
+                <td className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{entry.remarks}</td>
               </tr>
             ))}
           </tbody>
@@ -49,6 +49,7 @@ const TimesheetTable: React.FC = () => {
     </div>
   );
 };
+
 interface TimesheetEntry {
   date: string;
   location: string;

@@ -1,15 +1,14 @@
 "use client";
 
 import React from "react";
-import Sidebar from "@/components/ui/sidebar";
+import Sidebar from "@/components/ui/sidebar"; // currently unused
 import ProjectSelector from "./ProjectSelector";
 import ProjectSummary from "./ProjectSummary";
 import EmployeeReport from "./EmployeeReport";
 
 const ReportsPage = () => {
   return (
-    <div className="flex-1 bg-gray-50 min-h-screen">
-      {/* Navbar removed */}
+    <div className="flex-1 bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white">
       <ProjectSelector
         selectedProject="Project A"
         onProjectChange={() => {}}

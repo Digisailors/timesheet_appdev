@@ -1,5 +1,6 @@
 "use client";
 // components/Sidebar.tsx
+
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -27,48 +28,13 @@ interface SidebarProps {
 }
 
 const menuItems: MenuItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: HomeIcon
-  },
-  {
-    id: 'employee-management',
-    label: 'Employee Management',
-    href: '/employees',
-    icon: UsersIcon
-  },
-  {
-    id: 'supervisor-management',
-    label: 'Supervisor Management',
-    href: '/supervisors',
-    icon: UserGroupIcon
-  },
-  {
-    id: 'project-management',
-    label: 'Project Management',
-    href: '/projects',
-    icon: FolderIcon
-  },
-  {
-    id: 'timesheets',
-    label: 'Time-sheets',
-    href: '/timesheets',
-    icon: DocumentTextIcon
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    href: '/reports',
-    icon: ChartBarIcon
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    href: '/settings',
-    icon: CogIcon
-  }
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { id: 'employee-management', label: 'Employee Management', href: '/employees', icon: UsersIcon },
+  { id: 'supervisor-management', label: 'Supervisor Management', href: '/supervisors', icon: UserGroupIcon },
+  { id: 'project-management', label: 'Project Management', href: '/projects', icon: FolderIcon },
+  { id: 'timesheets', label: 'Time-sheets', href: '/timesheets', icon: DocumentTextIcon },
+  { id: 'reports', label: 'Reports', href: '/reports', icon: ChartBarIcon },
+  { id: 'settings', label: 'Settings', href: '/settings', icon: CogIcon }
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
@@ -81,33 +47,30 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
   };
 
   const handleLogout = () => {
-    // Add your logout logic here
     console.log('Logout clicked');
-    // Example: router.push('/login');
   };
 
   return (
-    <div className={`bg-blue-800 text-white h-screen w-64 flex flex-col fixed left-0 top-0 z-40 ${className}`}>
+    <div className={`bg-blue-800 dark:bg-gray-900 text-white dark:text-gray-200 h-screen w-64 flex flex-col fixed left-0 top-0 z-40 ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-blue-700 flex-shrink-0">
+      <div className="p-6 border-b border-blue-700 dark:border-gray-700 flex-shrink-0">
         <h1 className="text-xl font-semibold">Timesheet Admin</h1>
       </div>
 
-      {/* Navigation Menu - Scrollable */}
+      {/* Navigation */}
       <nav className="flex-1 py-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
-            
             return (
               <li key={item.id} className="mx-4">
-                <Link 
+                <Link
                   href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium transition-colors duration-200 rounded-lg ${
-                    isActive 
-                      ? 'bg-blue-600 bg-opacity-80' 
-                      : 'hover:bg-blue-700 hover:bg-opacity-50'
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 bg-opacity-80 dark:bg-gray-700'
+                      : 'hover:bg-blue-700 hover:bg-opacity-50 dark:hover:bg-gray-800'
                   }`}
                   onClick={() => handleItemClick(item.id)}
                 >
@@ -120,11 +83,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
         </ul>
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-blue-700 flex-shrink-0">
+      {/* Logout */}
+      <div className="p-4 border-t border-blue-700 dark:border-gray-700 flex-shrink-0">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-700 hover:bg-opacity-50 rounded-lg mx-0"
+          className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-blue-700 hover:bg-opacity-50 dark:hover:bg-gray-800"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
           Logout

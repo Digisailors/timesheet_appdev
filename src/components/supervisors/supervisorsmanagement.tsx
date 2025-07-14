@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { Plus, Users, Search } from 'lucide-react';
-
 import { useRouter } from 'next/router';
 import SupervisorList from './supervisorlis';
-
 
 interface Supervisor {
   id: string;
@@ -59,17 +57,15 @@ const supervisors: Supervisor[] = [
 ];
 
 export default function SupervisorPage() {
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
-  const [showDialog, setShowDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
 
   const filteredSupervisors = supervisors.filter(supervisor =>
-    supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())
+    (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supervisor.department.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (selectedProject === 'All Projects' || supervisor.location === selectedProject)
   );
 
   const handleAction = (action: string, supervisor: Supervisor) => {
@@ -85,34 +81,39 @@ export default function SupervisorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Supervisor Management</h2>
+          <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <h2 className="text-xl font-semibold">Supervisor Management</h2>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+        <button
+          onClick={handleAddSupervisor}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           <span>Add Supervisor</span>
         </button>
       </div>
+
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
         <div className="flex items-center justify-between space-x-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300 w-4 h-4" />
             <input
               type="text"
               placeholder="Search Supervisors..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option>All Projects</option>
             <option>Highway Bridge</option>
@@ -122,6 +123,8 @@ export default function SupervisorPage() {
           </select>
         </div>
       </div>
+
+      {/* List */}
       <SupervisorList supervisors={filteredSupervisors} onAction={handleAction} />
     </div>
   );
