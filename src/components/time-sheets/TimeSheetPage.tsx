@@ -2,8 +2,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import Image from "next/image";
-import Sidebar from "@/components/ui/sidebar";
-import Navbar from "@/components/ui/navbar";
 import { DataTable } from "@/components/time-sheets/dataTable";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";

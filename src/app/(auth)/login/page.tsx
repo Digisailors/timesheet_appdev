@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, Eye } from "lucide-react";
+import { Mail, Lock} from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -202,7 +202,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <div className="text-center">
               <span className="text-sm text-gray-600">
-                Don't have an account?{" "}
+                Dont have an account?{" "}
               </span>
               <Link
                 href="/signup"

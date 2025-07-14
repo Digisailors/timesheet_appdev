@@ -74,7 +74,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   submitLabel = 'Create Project',
   isViewMode = false,
   projectId, // Add this prop
-  isUpdateMode = false // Add this prop with default value
+  isUpdateMode = false // Add this prop to determine if it's update mode
 }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     name: initialData.name || '',
@@ -196,7 +196,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
-          } catch (e) {
+          } catch {
             // If response is not JSON, use the status text
             errorMessage = `${response.status} ${response.statusText}`;
           }

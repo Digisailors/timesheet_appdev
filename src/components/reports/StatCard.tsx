@@ -1,8 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import DatePicker from "react-datepicker";
+import React, {} from "react";
 import "react-datepicker/dist/react-datepicker.css";
-import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 
 // Types
 interface StatCardProps {
@@ -10,17 +8,6 @@ interface StatCardProps {
   value: string;
   bgColor: string;
   textColor?: string;
-}
-
-interface TimesheetEntry {
-  date: string;
-  location: string;
-  checkIn: string;
-  checkOut: string;
-  regularHours: number;
-  otHours: number;
-  travelTime: string;
-  remarks: string;
 }
 
 // StatCard Component

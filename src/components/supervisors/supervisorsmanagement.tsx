@@ -62,9 +62,9 @@ export default function SupervisorPage() {
   const router = useRouter(); // Initialize the router
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
-  const [showDialog, setShowDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
+  const [] = useState(false);
+  const [] = useState(false);
+  const [] = useState<Supervisor | null>(null);
 
   const filteredSupervisors = supervisors.filter(supervisor =>
     supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +91,10 @@ export default function SupervisorPage() {
           <Users className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-900">Supervisor Management</h2>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+          onClick={handleAddSupervisor}
+        >
           <Plus className="w-4 h-4" />
           <span>Add Supervisor</span>
         </button>
