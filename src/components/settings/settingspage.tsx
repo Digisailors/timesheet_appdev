@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Sidebar from "../ui/sidebar";
-import Navbar from "../ui/navbar";
 import CompanyForm from "./CompanyForm";
 import SettingsTabs from "./SettingsTabs";
 import ThemeSettings from "./ThemeSettings";
@@ -12,7 +11,7 @@ import DesignationSettings from "./DesignationSettings";
 import SystemSettings from "./SystemSettings"; // ✅ ADDED for System tab
 
 const SettingsPage: React.FC = () => {
-  const [activeMenuItem, setActiveMenuItem] = useState<string>('settings');
+  const [, setActiveMenuItem] = useState<string>('settings');
   const [activeTab, setActiveTab] = useState<string>('Company');
 
   const handleMenuClick = (itemId: string) => {

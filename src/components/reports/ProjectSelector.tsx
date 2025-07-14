@@ -21,7 +21,6 @@ interface ProjectSelectorProps {
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProject: propSelectedProject,
   onProjectChange,
-  dateRange: propDateRange,
   onDateRangeChange
 }) => {
   const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || 'Construction Phase 1 (CP001)');
@@ -66,16 +65,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     if (onDateRangeChange) {
       const newRange = `${new Date(dateRange.startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} - ${new Date(value).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}`;
       onDateRangeChange(newRange);
-    }
-  };
-
-  const handleGenerateReport = () => {
-    if (selectedProject && dateRange.startDate && dateRange.endDate) {
-      console.log('Generating report for:', {
-        project: selectedProject,
-        dateRange: dateRange
-      });
-      // Add your report generation logic here
     }
   };
 

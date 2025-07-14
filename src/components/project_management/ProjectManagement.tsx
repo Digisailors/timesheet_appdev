@@ -31,7 +31,7 @@ export interface ProjectManagementProps {
 interface ApiResponse {
   success: boolean;
   message: string;
-  data: any[];
+  data: Date[];
   total: number;
 }
 
@@ -163,7 +163,6 @@ console.log(label, value, options, onChange);
 
 // Main Project Management Component
 const ProjectManagement: React.FC<ProjectManagementProps> = ({
-  projects: propProjects = [], // Renamed to avoid confusion
   onCreateProject,
   onViewDetails,
   onEditProject,
@@ -201,18 +200,21 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       
       if (apiResponse.success) {
         // Transform API data to match our Project interface
-        const transformedProjects: Project[] = apiResponse.data.map((project: any) => ({
-          id: project.id,
-          name: project.name,
-          code: project.code,
-          location: project.location,
-          employees: 0, // Default value since API doesn't provide this
-          startDate: project.startDate,
-          endDate: project.endDate,
-          budget: project.budget,
-          description: project.description,
-          status: project.status as 'active' | 'completed' | 'pending' | 'cancelled'
-        }));
+        const transformedProjects: Project[] = apiResponse.data.map((project: unknown) => {
+          const p = project as Project;
+          return {
+            id: p.id,
+            name: p.name,
+            code: p.code,
+            location: p.location,
+            employees: 0, // Default value since API doesn't provide this
+            startDate: p.startDate,
+            endDate: p.endDate,
+            budget: p.budget,
+            description: p.description,
+            status: p.status as 'active' | 'completed' | 'pending' | 'cancelled'
+          };
+        });
         
         setProjects(transformedProjects);
       } else {

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Sidebar from "@/components/ui/sidebar";
 import ProjectSelector from "./ProjectSelector";
 import ProjectSummary from "./ProjectSummary";
 import EmployeeReport from "./EmployeeReport";
