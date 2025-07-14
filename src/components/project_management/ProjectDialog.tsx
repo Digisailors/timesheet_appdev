@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Search, Users, MapPin, CheckCircle } from 'lucide-react';
 
-
 export interface ProjectFormData {
   name: string;
   code: string;
@@ -21,8 +20,8 @@ export interface ProjectDialogProps {
   title?: string;
   submitLabel?: string;
   isViewMode?: boolean;
-  projectId?: string; // Add this prop for update operations
-  isUpdateMode?: boolean; // Add this prop to determine if it's update mode
+  projectId?: string;
+  isUpdateMode?: boolean;
 }
 
 // Sample work progress data
@@ -73,8 +72,8 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   title = 'Create New Project',
   submitLabel = 'Create Project',
   isViewMode = false,
-  projectId, // Add this prop
-  isUpdateMode = false // Add this prop to determine if it's update mode
+  projectId,
+  isUpdateMode = false
 }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     name: initialData.name || '',
@@ -110,7 +109,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       });
       setErrors({});
     }
-  }, [isOpen, initialData.name, initialData.code, initialData.location, initialData.description, initialData.startDate, initialData.endDate, initialData.budget, initialData.status]);
+  }, [isOpen, initialData]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ProjectFormData> = {};
@@ -162,42 +161,38 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
           status: formData.status
         };
 
-        // Get base URL - handle both with and without trailing slash
-      // Get base URL - handle both with and without trailing slash
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-      const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if present
+        // Get base URL from environment variable
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
+        const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
-      // Determine API endpoint and method based on mode
-      const apiEndpoint = isUpdateMode 
-        ? `${cleanBaseUrl}/api/projects/${projectId}`
-        : `${cleanBaseUrl}/api/projects`;
-      
-      const method = isUpdateMode ? 'PUT' : 'POST';
+        // Determine API endpoint and method based on mode
+        const apiEndpoint = isUpdateMode && projectId
+          ? `${cleanBaseUrl}/projects/update/${projectId}`
+          : `${cleanBaseUrl}/projects/create`;
+        
+        const method = isUpdateMode ? 'PUT' : 'POST';
 
-      console.log('Making API request to:', apiEndpoint);
-      console.log('Method:', method);
-      console.log('Request body:', requestBody);
+        console.log('Making API request to:', apiEndpoint);
+        console.log('Method:', method);
+        console.log('Request body:', requestBody);
 
-      // Make the API call
-      const response = await fetch(apiEndpoint, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+        // Make the API call
+        const response = await fetch(apiEndpoint, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
 
         console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
 
         if (!response.ok) {
-          // Try to get error message from response
           let errorMessage = `HTTP error! status: ${response.status}`;
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
           } catch {
-            // If response is not JSON, use the status text
             errorMessage = `${response.status} ${response.statusText}`;
           }
           throw new Error(errorMessage);
@@ -206,11 +201,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         const result = await response.json();
         console.log('API Response:', result);
         
-        if (result.success !== false) { // Accept if success is true or undefined
+        if (result.success !== false) {
           // Call the original onSubmit callback with the updated/created data
-          // Pass the data from the API response which includes the updated information
           onSubmit(result.data || formData);
-          // Close the dialog
           handleClose();
         } else {
           throw new Error(result.message || `Failed to ${isUpdateMode ? 'update' : 'create'} project`);
@@ -287,7 +280,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   // If not in view mode, show the original form
   if (!isViewMode) {
     return (
-<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -497,7 +490,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
   // View mode - show the work progress timeline UI
   return (
-<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
