@@ -21,7 +21,6 @@ interface ProjectSelectorProps {
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProject: propSelectedProject,
   onProjectChange,
-  dateRange: propDateRange,
   onDateRangeChange
 }) => {
   const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || 'Construction Phase 1 (CP001)');

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, Eye } from "lucide-react";
+import { Mail, Lock} from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -144,36 +144,30 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password field with single eye icon toggle */}
-            <div>
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700 mb-2 block"
-              >
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 pr-10"
-                  required
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <Eye className={`w-5 h-5 ${showPassword ? 'text-blue-500' : ''}`} />
-                </button>
-              </div>
-            </div>
+           
 
+{/* Password field with default eye icon */}
+<div>
+  <Label
+    htmlFor="password"
+    className="text-sm font-medium text-gray-700 mb-2 block"
+  >
+    Password
+  </Label>
+  <div className="relative">
+    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+    <Input
+      id="password"
+      type="password"
+      placeholder="Enter your password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+      required
+      disabled={isLoading}
+    />
+  </div>
+</div>
             {/* Login button */}
             <Button
               type="submit"
@@ -208,7 +202,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <div className="text-center">
               <span className="text-sm text-gray-600">
-                Don't have an account?{" "}
+                Dont have an account?{" "}
               </span>
               <Link
                 href="/signup"

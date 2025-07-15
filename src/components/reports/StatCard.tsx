@@ -1,5 +1,10 @@
 "use client";
+
 import React from "react";
+
+import React, {} from "react";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 // Types
 interface StatCardProps {
