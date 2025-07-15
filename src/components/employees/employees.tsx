@@ -1,4 +1,3 @@
-// Updated EmployeesPage.tsx - With Local Storage Persistence
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +7,6 @@ import EmployeeRow, { Employee } from "./EmployeeRow";
 import EmployeeProfileModal from "./EmployeeProfileModal";
 import AddEmployeeModal from "./AddEmployeeModalProps";
 
-// Define the interface for employee form data
 interface EmployeeFormData {
   firstName: string;
   lastName: string;
@@ -17,7 +15,6 @@ interface EmployeeFormData {
   designation: string;
 }
 
-// Initial employees data
 const initialEmployees: Employee[] = [
   {
     id: '1', name: 'John Smith', email: 'john.smith@company.com',
@@ -61,7 +58,6 @@ const EmployeesPage: React.FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  // Load employees from localStorage on component mount
   useEffect(() => {
     const savedEmployees = localStorage.getItem('employees');
     if (savedEmployees) {
@@ -73,24 +69,20 @@ const EmployeesPage: React.FC = () => {
         setEmployees(initialEmployees);
       }
     } else {
-      // If no saved data, use initial employees
       setEmployees(initialEmployees);
     }
   }, []);
 
-  // Save employees to localStorage whenever employees state changes
   useEffect(() => {
     if (employees.length > 0) {
       localStorage.setItem('employees', JSON.stringify(employees));
     }
   }, [employees]);
 
-  // Helper function to generate avatar initials
   const generateAvatar = (firstName: string, lastName: string) => {
     return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
   };
 
-  // Helper function to generate random avatar background
   const generateAvatarBg = () => {
     const colors = [
       'bg-blue-500', 'bg-blue-600', 'bg-blue-700', 'bg-blue-800', 'bg-blue-900',
@@ -122,7 +114,7 @@ const EmployeesPage: React.FC = () => {
       setIsProfileModalOpen(true);
     }
   };
-  
+
   const handleEdit = (id: string) => {
     const employee = employees.find(emp => emp.id === id);
     if (employee) {
@@ -130,50 +122,48 @@ const EmployeesPage: React.FC = () => {
       setIsAddModalOpen(true);
     }
   };
-  
+
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this employee?')) {
       setEmployees(prev => prev.filter(emp => emp.id !== id));
     }
   };
-  
+
   const handleAddEmployee = () => {
     setEditingEmployee(null);
     setIsAddModalOpen(true);
   };
-  
+
   const handleAddEmployeeSubmit = (employeeData: EmployeeFormData) => {
     if (editingEmployee) {
-      // Update existing employee
       const updatedEmployee: Employee = {
         id: editingEmployee.id,
         name: `${employeeData.firstName} ${employeeData.lastName}`,
         email: employeeData.email,
         designation: employeeData.designationType,
         project: employeeData.designation,
-        workHours: editingEmployee.workHours, // Keep existing work hours
-        timeFrame: editingEmployee.timeFrame, // Keep existing time frame
+        workHours: editingEmployee.workHours,
+        timeFrame: editingEmployee.timeFrame,
         avatar: generateAvatar(employeeData.firstName, employeeData.lastName),
-        avatarBg: editingEmployee.avatarBg // Keep existing avatar background
+        avatarBg: editingEmployee.avatarBg
       };
-      
-      setEmployees(prev => prev.map(emp => 
-        emp.id === editingEmployee.id ? updatedEmployee : emp
-      ));
+
+      setEmployees(prev =>
+        prev.map(emp => (emp.id === editingEmployee.id ? updatedEmployee : emp))
+      );
     } else {
-      // Add new employee
       const newEmployee: Employee = {
-        id: Date.now().toString(), // Simple ID generation
+        id: Date.now().toString(),
         name: `${employeeData.firstName} ${employeeData.lastName}`,
         email: employeeData.email,
         designation: employeeData.designationType,
         project: employeeData.designation,
-        workHours: '0h', // Default work hours for new employee
+        workHours: '0h',
         timeFrame: 'This month',
         avatar: generateAvatar(employeeData.firstName, employeeData.lastName),
         avatarBg: generateAvatarBg()
       };
-      
+
       setEmployees(prev => [...prev, newEmployee]);
     }
     setEditingEmployee(null);
@@ -185,7 +175,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-h-screen bg-gray-50">
+    <div className="w-full max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="px-4 sm:px-6 py-4">
         <EmployeeHeader onAdd={handleAddEmployee} />
 
@@ -200,13 +190,13 @@ const EmployeesPage: React.FC = () => {
           />
         </div>
 
-        <div className="mt-6 bg-white rounded-lg shadow-md">
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
           <div className="px-4 sm:px-6 py-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Employees ({filteredEmployees.length})
             </h3>
             {filteredEmployees.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 No employees found matching your criteria.
               </div>
             ) : (
@@ -226,7 +216,6 @@ const EmployeesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Add/Edit Employee Modal */}
       <AddEmployeeModal
         isOpen={isAddModalOpen}
         onClose={handleCloseModal}
@@ -234,7 +223,6 @@ const EmployeesPage: React.FC = () => {
         editingEmployee={editingEmployee}
       />
 
-      {/* Employee Profile Modal */}
       <EmployeeProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}

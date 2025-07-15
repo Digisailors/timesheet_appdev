@@ -1,20 +1,57 @@
 'use client';
 
 import { useState } from 'react';
+
+
 import { toast } from 'sonner';
+
 
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
 import { Project } from "@/components/project_management/ProjectManagement";
 import { ProjectFormData } from "@/components/project_management/ProjectDialog";
 
+
+// Sample data
+const sampleProjects: Project[] = [
+  {
+    id: 'HBC-2024-001',
+    name: 'Highway Bridge Construction',
+    code: 'HBC-2024-001',
+    location: 'North District, Highway 1',
+    employees: 32,
+    startDate: '2024-01-15',
+    status: 'active',
+  },
+  {
+    id: 'RCP-2023-005',
+    name: 'Residential Complex Phase 1',
+    code: 'RCP-2023-005',
+    location: 'Suburban Area, Green Valley',
+    employees: 32,
+    startDate: '2024-01-15',
+    status: 'completed',
+  }
+];
+
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>(sampleProjects);
+
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
 
+
+  // ID generator
   const generateProjectId = () => `PRJ-${Date.now()}`;
+
+  // Actions
+
+  const generateProjectId = () => `PRJ-${Date.now()}`;
+
 
   const handleCreateProject = () => {
     setEditingProject(null);
@@ -34,6 +71,12 @@ const ProjectsPage = () => {
     setIsDialogOpen(true);
   };
 
+
+  const handleDeleteProject = (project: Project) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${project.name}"?`);
+    if (confirmDelete) {
+      setProjects(prev => prev.filter(p => p.id !== project.id));
+
   const handleDeleteProject = async (project: Project) => {
     const confirmed = window.confirm(`Are you sure you want to delete "${project.name}"?`);
     if (confirmed) {
@@ -50,11 +93,31 @@ const ProjectsPage = () => {
         console.error(error);
         toast.error("Failed to delete project.");
       }
+
     }
   };
 
   const handleDialogSubmit = async (formData: ProjectFormData) => {
     if (editingProject) {
+
+      // Update
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === editingProject.id
+            ? {
+                ...p,
+                name: formData.name,
+                code: formData.code,
+                location: formData.location,
+                startDate: formData.startDate,
+                status: formData.status
+              }
+            : p
+        )
+      );
+    } else {
+      // Create
+
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/update/${editingProject.id}`, {
           method: 'PUT',
@@ -80,11 +143,18 @@ const ProjectsPage = () => {
         toast.error("Failed to update project.");
       }
     } else {
+
       const newProject: Project = {
         id: generateProjectId(),
         name: formData.name,
         code: formData.code,
         location: formData.location,
+
+        employees: 0, // Default
+        startDate: formData.startDate,
+        status: formData.status
+      };
+
         employees: 0,
         startDate: formData.startDate,
         status: formData.status,
@@ -92,6 +162,7 @@ const ProjectsPage = () => {
         endDate: formData.endDate,
         description: formData.description,
       };
+
 
       setProjects(prev => [...prev, newProject]);
       toast.success("Project created successfully");
@@ -105,9 +176,27 @@ const ProjectsPage = () => {
     setViewingProject(null);
   };
 
+
+  // Dialog setup
+
   const getDialogProps = () => {
+    const commonFields = (project: Project) => ({
+      name: project.name,
+      code: project.code,
+      location: project.location,
+      startDate: project.startDate,
+      status: project.status,
+      description: '',
+      endDate: '',
+      budget: ''
+    });
+
     if (viewingProject) {
       return {
+
+        initialData: commonFields(viewingProject),
+        title: `View Project - ${viewingProject.name}`,
+
         initialData: {
           name: viewingProject.name,
           code: viewingProject.code,
@@ -119,6 +208,7 @@ const ProjectsPage = () => {
           budget: viewingProject.budget || '',
         },
         title: `View Project Details - ${viewingProject.name}`,
+
         submitLabel: '',
         isViewMode: true,
         isUpdateMode: false,
@@ -126,6 +216,9 @@ const ProjectsPage = () => {
       };
     } else if (editingProject) {
       return {
+
+        initialData: commonFields(editingProject),
+
         initialData: {
           name: editingProject.name,
           code: editingProject.code,
@@ -136,6 +229,7 @@ const ProjectsPage = () => {
           endDate: editingProject.endDate || '',
           budget: editingProject.budget || '',
         },
+
         title: 'Edit Project',
         submitLabel: 'Update Project',
         isViewMode: false,
@@ -166,6 +260,31 @@ const ProjectsPage = () => {
   const dialogProps = getDialogProps();
 
   return (
+
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <ProjectManagement
+          projects={projects}
+          onCreateProject={handleCreateProject}
+          onViewDetails={handleViewDetails}
+          onEditProject={handleEditProject}
+          onDeleteProject={handleDeleteProject}
+        />
+
+        <ProjectDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          onSubmit={handleDialogSubmit}
+          initialData={dialogProps.initialData}
+          title={dialogProps.title}
+          submitLabel={dialogProps.submitLabel}
+          isViewMode={dialogProps.isViewMode}
+        />
+      </div>
+    </div>
+  );
+}
+
     <div>
       <ProjectManagement
         projects={projects}
@@ -191,3 +310,4 @@ const ProjectsPage = () => {
 };
 
 export default ProjectsPage;
+

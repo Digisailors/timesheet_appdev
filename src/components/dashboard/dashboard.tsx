@@ -102,96 +102,97 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     // });
   }, []);
 
-  return (
-    <div className={`flex-1 bg-gray-50 min-h-screen ${className}`}>
-      {/* Main Content */}
-      <div className="p-6">
-        {/* Overview Title - Top Left */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
+ return (
+  <div className={`flex-1 bg-gray-50 dark:bg-gray-900 min-h-screen ${className}`}>
+    {/* Main Content */}
+    <div className="p-6">
+      {/* Overview Title - Top Left */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Overview</h1>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <StatCard
+          title="Total Timesheets Logged"
+          value={stats.totalTimesheets}
+          subtitle="All time"
+          icon={ClipboardDocumentListIcon}
+          color="blue"
+        />
+        <StatCard
+          title="Total Employees"
+          value={stats.totalEmployees}
+          subtitle="Active roster"
+          icon={UsersIcon}
+          color="blue"
+        />
+        <StatCard
+          title="Active Locations Today"
+          value={stats.activeLocations}
+          subtitle="Today"
+          icon={MapPinIcon}
+          color="blue"
+        />
+        <StatCard
+          title="Days with Timesheets"
+          value={stats.daysWithTimesheets}
+          subtitle="Total logged days"
+          icon={CalendarDaysIcon}
+          color="blue"
+        />
+      </div>
+
+      {/* Second Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Checked-in Today"
+          value={stats.checkedInToday}
+          subtitle="Today"
+          icon={CheckCircleIcon}
+          color="green"
+        />
+        <StatCard
+          title="Pending Check-Outs"
+          value={stats.pendingCheckouts}
+          subtitle="Needs attention"
+          icon={ClockIcon}
+          color="orange"
+        />
+        <StatCard
+          title="Total Overtime Hours"
+          value={stats.totalOvertimeHours}
+          subtitle="This month"
+          icon={ClockIcon}
+          color="purple"
+        />
+        <StatCard
+          title="Missing Entries"
+          value={stats.missingEntries}
+          subtitle="Requires action"
+          icon={ExclamationTriangleIcon}
+          color="red"
+        />
+      </div>
+
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-6">
+          <ProjectHighlights projects={projects} />
+          <WeeklySnapshot weeklyStats={weeklyStats} />
         </div>
 
-        {/* Stats Grid */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <StatCard
-            title="Total Timesheets Logged"
-            value={stats.totalTimesheets}
-            subtitle="All time"
-            icon={ClipboardDocumentListIcon}
-            color="blue"
-          />
-          <StatCard
-            title="Total Employees"
-            value={stats.totalEmployees}
-            subtitle="Active roster"
-            icon={UsersIcon}
-            color="blue"
-          />
-          <StatCard
-            title="Active Locations Today"
-            value={stats.activeLocations}
-            subtitle="Today"
-            icon={MapPinIcon}
-            color="blue"
-          />
-          <StatCard
-            title="Days with Timesheets"
-            value={stats.daysWithTimesheets}
-            subtitle="Total logged days"
-            icon={CalendarDaysIcon}
-            color="blue"
-          />
-        </div>
-
-        {/* Second Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Checked-in Today"
-            value={stats.checkedInToday}
-            subtitle="Today"
-            icon={CheckCircleIcon}
-            color="green"
-          />
-          <StatCard
-            title="Pending Check-Outs"
-            value={stats.pendingCheckouts}
-            subtitle="Needs attention"
-            icon={ClockIcon}
-            color="orange"
-          />
-          <StatCard
-            title="Total Overtime Hours"
-            value={stats.totalOvertimeHours}
-            subtitle="This month"
-            icon={ClockIcon}
-            color="purple"
-          />
-          <StatCard
-            title="Missing Entries"
-            value={stats.missingEntries}
-            subtitle="Requires action"
-            icon={ExclamationTriangleIcon}
-            color="red"
-          />
-        </div>
-     
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <ProjectHighlights projects={projects} />
-            <WeeklySnapshot weeklyStats={weeklyStats} />
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            <TimesheetActivity timesheetActivity={timesheetActivity2} />
-            <RecentActivity recentActivity={recentActivity} />
-          </div>
+        {/* Right Column */}
+        <div className="space-y-6">
+          <TimesheetActivity timesheetActivity={timesheetActivity2} />
+          <RecentActivity recentActivity={recentActivity} />
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default Dashboard;
