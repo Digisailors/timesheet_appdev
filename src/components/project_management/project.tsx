@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
@@ -35,7 +35,8 @@ const ProjectsPage = () => {
   };
 
   const handleDeleteProject = async (project: Project) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${project.name}"?`);
+    const confirmed = await customConfirm(`Are you sure you want to delete "${project.name}"?`);
+    
     if (confirmed) {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/delete/${project.id}`, {
@@ -53,6 +54,53 @@ const ProjectsPage = () => {
     }
   };
 
+  const customConfirm = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const backdrop = document.createElement('div');
+      backdrop.style.position = 'fixed';
+      backdrop.style.top = '0';
+      backdrop.style.left = '0';
+      backdrop.style.right = '0';
+      backdrop.style.bottom = '0';
+      backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      backdrop.style.display = 'flex';
+      backdrop.style.alignItems = 'center';
+      backdrop.style.justifyContent = 'center';
+      backdrop.style.zIndex = '9999';
+
+      const dialog = document.createElement('div');
+      dialog.style.backgroundColor = 'white';
+      dialog.style.padding = '20px';
+      dialog.style.borderRadius = '8px';
+      dialog.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+      dialog.style.maxWidth = '400px';
+      dialog.style.width = '90%';
+
+      dialog.innerHTML = `
+        <p style="margin-bottom: 20px; font-size: 16px;">${message}</p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer;">Cancel</button>
+          <button id="confirm-ok" style="padding: 8px 16px; border: none; border-radius: 4px; background: #dc3545; color: white; cursor: pointer;">Delete</button>
+        </div>
+      `;
+
+      backdrop.appendChild(dialog);
+      document.body.appendChild(backdrop);
+
+      const cleanup = () => {
+        document.body.removeChild(backdrop);
+      };
+
+      const handleConfirm = (result: boolean) => {
+        cleanup();
+        resolve(result);
+      };
+
+      dialog.querySelector('#confirm-ok')?.addEventListener('click', () => handleConfirm(true));
+      dialog.querySelector('#confirm-cancel')?.addEventListener('click', () => handleConfirm(false));
+    });
+  };
+
   const handleDialogSubmit = async (formData: ProjectFormData) => {
     if (editingProject) {
       try {
@@ -66,36 +114,83 @@ const ProjectsPage = () => {
 
         const updatedProject = await response.json();
 
+        // Update the local state immediately with the updated project data
         setProjects(prev =>
           prev.map(p =>
             p.id === editingProject.id
-              ? { ...p, ...formData, id: editingProject.id, employees: p.employees }
+              ? { 
+                  ...p, 
+                  name: formData.name,
+                  code: formData.code,
+                  location: formData.location,
+                  startDate: formData.startDate,
+                  endDate: formData.endDate,
+                  budget: formData.budget,
+                  status: formData.status,
+                  description: formData.description
+                }
               : p
           )
         );
-        toast.success("Project updated successfully");
         handleDialogClose();
+        toast.dismiss();
+        toast.success("Project updated successfully");
       } catch (error) {
-        console.error(error);
+        handleDialogClose();
+        toast.dismiss();
         toast.error("Failed to update project.");
       }
     } else {
-      const newProject: Project = {
-        id: generateProjectId(),
-        name: formData.name,
-        code: formData.code,
-        location: formData.location,
-        employees: 0,
-        startDate: formData.startDate,
-        status: formData.status,
-        budget: formData.budget,
-        endDate: formData.endDate,
-        description: formData.description,
-      };
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
 
-      setProjects(prev => [...prev, newProject]);
-      toast.success("Project created successfully");
-      handleDialogClose();
+        if (!response.ok) throw new Error('Failed to create project');
+
+        const result = await response.json();
+        
+        // Create the new project object with the response data or fallback to form data
+        const newProject: Project = {
+          id: result.data?.id || generateProjectId(),
+          name: formData.name,
+          code: formData.code,
+          location: formData.location,
+          employees: 0,
+          startDate: formData.startDate,
+          status: formData.status,
+          budget: formData.budget,
+          endDate: formData.endDate,
+          description: formData.description,
+        };
+
+        // Add the new project to local state immediately
+        setProjects(prev => [...prev, newProject]);
+        handleDialogClose();
+        toast.dismiss();
+        toast.success("Project created successfully");
+      } catch (error) {
+        // Fallback to original behavior if API fails
+        const newProject: Project = {
+          id: generateProjectId(),
+          name: formData.name,
+          code: formData.code,
+          location: formData.location,
+          employees: 0,
+          startDate: formData.startDate,
+          status: formData.status,
+          budget: formData.budget,
+          endDate: formData.endDate,
+          description: formData.description,
+        };
+
+        setProjects(prev => [...prev, newProject]);
+        handleDialogClose();
+        toast.dismiss();
+        toast.success("Project created successfully");
+      }
     }
   };
 
@@ -165,8 +260,15 @@ const ProjectsPage = () => {
 
   const dialogProps = getDialogProps();
 
+  // Pass projects and setProjects to ProjectManagement for immediate updates
   return (
     <div>
+      <Toaster 
+        position="bottom-right" 
+        visibleToasts={0}
+        duration={3000}
+      />
+      
       <ProjectManagement
         projects={projects}
         onCreateProject={handleCreateProject}
