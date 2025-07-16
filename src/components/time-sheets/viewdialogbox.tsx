@@ -23,69 +23,80 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-none flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-md text-gray-900 dark:text-white">
         <div className="p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Time-sheet Details</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <button onClick={onClose} className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-xl">
               &times;
             </button>
           </div>
+
+          {/* Avatar and Name */}
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
               {employee.name.split(' ').map(n => n[0]).join('')}
             </div>
             <div>
               <h3 className="font-bold">{employee.name}</h3>
-              <p className="text-sm text-gray-500">{employee.id}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{employee.id}</p>
             </div>
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+            <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full">
               Regular
             </span>
           </div>
+
+          {/* Project / Location */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">Project</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Project</p>
               <p className="font-bold">{employee.project}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Location</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
               <p className="font-bold">{employee.location}</p>
             </div>
           </div>
+
+          {/* Date */}
           <div className="mb-4">
-            <p className="text-sm text-gray-500">Date</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
             <p className="font-bold">{employee.date}</p>
           </div>
+
+          {/* Check-in/out */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">Check In</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Check In</p>
               <p className="font-bold">{employee.checkIn}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Check Out</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Check Out</p>
               <p className="font-bold">{employee.checkOut}</p>
             </div>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+
+          {/* Hours Breakdown */}
+          <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-4">
             <h3 className="text-lg font-bold text-center mb-2">Hours Breakdown</h3>
             <div className="grid grid-cols-4 gap-4 text-center">
               <div>
-                <p className="text-sm text-gray-500">Total Hours</p>
-                <p className={`font-bold text-blue-500`}>{employee.totalHours}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Hours</p>
+                <p className="font-bold text-blue-500 dark:text-blue-300">{employee.totalHours}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Overtime</p>
-                <p className={`font-bold text-red-500`}>{employee.overtime}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Overtime</p>
+                <p className="font-bold text-red-500 dark:text-red-300">{employee.overtime}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Travel Time</p>
-                <p className={`font-bold text-purple-500`}>{employee.travelTime}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Travel Time</p>
+                <p className="font-bold text-purple-500 dark:text-purple-300">{employee.travelTime}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Break Time</p>
-                <p className="font-bold text-gray-500">{employee.breakTime}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Break Time</p>
+                <p className="font-bold text-gray-500 dark:text-gray-300">{employee.breakTime}</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,3 @@
-// src/components/dashboard/StatCard.tsx
 "use client";
 
 import React from 'react';
@@ -27,7 +26,7 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 relative">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 relative">
       {/* Icon positioned in top right */}
       <div className="absolute top-6 right-6">
         <Icon className={`h-6 w-6 ${colorClasses[color]}`} />
@@ -35,9 +34,15 @@ const StatCard: React.FC<StatCardProps> = ({
       
       {/* Content */}
       <div className="pr-8">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
-        <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
-        <p className="text-sm text-gray-500">{subtitle}</p>
+        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+          {title}
+        </h3>
+        <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          {value}
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-300">
+          {subtitle}
+        </p>
       </div>
     </div>
   );

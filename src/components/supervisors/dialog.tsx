@@ -103,10 +103,10 @@ export default function SupervisorDialog({
   if (!isOpen) return null;
 
   return (
-<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60">
+      <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b">
+        <div className="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-semibold">
             {mode === 'add' ? 'Add New Supervisor' : 'Edit Supervisor'}
           </h2>
@@ -115,74 +115,20 @@ export default function SupervisorDialog({
           </button>
         </div>
 
-        {/* Scrollable Form Content */}
+        {/* Form */}
         <div className="overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Specialization</label>
-                <input
-                  type="text"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.specialization && (
-                  <p className="text-red-500 text-sm">{errors.specialization}</p>
-                )}
-              </div>
+              <FormInput label="Full Name" name="fullName" value={formData.fullName} error={errors.fullName} onChange={handleInputChange} />
+              <FormInput label="Specialization" name="specialization" value={formData.specialization} error={errors.specialization} onChange={handleInputChange} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  type="email"
-                  name="emailAddress"
-                  value={formData.emailAddress}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.emailAddress && (
-                  <p className="text-red-500 text-sm">{errors.emailAddress}</p>
-                )}
-              </div>
+              <FormInput label="Phone" name="phoneNumber" value={formData.phoneNumber} error={errors.phoneNumber} onChange={handleInputChange} />
+              <FormInput label="Email" name="emailAddress" type="email" value={formData.emailAddress} error={errors.emailAddress} onChange={handleInputChange} />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border rounded-lg"
-              />
-              {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-            </div>
+            <FormInput label="Password" name="password" type="password" value={formData.password} error={errors.password} onChange={handleInputChange} />
 
             <div>
               <label className="text-sm font-medium">Address</label>
@@ -191,36 +137,14 @@ export default function SupervisorDialog({
                 rows={3}
                 value={formData.address}
                 onChange={handleInputChange}
-                className="w-full mt-1 p-2 border rounded-lg"
+                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Joining Date</label>
-                <input
-                  type="date"
-                  name="dateOfJoining"
-                  value={formData.dateOfJoining}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.dateOfJoining && (
-                  <p className="text-red-500 text-sm">{errors.dateOfJoining}</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium">Experience</label>
-                <input
-                  type="text"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleInputChange}
-                  className="w-full mt-1 p-2 border rounded-lg"
-                />
-                {errors.experience && <p className="text-red-500 text-sm">{errors.experience}</p>}
-              </div>
+              <FormInput label="Joining Date" name="dateOfJoining" type="date" value={formData.dateOfJoining} error={errors.dateOfJoining} onChange={handleInputChange} />
+              <FormInput label="Experience" name="experience" value={formData.experience} error={errors.experience} onChange={handleInputChange} />
             </div>
 
             <div>
@@ -229,7 +153,7 @@ export default function SupervisorDialog({
                 name="assignedProject"
                 value={formData.assignedProject}
                 onChange={handleInputChange}
-                className="w-full mt-1 p-2 border rounded-lg"
+                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               >
                 <option value="">Select project</option>
                 <option value="Highway Bridge">Highway Bridge</option>
@@ -246,7 +170,7 @@ export default function SupervisorDialog({
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                className="px-4 py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
               >
                 Cancel
               </button>
@@ -263,3 +187,31 @@ export default function SupervisorDialog({
     </div>
   );
 }
+
+const FormInput = ({
+  label,
+  name,
+  type = 'text',
+  value,
+  error,
+  onChange
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  value: string;
+  error?: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
+  <div>
+    <label className="text-sm font-medium">{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+    />
+    {error && <p className="text-red-500 text-sm">{error}</p>}
+  </div>
+);

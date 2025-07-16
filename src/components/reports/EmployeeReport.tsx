@@ -15,7 +15,6 @@ const EmployeeReport: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('EMP004');
   const [selectedMonth, setSelectedMonth] = useState<string>('05');
 
-  // Mock data - replace with your actual data
   const employees: Employee[] = [
     { id: 'EMP004', name: 'Alice Williams (EMP004)' },
     { id: 'EMP001', name: 'John Doe (EMP001)' },
@@ -38,27 +37,19 @@ const EmployeeReport: React.FC = () => {
     { value: '12', label: 'December 2025' },
   ];
 
-  const handleEmployeeChange = (value: string) => {
-    setSelectedEmployee(value);
-  };
-
-  const handleMonthChange = (value: string) => {
-    setSelectedMonth(value);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 text-gray-900 dark:text-gray-100">
       <div className="max-w-8xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Employee-Wise Report for Construction Phase 1</h1>
-        
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h1 className="text-3xl font-bold mb-8">Employee-Wise Report for Construction Phase 1</h1>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Employee</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Employee</label>
               <select 
                 value={selectedEmployee}
-                onChange={(e) => handleEmployeeChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               >
                 {employees.map((employee) => (
                   <option key={employee.id} value={employee.id}>
@@ -69,11 +60,11 @@ const EmployeeReport: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Month</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Month</label>
               <select 
                 value={selectedMonth}
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               >
                 {months.map((month) => (
                   <option key={month.value} value={month.value}>
@@ -85,11 +76,11 @@ const EmployeeReport: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Alice Williams Report</h2>
+            <h2 className="text-xl font-semibold">Alice Williams Report</h2>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-100 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <FileText size={16} />
                 Export Excel
               </button>
@@ -101,44 +92,44 @@ const EmployeeReport: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600 mb-1">Regular Hours</p>
-              <p className="text-3xl font-bold text-blue-600">0</p>
+            <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Regular Hours</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">0</p>
             </div>
-            <div className="bg-orange-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600 mb-1">Overtime Hours</p>
-              <p className="text-3xl font-bold text-orange-600">0</p>
+            <div className="bg-orange-50 dark:bg-orange-900 rounded-lg p-4 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Overtime Hours</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-300">0</p>
             </div>
-            <div className="bg-green-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600 mb-1">Days Worked</p>
-              <p className="text-3xl font-bold text-green-600">0</p>
+            <div className="bg-green-50 dark:bg-green-900 rounded-lg p-4 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Days Worked</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-300">0</p>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Location</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Check-In</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Check-Out</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Regular Hours</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">OT Hours</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Travel Time</th>
-                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">Remarks</th>
+                <tr className="bg-gray-50 dark:bg-gray-700">
+                  {['Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks'].map((header) => (
+                    <th
+                      key={header}
+                      className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-gray-50">
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">5/18/2025</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">Downtown Office</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">07:15</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">15:30</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">8</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">0</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900">00:30</td>
-                  <td className="border border-gray-200 px-4 py-3 text-sm text-gray-900"></td>
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">5/18/2025</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">Downtown Office</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">07:15</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">15:30</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">8</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">0</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">00:30</td>
+                  <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm"></td>
                 </tr>
               </tbody>
             </table>
