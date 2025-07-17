@@ -61,12 +61,6 @@ export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
 
-
-  const [] = useState(false);
-  const [] = useState(false);
-  const [] = useState<Supervisor | null>(null);
-
-
   const filteredSupervisors = supervisors.filter(supervisor =>
     (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,13 +89,8 @@ export default function SupervisorPage() {
           <h2 className="text-xl font-semibold">Supervisor Management</h2>
         </div>
         <button
-
           onClick={handleAddSupervisor}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
-
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
-          onClick={handleAddSupervisor}
-
         >
           <Plus className="w-4 h-4" />
           <span>Add Supervisor</span>

@@ -204,20 +204,6 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
       if (apiResponse.success) {
 
-        const transformedProjects: Project[] = apiResponse.data.map((project: any) => ({
-          id: project.id,
-          name: project.name,
-          code: project.code,
-          location: project.location,
-          employees: 0,
-          startDate: project.startDate,
-          endDate: project.endDate,
-          budget: project.budget,
-          description: project.description,
-          status: project.status
-        }));
-
-
         // Transform API data to match our Project interface
         const transformedProjects: Project[] = apiResponse.data.map((project: unknown) => {
           const p = project as Project;
@@ -234,7 +220,6 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
             status: p.status as 'active' | 'completed' | 'pending' | 'cancelled'
           };
         });
-        
 
         setProjects(transformedProjects);
       } else {
