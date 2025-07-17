@@ -4,6 +4,10 @@ import './globals.css';
 import { ThemeProvider } from 'next-themes';
 import React, { ReactNode } from 'react';
 import { Toaster } from 'react-hot-toast'; // <-- Add this
+import { Toaster } from 'sonner';
+// import { GeistSans, GeistMono } from 'geist/font'; // Import the font variables
+
+// Optionally, use a Google Font or another available font package here if needed.
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -11,8 +15,8 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
+    <html lang="en">
+      <body className={`antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
           {/* 🔔 Toast messages shown at top-right */}
@@ -27,6 +31,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             }}
           />
         </ThemeProvider>
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

@@ -173,6 +173,62 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
   const uniqueProjects = useMemo(() => ['All Projects', ...new Set(projects.map((p) => p.name))], [projects]);
   const uniqueLocations = useMemo(() => ['All Locations', ...new Set(projects.map((p) => p.location))], [projects]);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const apiResponse: ApiResponse = await response.json();
+
+      if (apiResponse.success) {
+
+        // Transform API data to match our Project interface
+        const transformedProjects: Project[] = apiResponse.data.map((project: unknown) => {
+          const p = project as Project;
+          return {
+            id: p.id,
+            name: p.name,
+            code: p.code,
+            location: p.location,
+            employees: 0, // Default value since API doesn't provide this
+            startDate: p.startDate,
+            endDate: p.endDate,
+            budget: p.budget,
+            description: p.description,
+            status: p.status as 'active' | 'completed' | 'pending' | 'cancelled'
+          };
+        });
+
+        setProjects(transformedProjects);
+      } else {
+        throw new Error(apiResponse.message || 'Failed to fetch projects');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching projects');
+      console.error('Error fetching projects:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const uniqueProjects = useMemo(() => ['All Projects', ...new Set(projects.map(p => p.name))], [projects]);
+  const uniqueLocations = useMemo(() => ['All Locations', ...new Set(projects.map(p => p.location))], [projects]);
   const statusOptions = ['Status', 'active', 'completed', 'pending', 'cancelled'];
 
   const filteredProjects = useMemo(() => {

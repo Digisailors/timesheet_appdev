@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
 import SupervisorDialog from './dialog';
 
@@ -30,57 +30,6 @@ interface SupervisorData {
   password: string;
 }
 
-const supervisors: Supervisor[] = [
-  {
-    id: '1',
-    name: 'Robert Martinez',
-    email: 'robert.martinez@company.com',
-    initials: 'RM',
-    backgroundColor: 'bg-blue-500',
-    department: 'Construction Management',
-    location: 'Highway Bridge',
-    phoneNumber: '98765 43210',
-    dateOfJoining: '2023-01-15',
-    password: 'password123'
-  },
-  {
-    id: '2',
-    name: 'Maria Garcia',
-    email: 'maria.garcia@company.com',
-    initials: 'MG',
-    backgroundColor: 'bg-blue-600',
-    department: 'Site Management',
-    location: 'Downtown Plaza',
-    phoneNumber: '98765 43211',
-    dateOfJoining: '2022-08-20',
-    password: 'password123'
-  },
-  {
-    id: '3',
-    name: 'James Wilson',
-    email: 'james.wilson@company.com',
-    initials: 'JW',
-    backgroundColor: 'bg-blue-700',
-    department: 'Industrial Construction',
-    location: 'Factory Building',
-    phoneNumber: '98765 43212',
-    dateOfJoining: '2023-05-10',
-    password: 'password123'
-  },
-  {
-    id: '4',
-    name: 'Anna Thompson',
-    email: 'anna.thompson@company.com',
-    initials: 'AT',
-    backgroundColor: 'bg-blue-800',
-    department: 'Quality Control',
-    location: 'Office Complex',
-    phoneNumber: '98765 43213',
-    dateOfJoining: '2023-03-25',
-    password: 'password123'
-  }
-];
-
 export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
@@ -88,7 +37,44 @@ export default function SupervisorPage() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
-  const [supervisorList, setSupervisorList] = useState<Supervisor[]>(supervisors);
+  const [supervisorList, setSupervisorList] = useState<Supervisor[]>([]);
+
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const dbSupervisors: Supervisor[] = result.data.map((item: any) => {
+            const nameParts = item.fullName.split(' ');
+            const initials = nameParts.map((part: string) => part[0]).join('').toUpperCase();
+
+            return {
+              id: item.id,
+              name: item.fullName,
+              email: item.emailAddress,
+              initials,
+              backgroundColor: 'bg-blue-500',
+              department: item.specialization,
+              location: item.assignedProject?.name || 'N/A',
+              phoneNumber: item.phoneNumber,
+              dateOfJoining: item.dateOfJoining,
+              password: item.password || '',
+            };
+          });
+
+          setSupervisorList(dbSupervisors);
+        } else {
+          console.error('Failed to load supervisors:', result.message);
+        }
+      } catch (error) {
+        console.error('Error fetching supervisors:', error);
+      }
+    };
+
+    fetchSupervisors();
+  }, []);
 
   const filteredSupervisors = supervisorList.filter(supervisor => {
     const matchesSearch =
@@ -162,10 +148,50 @@ export default function SupervisorPage() {
     setSelectedSupervisor(null);
   };
 
-  const handleFormSubmit = (formData: SupervisorData, mode: 'add' | 'edit') => {
+  const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
     if (mode === 'add') {
-      const newSupervisor = formDataToSupervisor(formData);
-      setSupervisorList(prev => [...prev, newSupervisor]);
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            emailAddress: formData.emailAddress,
+            phoneNumber: formData.phoneNumber,
+            specialization: formData.specialization,
+            address: formData.address,
+            dateOfJoining: formData.dateOfJoining,
+            experience: formData.experience,
+            password: formData.password,
+            assignedProjectId: '0a01c83f-ed45-493e-ac70-eacf0781eec7'
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const newSupervisor: Supervisor = {
+            id: result.data.id,
+            name: result.data.fullName,
+            email: result.data.emailAddress,
+            initials: result.data.fullName.split(' ').map((part: any[]) => part[0]).join('').toUpperCase(),
+            backgroundColor: 'bg-blue-500',
+            department: result.data.specialization,
+            location: formData.assignedProject,
+            phoneNumber: result.data.phoneNumber,
+            dateOfJoining: result.data.dateOfJoining.split('T')[0],
+            password: result.data.password || ''
+          };
+
+          setSupervisorList(prev => [...prev, newSupervisor]);
+        } else {
+          console.error('Failed to create supervisor:', result.message);
+        }
+      } catch (error) {
+        console.error('Error creating supervisor:', error);
+      }
     } else if (mode === 'edit' && selectedSupervisor) {
       const updatedSupervisor = formDataToSupervisor(formData, selectedSupervisor.id);
       setSupervisorList(prev =>
@@ -215,6 +241,8 @@ export default function SupervisorPage() {
               <option>Downtown Plaza</option>
               <option>Factory Building</option>
               <option>Office Complex</option>
+              <option>building construction </option>
+              <option>construction </option>
             </select>
           </div>
         </div>
