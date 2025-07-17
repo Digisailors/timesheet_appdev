@@ -6,10 +6,6 @@ import { toast, Toaster } from 'sonner';
 
 
 
-import { toast } from 'sonner';
-
-
-
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import ProjectDialog from "@/components/project_management/ProjectDialog";
 import { Project } from "@/components/project_management/ProjectManagement";
@@ -38,11 +34,8 @@ const sampleProjects: Project[] = [
   }
 ];
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
-
 const ProjectsPage = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(sampleProjects);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -53,8 +46,6 @@ const ProjectsPage = () => {
   const generateProjectId = () => `PRJ-${Date.now()}`;
 
   // Actions
-
-  const generateProjectId = () => `PRJ-${Date.now()}`;
 
 
   const handleCreateProject = () => {
@@ -76,10 +67,6 @@ const ProjectsPage = () => {
   };
 
 
-  const handleDeleteProject = (project: Project) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete "${project.name}"?`);
-    if (confirmDelete) {
-      setProjects(prev => prev.filter(p => p.id !== project.id));
 
   const handleDeleteProject = async (project: Project) => {
     const confirmed = await customConfirm(`Are you sure you want to delete "${project.name}"?`);
@@ -167,7 +154,6 @@ const ProjectsPage = () => {
             : p
         )
       );
-    } else {
       // Create
 
       try {
@@ -202,92 +188,14 @@ const ProjectsPage = () => {
         handleDialogClose();
         toast.dismiss();
         toast.success("Project updated successfully");
+        toast.success("Project updated successfully");
       } catch (error) {
         handleDialogClose();
         toast.dismiss();
         toast.error("Failed to update project.");
       }
-    } else {
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-
-        if (!response.ok) throw new Error('Failed to create project');
-
-        const result = await response.json();
-        
-        // Create the new project object with the response data or fallback to form data
-        const newProject: Project = {
-          id: result.data?.id || generateProjectId(),
-          name: formData.name,
-          code: formData.code,
-          location: formData.location,
-          employees: 0,
-          startDate: formData.startDate,
-          status: formData.status,
-          budget: formData.budget,
-          endDate: formData.endDate,
-          description: formData.description,
-        };
-
-        // Add the new project to local state immediately
-        setProjects(prev => [...prev, newProject]);
-        handleDialogClose();
-        toast.dismiss();
-        toast.success("Project created successfully");
-      } catch (error) {
-        // Fallback to original behavior if API fails
-        const newProject: Project = {
-          id: generateProjectId(),
-          name: formData.name,
-          code: formData.code,
-          location: formData.location,
-          employees: 0,
-          startDate: formData.startDate,
-          status: formData.status,
-          budget: formData.budget,
-          endDate: formData.endDate,
-          description: formData.description,
-        };
-
-        setProjects(prev => [...prev, newProject]);
-        handleDialogClose();
-        toast.dismiss();
-        toast.success("Project created successfully");
-      }
-
-
-      const newProject: Project = {
-        id: generateProjectId(),
-        name: formData.name,
-        code: formData.code,
-        location: formData.location,
-
-        employees: 0, // Default
-        startDate: formData.startDate,
-        status: formData.status
-      };
-
-        employees: 0,
-        startDate: formData.startDate,
-        status: formData.status,
-        budget: formData.budget,
-        endDate: formData.endDate,
-        description: formData.description,
-      };
-
-
-      setProjects(prev => [...prev, newProject]);
-      toast.success("Project created successfully");
-      handleDialogClose();
-
     }
   };
-
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setEditingProject(null);
@@ -311,10 +219,6 @@ const ProjectsPage = () => {
 
     if (viewingProject) {
       return {
-
-        initialData: commonFields(viewingProject),
-        title: `View Project - ${viewingProject.name}`,
-
         initialData: {
           name: viewingProject.name,
           code: viewingProject.code,
@@ -326,7 +230,6 @@ const ProjectsPage = () => {
           budget: viewingProject.budget || '',
         },
         title: `View Project Details - ${viewingProject.name}`,
-
         submitLabel: '',
         isViewMode: true,
         isUpdateMode: false,
@@ -334,9 +237,6 @@ const ProjectsPage = () => {
       };
     } else if (editingProject) {
       return {
-
-        initialData: commonFields(editingProject),
-
         initialData: {
           name: editingProject.name,
           code: editingProject.code,
@@ -347,7 +247,6 @@ const ProjectsPage = () => {
           endDate: editingProject.endDate || '',
           budget: editingProject.budget || '',
         },
-
         title: 'Edit Project',
         submitLabel: 'Update Project',
         isViewMode: false,
@@ -379,31 +278,6 @@ const ProjectsPage = () => {
 
   // Pass projects and setProjects to ProjectManagement for immediate updates
   return (
-
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto">
-        <ProjectManagement
-          projects={projects}
-          onCreateProject={handleCreateProject}
-          onViewDetails={handleViewDetails}
-          onEditProject={handleEditProject}
-          onDeleteProject={handleDeleteProject}
-        />
-
-        <ProjectDialog
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          onSubmit={handleDialogSubmit}
-          initialData={dialogProps.initialData}
-          title={dialogProps.title}
-          submitLabel={dialogProps.submitLabel}
-          isViewMode={dialogProps.isViewMode}
-        />
-      </div>
-    </div>
-  );
-}
-
     <div>
       <Toaster 
         position="bottom-right" 
@@ -434,9 +308,4 @@ const ProjectsPage = () => {
   );
 };
 
-
 export default ProjectsPage;
-
-export default ProjectsPage;
-
-
