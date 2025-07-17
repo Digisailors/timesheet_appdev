@@ -6,6 +6,7 @@ import SearchBarRow from "./SearchBarRow";
 import EmployeeRow, { Employee } from "./EmployeeRow";
 import EmployeeProfileModal from "./EmployeeProfileModal";
 import AddEmployeeModal from "./AddEmployeeModalProps";
+import { toast } from "react-hot-toast";
 
 interface EmployeeFormData {
   firstName: string;
@@ -13,40 +14,12 @@ interface EmployeeFormData {
   email: string;
   designationType: string;
   designation: string;
+  specialization?: string;
+  address?: string;
+  phoneNumber?: string;
+  experience?: string;
+  dateOfJoining?: string;
 }
-
-const initialEmployees: Employee[] = [
-  {
-    id: '1', name: 'John Smith', email: 'john.smith@company.com',
-    designation: 'Regular', project: 'Driver',
-    workHours: '168h', timeFrame: 'This month',
-    avatar: 'JS', avatarBg: 'bg-blue-500'
-  },
-  {
-    id: '2', name: 'Sarah Wilson', email: 'sarah.wilson@company.com',
-    designation: 'Rental', project: 'Plumber',
-    workHours: '142h', timeFrame: 'This month',
-    avatar: 'SW', avatarBg: 'bg-blue-600'
-  },
-  {
-    id: '3', name: 'Mike Johnson', email: 'mike.johnson@company.com',
-    designation: 'Rental', project: 'Factory Building',
-    workHours: '156h', timeFrame: 'This month',
-    avatar: 'MJ', avatarBg: 'bg-blue-700'
-  },
-  {
-    id: '4', name: 'Lisa Chen', email: 'lisa.chen@company.com',
-    designation: 'Coaster Driver', project: 'Office Complex',
-    workHours: '134h', timeFrame: 'This month',
-    avatar: 'LC', avatarBg: 'bg-blue-800'
-  },
-  {
-    id: '5', name: 'David Brown', email: 'david.brown@company.com',
-    designation: 'Regular', project: 'Highway Bridge',
-    workHours: '178h', timeFrame: 'This month',
-    avatar: 'DB', avatarBg: 'bg-blue-900'
-  }
-];
 
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -57,50 +30,72 @@ const EmployeesPage: React.FC = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const savedEmployees = localStorage.getItem('employees');
-    if (savedEmployees) {
-      try {
-        const parsedEmployees = JSON.parse(savedEmployees);
-        setEmployees(parsedEmployees);
-      } catch (error) {
-        console.error('Error parsing employees from localStorage:', error);
-        setEmployees(initialEmployees);
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
+  const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+
+  const [avatarBgs, setAvatarBgs] = useState<{ [key: string]: string }>({});
+
+  const generateAvatarBg = (employeeId: string) => {
+  const blueBg = "bg-blue-600"; // fixed blue
+  setAvatarBgs(prev => ({ ...prev, [employeeId]: blueBg }));
+  return blueBg;
+};
+
+
+  const fetchEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${cleanBaseUrl}/api/employees/all`);
+      const result = await response.json();
+
+      if (result.success && Array.isArray(result.data)) {
+        const enrichedEmployees = result.data.map((emp: any): Employee => {
+          const fullName = `${emp.firstName} ${emp.lastName}`;
+          return {
+            ...emp,
+            name: fullName,
+            avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+            avatarBg: generateAvatarBg(emp.id),
+            project: emp.specialization || emp.designation,
+            workHours: "160h",
+            timeFrame: "This month",
+            designation: emp.designation || "",
+            designationType: emp.designationType || "",
+            phoneNumber: emp.phoneNumber || "+0000000000",
+            email: emp.email || "",
+            address: emp.address || "Some Address",
+            experience: emp.experience || "0 years",
+            dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+            specialization: emp.specialization || emp.designation || "",
+          };
+        });
+
+        setEmployees(enrichedEmployees);
+      } else {
+        toast.error("Failed to fetch employees");
       }
-    } else {
-      setEmployees(initialEmployees);
+    } catch (error) {
+      toast.error("Error fetching employees");
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    if (employees.length > 0) {
-      localStorage.setItem('employees', JSON.stringify(employees));
-    }
-  }, [employees]);
-
-  const generateAvatar = (firstName: string, lastName: string) => {
-    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-  };
-
-  const generateAvatarBg = () => {
-    const colors = [
-      'bg-blue-500', 'bg-blue-600', 'bg-blue-700', 'bg-blue-800', 'bg-blue-900',
-      'bg-green-500', 'bg-green-600', 'bg-green-700', 'bg-green-800', 'bg-green-900',
-      'bg-purple-500', 'bg-purple-600', 'bg-purple-700', 'bg-purple-800', 'bg-purple-900',
-      'bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800', 'bg-red-900',
-      'bg-yellow-500', 'bg-yellow-600', 'bg-yellow-700', 'bg-yellow-800', 'bg-yellow-900',
-      'bg-indigo-500', 'bg-indigo-600', 'bg-indigo-700', 'bg-indigo-800', 'bg-indigo-900'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
+    fetchEmployees();
+  }, []);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+      employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesDesignation =
       selectedDesignation === "All Designations" || employee.designation === selectedDesignation;
+
     const matchesProject =
       selectedProject === "All Projects" || employee.project === selectedProject;
 
@@ -124,8 +119,27 @@ const EmployeesPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
+    setConfirmDeleteId(id); // Open confirmation modal
+  };
+
+  const performDelete = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${cleanBaseUrl}/api/employees/delete/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success("Employee deleted successfully!");
+        setEmployees(prev => prev.filter(emp => emp.id !== id));
+      } else {
+        toast.error("Delete failed: " + result.message);
+      }
+    } catch (error) {
+      toast.error("Error deleting employee.");
+    } finally {
+      setIsLoading(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -134,39 +148,74 @@ const EmployeesPage: React.FC = () => {
     setIsAddModalOpen(true);
   };
 
-  const handleAddEmployeeSubmit = (employeeData: EmployeeFormData) => {
-    if (editingEmployee) {
-      const updatedEmployee: Employee = {
-        id: editingEmployee.id,
-        name: `${employeeData.firstName} ${employeeData.lastName}`,
-        email: employeeData.email,
-        designation: employeeData.designationType,
-        project: employeeData.designation,
-        workHours: editingEmployee.workHours,
-        timeFrame: editingEmployee.timeFrame,
-        avatar: generateAvatar(employeeData.firstName, employeeData.lastName),
-        avatarBg: editingEmployee.avatarBg
+  const handleAddEmployeeSubmit = async (employeeData: EmployeeFormData) => {
+    setIsLoading(true);
+    try {
+      const commonData = {
+        ...employeeData,
+        specialization: employeeData.specialization || employeeData.designation,
+        address: employeeData.address || "Some Address",
+        phoneNumber: employeeData.phoneNumber || "+0000000000",
+        experience: employeeData.experience || "0 years",
+        dateOfJoining: employeeData.dateOfJoining || new Date().toISOString().split("T")[0],
       };
 
-      setEmployees(prev =>
-        prev.map(emp => (emp.id === editingEmployee.id ? updatedEmployee : emp))
-      );
-    } else {
-      const newEmployee: Employee = {
-        id: Date.now().toString(),
-        name: `${employeeData.firstName} ${employeeData.lastName}`,
-        email: employeeData.email,
-        designation: employeeData.designationType,
-        project: employeeData.designation,
-        workHours: '0h',
-        timeFrame: 'This month',
-        avatar: generateAvatar(employeeData.firstName, employeeData.lastName),
-        avatarBg: generateAvatarBg()
-      };
+      const isEdit = !!editingEmployee;
+      const endpoint = isEdit
+        ? `${cleanBaseUrl}/api/employees/update/${editingEmployee.id}`
+        : `${cleanBaseUrl}/api/employees/create`;
 
-      setEmployees(prev => [...prev, newEmployee]);
+      const method = isEdit ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(commonData),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      const result = contentType.includes("application/json")
+        ? await response.json()
+        : null;
+
+      if (response.ok && result?.success && result.data) {
+        toast.success(`Employee ${isEdit ? "updated" : "added"} successfully!`);
+
+        const newEmp = result.data;
+
+        const enrichedEmp: Employee = {
+          ...newEmp,
+          name: `${newEmp.firstName} ${newEmp.lastName}`,
+          avatar: (newEmp.firstName[0] + newEmp.lastName[0]).toUpperCase(),
+          avatarBg: generateAvatarBg(newEmp.id),
+          project: newEmp.specialization || newEmp.designation,
+          workHours: "160h",
+          timeFrame: "This month",
+          designation: newEmp.designation || "",
+          designationType: newEmp.designationType || "",
+          phoneNumber: newEmp.phoneNumber || "+0000000000",
+          email: newEmp.email || "",
+          address: newEmp.address || "Some Address",
+          experience: newEmp.experience || "0 years",
+          dateOfJoining: newEmp.dateOfJoining || new Date().toISOString().split("T")[0],
+          specialization: newEmp.specialization || newEmp.designation || "",
+        };
+
+        setEmployees((prev) => {
+          const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);
+          return isEdit ? [...filtered, enrichedEmp] : [enrichedEmp, ...prev];
+        });
+
+        setIsAddModalOpen(false);
+        setEditingEmployee(null);
+      } else {
+        toast.error("❌ Failed: " + (result?.message || "Unknown error"));
+      }
+    } catch (error) {
+      toast.error("Something went wrong while submitting.");
+    } finally {
+      setIsLoading(false);
     }
-    setEditingEmployee(null);
   };
 
   const handleCloseModal = () => {
@@ -175,7 +224,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="w-full h-full min-h-screen max-w-7xl mx-auto px-2 py-2">
       <div className="px-4 sm:px-6 py-4">
         <EmployeeHeader onAdd={handleAddEmployee} />
 
@@ -195,7 +244,11 @@ const EmployeesPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Employees ({filteredEmployees.length})
             </h3>
-            {filteredEmployees.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading employees...
+              </div>
+            ) : filteredEmployees.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 No employees found matching your criteria.
               </div>
@@ -228,6 +281,37 @@ const EmployeesPage: React.FC = () => {
         onClose={() => setIsProfileModalOpen(false)}
         employee={selectedEmployee}
       />
+
+      {/* Confirmation Modal */}
+      {confirmDeleteId && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30 dark:bg-black/50"
+          onClick={() => setConfirmDeleteId(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white p-6 rounded-xl shadow-2xl border dark:border-gray-700 w-full max-w-sm mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-center text-base font-semibold mb-4">
+              Are you sure you want to delete this employee?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => confirmDeleteId && performDelete(confirmDeleteId)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
