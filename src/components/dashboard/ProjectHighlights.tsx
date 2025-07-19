@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 interface ProjectData {
@@ -13,11 +13,44 @@ interface ProjectData {
   lastUpdated: string;
 }
 
+
 interface ProjectHighlightsProps {
   projects: ProjectData[];
 }
 
-const ProjectHighlights: React.FC<ProjectHighlightsProps> = ({ projects }) => {
+const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('http://localhost:5088/api/projects/all', {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch projects');
+
+      const result = await response.json();
+      console.log('API response:', result);
+
+      if (result.success && Array.isArray(result.data)) {
+        setProjects(result.data);
+      } else {
+        console.error('Unexpected data structure:', result);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
   return (
     <div>
       <div>
@@ -27,6 +60,9 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = ({ projects }) => {
         </h2>
       </div>
       <div className="p-6">
+        {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading projects...</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
         <div className="space-y-6">
           {projects.map((project, index) => (
             <div
