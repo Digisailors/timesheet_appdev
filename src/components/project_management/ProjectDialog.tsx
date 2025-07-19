@@ -88,6 +88,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isViewMode) return; // Don't submit in view mode
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -118,19 +119,18 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     }
   };
 
-
-  // Changed this condition - removed isViewMode check
   if (!isOpen) return null;
 
-  if (!isOpen || isViewMode) return null;
-
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors" disabled={isSubmitting}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/40">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <button 
+            onClick={handleClose} 
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" 
+            disabled={isSubmitting}
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -138,92 +138,100 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project Name*</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Project Name*
+              </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter project name"
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } ${
+                  isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                } text-gray-900 dark:text-white`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project Code*</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Project Code*
+              </label>
               <input
                 type="text"
                 value={formData.code}
                 onChange={(e) => handleInputChange('code', e.target.value)}
                 placeholder="e.g., HBC-2024-001"
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.code ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  errors.code ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } ${
+                  isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                } text-gray-900 dark:text-white`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.code ? 'border-red-500' : 'border-gray-300'}`}
-
               />
               {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location*</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Location*
+            </label>
             <input
               type="text"
               value={formData.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
               placeholder="Enter project location"
-
-              className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border rounded-md ${
+                errors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              } ${
+                isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+              } text-gray-900 dark:text-white`}
               disabled={isViewMode}
               readOnly={isViewMode}
-
-              className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'}`}
-
             />
             {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Description
+            </label>
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Enter project description"
               rows={4}
-
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md ${
+                isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+              } text-gray-900 dark:text-white`}
               disabled={isViewMode}
               readOnly={isViewMode}
-
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date*</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Start Date*
+              </label>
               <div className="relative">
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
-
-                  className={`w-full px-3 py-2 border rounded-md ${errors.startDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.startDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  } ${
+                    isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                  } text-gray-900 dark:text-white`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
-
-                  className={`w-full px-3 py-2 border rounded-md ${errors.startDate ? 'border-red-500' : 'border-gray-300'}`}
-
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
@@ -231,19 +239,21 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Expected End Date</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Expected End Date
+              </label>
               <div className="relative">
                 <input
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
-
-                  className={`w-full px-3 py-2 border rounded-md ${errors.endDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.endDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  } ${
+                    isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                  } text-gray-900 dark:text-white`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
-
-                  className={`w-full px-3 py-2 border rounded-md ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
-
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
@@ -253,34 +263,36 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Budget ($)*</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Budget ($)*
+              </label>
               <input
                 type="text"
                 value={formData.budget}
                 onChange={(e) => handleInputChange('budget', e.target.value)}
                 placeholder="Enter budget amount"
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.budget ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  errors.budget ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                } ${
+                  isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                } text-gray-900 dark:text-white`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
-
-                className={`w-full px-3 py-2 border rounded-md ${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
-
               />
               {errors.budget && <p className="text-red-500 text-sm mt-1">{errors.budget}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Status
+              </label>
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value as ProjectFormData['status'])}
-<<<<<<< HEAD
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md ${
+                  isViewMode ? 'bg-gray-50 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
+                } text-gray-900 dark:text-white`}
                 disabled={isViewMode}
-=======
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
->>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
               >
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -288,31 +300,26 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-<<<<<<< HEAD
           </div>
 
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <button 
+              type="button" 
+              onClick={handleClose} 
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+            >
               {isViewMode ? 'Close' : 'Cancel'}
             </button>
-            {!isViewMode && (
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            {!isViewMode && submitLabel && (
+              <button 
+                type="submit" 
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? 'Submitting...' : submitLabel}
               </button>
             )}
           </div>
-=======
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md">
-              Cancel
-            </button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              {isSubmitting ? 'Submitting...' : submitLabel}
-            </button>
-          </div>
->>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
         </form>
       </div>
     </div>
