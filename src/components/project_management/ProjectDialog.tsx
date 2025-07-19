@@ -118,8 +118,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     }
   };
 
+
   // Changed this condition - removed isViewMode check
   if (!isOpen) return null;
+
+  if (!isOpen || isViewMode) return null;
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -140,9 +144,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter project name"
+
                 className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
+
+                className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
@@ -154,9 +162,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.code}
                 onChange={(e) => handleInputChange('code', e.target.value)}
                 placeholder="e.g., HBC-2024-001"
+
                 className={`w-full px-3 py-2 border rounded-md ${errors.code ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
+
+                className={`w-full px-3 py-2 border rounded-md ${errors.code ? 'border-red-500' : 'border-gray-300'}`}
+
               />
               {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
             </div>
@@ -169,9 +181,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               value={formData.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
               placeholder="Enter project location"
+
               className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               disabled={isViewMode}
               readOnly={isViewMode}
+
+              className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'}`}
+
             />
             {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
           </div>
@@ -183,9 +199,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Enter project description"
               rows={4}
+
               className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               disabled={isViewMode}
               readOnly={isViewMode}
+
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+
             />
           </div>
 
@@ -197,9 +217,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
+
                   className={`w-full px-3 py-2 border rounded-md ${errors.startDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
+
+                  className={`w-full px-3 py-2 border rounded-md ${errors.startDate ? 'border-red-500' : 'border-gray-300'}`}
+
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
@@ -213,9 +237,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
+
                   className={`w-full px-3 py-2 border rounded-md ${errors.endDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
+
+                  className={`w-full px-3 py-2 border rounded-md ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
+
                 />
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
@@ -231,9 +259,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 value={formData.budget}
                 onChange={(e) => handleInputChange('budget', e.target.value)}
                 placeholder="Enter budget amount"
+
                 className={`w-full px-3 py-2 border rounded-md ${errors.budget ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 disabled={isViewMode}
                 readOnly={isViewMode}
+
+                className={`w-full px-3 py-2 border rounded-md ${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
+
               />
               {errors.budget && <p className="text-red-500 text-sm mt-1">{errors.budget}</p>}
             </div>
@@ -243,8 +275,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value as ProjectFormData['status'])}
+<<<<<<< HEAD
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isViewMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 disabled={isViewMode}
+=======
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
               >
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -252,6 +288,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
+<<<<<<< HEAD
           </div>
 
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
@@ -264,6 +301,18 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </button>
             )}
           </div>
+=======
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md">
+              Cancel
+            </button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              {isSubmitting ? 'Submitting...' : submitLabel}
+            </button>
+          </div>
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
         </form>
       </div>
     </div>

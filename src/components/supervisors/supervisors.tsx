@@ -1,6 +1,8 @@
 'use client';
 
+
 import { useState, useEffect } from 'react';
+
 import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
 import SupervisorDialog from './dialog';
 import { toast, Toaster } from 'sonner';
@@ -31,12 +33,12 @@ interface SupervisorData {
   password: string;
 }
 
+
 interface Project {
   id: string;
   name: string;
   code: string;
 }
-
 export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
@@ -45,6 +47,7 @@ export default function SupervisorPage() {
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [supervisorList, setSupervisorList] = useState<Supervisor[]>([]);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
@@ -105,6 +108,44 @@ export default function SupervisorPage() {
   useEffect(() => {
     fetchSupervisors();
     fetchProjects();
+
+
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const dbSupervisors: Supervisor[] = result.data.map((item: any) => {
+            const nameParts = item.fullName.split(' ');
+            const initials = nameParts.map((part: string) => part[0]).join('').toUpperCase();
+
+            return {
+              id: item.id,
+              name: item.fullName,
+              email: item.emailAddress,
+              initials,
+              backgroundColor: 'bg-blue-500',
+              department: item.specialization,
+              location: item.assignedProject?.name || 'N/A',
+              phoneNumber: item.phoneNumber,
+              dateOfJoining: item.dateOfJoining,
+              password: item.password || '',
+            };
+          });
+
+          setSupervisorList(dbSupervisors);
+        } else {
+          console.error('Failed to load supervisors:', result.message);
+        }
+      } catch (error) {
+        console.error('Error fetching supervisors:', error);
+      }
+    };
+
+    fetchSupervisors();
+
   }, []);
 
   const filteredSupervisors = supervisorList.filter(supervisor => {
@@ -174,6 +215,7 @@ export default function SupervisorPage() {
     setSelectedSupervisor(null);
   };
 
+
   const closeViewDialog = () => {
     setShowViewDialog(false);
     setSelectedSupervisor(null);
@@ -206,6 +248,59 @@ export default function SupervisorPage() {
         console.error('Delete failed:', error);
         toast.error("❌ Error deleting supervisor");
       }
+
+  const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
+    if (mode === 'add') {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            emailAddress: formData.emailAddress,
+            phoneNumber: formData.phoneNumber,
+            specialization: formData.specialization,
+            address: formData.address,
+            dateOfJoining: formData.dateOfJoining,
+            experience: formData.experience,
+            password: formData.password,
+            assignedProjectId: '0a01c83f-ed45-493e-ac70-eacf0781eec7'
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const newSupervisor: Supervisor = {
+            id: result.data.id,
+            name: result.data.fullName,
+            email: result.data.emailAddress,
+            initials: result.data.fullName.split(' ').map((part: any[]) => part[0]).join('').toUpperCase(),
+            backgroundColor: 'bg-blue-500',
+            department: result.data.specialization,
+            location: formData.assignedProject,
+            phoneNumber: result.data.phoneNumber,
+            dateOfJoining: result.data.dateOfJoining.split('T')[0],
+            password: result.data.password || ''
+          };
+
+          setSupervisorList(prev => [...prev, newSupervisor]);
+        } else {
+          console.error('Failed to create supervisor:', result.message);
+        }
+      } catch (error) {
+        console.error('Error creating supervisor:', error);
+      }
+    } else if (mode === 'edit' && selectedSupervisor) {
+      const updatedSupervisor = formDataToSupervisor(formData, selectedSupervisor.id);
+      setSupervisorList(prev =>
+        prev.map(supervisor =>
+          supervisor.id === selectedSupervisor.id ? updatedSupervisor : supervisor
+        )
+      );
+
     }
     setConfirmDelete(false);
     setSupervisorToDelete(null);
@@ -338,6 +433,14 @@ export default function SupervisorPage() {
                   {project.name}
                 </option>
               ))}
+
+              <option>Highway Bridge</option>
+              <option>Downtown Plaza</option>
+              <option>Factory Building</option>
+              <option>Office Complex</option>
+              <option>building construction </option>
+              <option>construction </option>
+
             </select>
           </div>
         </div>
