@@ -13,6 +13,11 @@ import {
   ChevronDown,
   DollarSign,
   Folder,
+
+  ChevronLeft,
+  ChevronRight,
+
+
 } from 'lucide-react';
 
 // Types
@@ -126,7 +131,7 @@ const FilterDropdown: React.FC<{
   value: string;
   options: string[];
   onChange: (value: string) => void;
-}> = ({ label, value, options, onChange }) => {
+}> = ({ value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative">
@@ -157,6 +162,73 @@ const FilterDropdown: React.FC<{
   );
 };
 
+// Pagination
+const Pagination: React.FC<{
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}> = ({ currentPage, totalPages, onPageChange }) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex justify-center items-center space-x-2">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+      >
+        <ChevronLeft className="w-4 h-4 mr-1" />
+        Previous
+      </button>
+
+      {getPageNumbers().map((page, idx) => (
+        <button
+          key={idx}
+          onClick={() => typeof page === 'number' && onPageChange(page)}
+          disabled={page === '...'}
+          className={`px-3 py-2 text-sm rounded-md ${
+            page === currentPage
+              ? 'bg-blue-600 text-white'
+              : page === '...'
+              ? 'text-gray-400 cursor-default'
+              : 'text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+      >
+        Next
+        <ChevronRight className="w-4 h-4 ml-1" />
+      </button>
+    </div>
+  );
+};
+
 // Main Component
 const ProjectManagement: React.FC<ProjectManagementProps> = ({
   projects,
@@ -170,9 +242,17 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const [selectedProject, setSelectedProject] = useState('All Projects');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [selectedStatus, setSelectedStatus] = useState('Status');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   const uniqueProjects = useMemo(() => ['All Projects', ...new Set(projects.map((p) => p.name))], [projects]);
   const uniqueLocations = useMemo(() => ['All Locations', ...new Set(projects.map((p) => p.location))], [projects]);
+
+  const statusOptions = ['Status', 'active', 'completed', 'pending', 'cancelled'];
+
+  const filteredProjects = useMemo(() => {
+    const filtered = projects.filter((project) => {
+
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -233,6 +313,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
+
       const matchSearch =
         project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -244,8 +325,19 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
       return matchSearch && matchProject && matchLocation && matchStatus;
     });
+
+    setCurrentPage(1);
+    return filtered;
   }, [projects, searchTerm, selectedProject, selectedLocation, selectedStatus]);
 
+
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
   return (
     <div className={`bg-gray-50 dark:bg-gray-900 flex-1 ${className}`}>
       <div className="px-6 py-4">
@@ -285,23 +377,37 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           </div>
         </div>
 
-        {filteredProjects.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-300">No projects found matching your criteria.</p>
+        {/* Content Container with Fixed Height */}
+        <div className="min-h-[600px] flex flex-col">
+          {filteredProjects.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-300">No projects found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {paginatedProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onViewDetails={onViewDetails}
+                    onEditProject={onEditProject}
+                    onDeleteProject={onDeleteProject}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fixed Pagination at Bottom */}
+          <div className="mt-8 py-4 border-t border-gray-200 dark:border-gray-700">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onViewDetails={onViewDetails}
-                onEditProject={onEditProject}
-                onDeleteProject={onDeleteProject}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

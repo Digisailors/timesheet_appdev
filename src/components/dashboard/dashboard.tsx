@@ -20,6 +20,16 @@ import { DashboardProps } from './types';
 
 const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
   const [stats, setStats] = useState({
+<<<<<<< HEAD
+    totalTimesheets: 78, // Hardcoded
+    totalEmployees: 0,   // Fetched from API
+    activeLocations: 5,
+    daysWithTimesheets: 17,
+    checkedInToday: 12,
+    pendingCheckouts: 3,
+    totalOvertimeHours: 42,
+    missingEntries: 1
+=======
     totalTimesheets: 0,
     totalEmployees: 0,
     activeLocations: 0,
@@ -28,6 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     pendingCheckouts: 0,
     totalOvertimeHours: 0,
     missingEntries: 0
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
   });
 
   const [projects, setProjects] = useState([
@@ -60,7 +71,10 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     }
   ]);
 
+<<<<<<< HEAD
+=======
   const [timesheetActivity, setTimesheetActivity] = useState([65, 72, 88, 105, 108, 58, 95]);
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
   const [timesheetActivity2, setTimesheetActivity2] = useState([55, 60, 70, 90, 100, 40, 80]);
 
   const [recentActivity, setRecentActivity] = useState([
@@ -82,6 +96,8 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
     const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
+<<<<<<< HEAD
+=======
     const fetchDashboardStats = async () => {
       try {
         const res = await fetch(`${cleanBaseUrl}/api/dashboard/stats`);
@@ -102,6 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       }
     };
 
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
     const fetchEmployees = async () => {
       try {
         const response = await fetch(`${cleanBaseUrl}/api/employees/all`);
@@ -116,7 +133,10 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       }
     };
 
+<<<<<<< HEAD
+=======
     fetchDashboardStats();
+>>>>>>> 9161bf462c3c0fbc2817474ffa66f77f3090a0fe
     fetchEmployees();
   }, []);
 

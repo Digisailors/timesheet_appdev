@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
+
 import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
 import SupervisorDialog from './dialog';
+import { toast, Toaster } from 'sonner';
 
 interface Supervisor {
   id: string;
@@ -15,7 +18,6 @@ interface Supervisor {
   phoneNumber: string;
   dateOfJoining: string;
   password: string;
-  avatar?: string;
 }
 
 interface SupervisorData {
@@ -27,9 +29,16 @@ interface SupervisorData {
   dateOfJoining: string;
   experience: string;
   assignedProject: string;
+  assignedProjectId?: string;
   password: string;
 }
 
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+}
 export default function SupervisorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('All Projects');
@@ -38,6 +47,68 @@ export default function SupervisorPage() {
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [supervisorList, setSupervisorList] = useState<Supervisor[]>([]);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
+
+  const fetchSupervisors = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/api/supervisors/all`);
+      if (!response.ok) throw new Error('Failed to fetch supervisors');
+
+      const result = await response.json();
+      if (result.success) {
+        const loadedSupervisors: Supervisor[] = result.data.map((s: any) => ({
+          id: s.id,
+          name: s.fullName,
+          email: s.emailAddress,
+          initials: s.fullName.split(' ').map(part => part.charAt(0)).join('').toUpperCase(),
+          backgroundColor: 'bg-blue-500',
+          department: s.specialization,
+          location: s.assignedProject,
+          phoneNumber: s.phoneNumber,
+          dateOfJoining: s.dateOfJoining,
+          password: s.password
+        }));
+        setSupervisorList(loadedSupervisors);
+      } else {
+        throw new Error(result.message || 'No supervisor data');
+      }
+    } catch (error) {
+      console.error('Fetch failed:', error);
+      toast.error("❌ Error loading supervisor list");
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/api/projects/all`);
+      if (!response.ok) throw new Error('Failed to fetch projects');
+
+      const result = await response.json();
+      if (result.success) {
+        const loadedProjects: Project[] = result.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          code: p.code,
+        }));
+        setProjects(loadedProjects);
+      } else {
+        throw new Error(result.message || 'No project data');
+      }
+    } catch (error) {
+      console.error('Fetch failed:', error);
+      toast.error("❌ Error loading project list");
+    }
+  };
+
+  useEffect(() => {
+    fetchSupervisors();
+    fetchProjects();
+
 
   useEffect(() => {
     const fetchSupervisors = async () => {
@@ -74,6 +145,7 @@ export default function SupervisorPage() {
     };
 
     fetchSupervisors();
+
   }, []);
 
   const filteredSupervisors = supervisorList.filter(supervisor => {
@@ -127,8 +199,8 @@ export default function SupervisorPage() {
       setDialogMode('edit');
       setShowDialog(true);
     } else if (action === 'delete') {
-      setSupervisorList(prev => prev.filter(s => s.id !== supervisor.id));
-      console.log(`Deleted supervisor: ${supervisor.name}`);
+      setSupervisorToDelete(supervisor);
+      setConfirmDelete(true);
     }
   };
 
@@ -138,15 +210,44 @@ export default function SupervisorPage() {
     setShowDialog(true);
   };
 
+  const closeDialog = () => {
+    setShowDialog(false);
+    setSelectedSupervisor(null);
+  };
+
+
   const closeViewDialog = () => {
     setShowViewDialog(false);
     setSelectedSupervisor(null);
   };
 
-  const closeDialog = () => {
-    setShowDialog(false);
-    setSelectedSupervisor(null);
-  };
+  const confirmDeleteSupervisor = async () => {
+    if (supervisorToDelete) {
+      try {
+        const response = await fetch(`${baseUrl}/api/supervisors/delete/${supervisorToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorResult = await response.json();
+          throw new Error(errorResult.message || 'Failed to delete supervisor');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          setSupervisorList(prev => prev.filter(s => s.id !== supervisorToDelete.id));
+          toast.success('🗑️ Supervisor deleted successfully!');
+        } else {
+          throw new Error(result.message || 'Failed to delete supervisor');
+        }
+      } catch (error) {
+        console.error('Delete failed:', error);
+        toast.error("❌ Error deleting supervisor");
+      }
 
   const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
     if (mode === 'add') {
@@ -199,11 +300,100 @@ export default function SupervisorPage() {
           supervisor.id === selectedSupervisor.id ? updatedSupervisor : supervisor
         )
       );
+
     }
+    setConfirmDelete(false);
+    setSupervisorToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setConfirmDelete(false);
+    setSupervisorToDelete(null);
+  };
+
+  const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
+    try {
+      if (mode === 'add') {
+        // Find the project ID based on assigned project name
+        const assignedProject = projects.find(p => p.name === formData.assignedProject);
+        const supervisorPayload = {
+          ...formData,
+          assignedProjectId: assignedProject?.id || ''
+        };
+
+        const response = await fetch(`${baseUrl}/api/supervisors/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(supervisorPayload),
+        });
+
+        if (!response.ok) {
+          const errorResult = await response.json();
+          throw new Error(errorResult.message || 'Failed to create supervisor');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Refresh the supervisor list
+          await fetchSupervisors();
+          toast.success('✅ Supervisor registered successfully!');
+        } else {
+          throw new Error(result.message || 'Failed to create supervisor');
+        }
+      } else if (mode === 'edit' && selectedSupervisor) {
+        // Find the project ID based on assigned project name
+        const assignedProject = projects.find(p => p.name === formData.assignedProject);
+        const supervisorPayload = {
+          ...formData,
+          assignedProjectId: assignedProject?.id || ''
+        };
+
+        const response = await fetch(`${baseUrl}/api/supervisors/update/${selectedSupervisor.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(supervisorPayload),
+        });
+
+        if (!response.ok) {
+          const errorResult = await response.json();
+          throw new Error(errorResult.message || 'Failed to update supervisor');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Refresh the supervisor list
+          await fetchSupervisors();
+          toast.success('✅ Supervisor updated successfully!');
+        } else {
+          throw new Error(result.message || 'Failed to update supervisor');
+        }
+      }
+    } catch (error) {
+      console.error('Submit failed:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('already exists')) {
+          toast.error("❌ Email already exists! Please use a different email.");
+        } else if (error.message.includes('email service')) {
+          toast.success('✅ Supervisor created but email service is not configured');
+        } else {
+          toast.error(`❌ ${error.message}`);
+        }
+      } else {
+        toast.error("❌ An unexpected error occurred");
+      }
+    }
+    setShowDialog(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <Toaster position="bottom-right" toastOptions={{ classNames: { toast: 'bg-green-700 text-white' } }} />
       <div className="px-6 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -219,6 +409,7 @@ export default function SupervisorPage() {
           </button>
         </div>
 
+        {/* Search + Project Filter */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between space-x-4">
             <div className="relative flex-1">
@@ -237,12 +428,19 @@ export default function SupervisorPage() {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option>All Projects</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.name}>
+                  {project.name}
+                </option>
+              ))}
+
               <option>Highway Bridge</option>
               <option>Downtown Plaza</option>
               <option>Factory Building</option>
               <option>Office Complex</option>
               <option>building construction </option>
               <option>construction </option>
+
             </select>
           </div>
         </div>
@@ -312,6 +510,7 @@ export default function SupervisorPage() {
         )}
       </div>
 
+      {/* Dialogs */}
       <SupervisorDialog
         isOpen={showDialog}
         onClose={closeDialog}
@@ -329,7 +528,7 @@ export default function SupervisorPage() {
                 <X size={20} className="text-gray-400 dark:text-gray-300" />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-6 space-y-6">
               <div className="flex items-center space-x-4 mb-8">
                 <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
                   {selectedSupervisor.initials}
@@ -339,41 +538,34 @@ export default function SupervisorPage() {
                   <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.padStart(3, '0')}</p>
                 </div>
               </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Join Date</p>
-                    <p className="font-medium">{selectedSupervisor.dateOfJoining}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Experience</p>
-                    <p className="font-medium">5 Years</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Phone Number</p>
-                    <p className="font-medium">{selectedSupervisor.phoneNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Email ID</p>
-                    <p className="text-blue-600 dark:text-blue-400 font-medium">{selectedSupervisor.email}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Current Project</p>
-                    <p className="font-medium">{selectedSupervisor.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Specialization</p>
-                    <p className="font-medium">{selectedSupervisor.department}</p>
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-8">
+                <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>5 Years</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && supervisorToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
+            <p className="mb-6">
+              Are you sure you want to delete supervisor <strong>{supervisorToDelete.name}</strong>?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button onClick={cancelDelete} className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-400">
+                Cancel
+              </button>
+              <button onClick={confirmDeleteSupervisor} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Delete
+              </button>
             </div>
           </div>
         </div>

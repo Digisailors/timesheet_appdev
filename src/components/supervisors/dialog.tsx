@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 
 interface SupervisorData {
   fullName: string;
@@ -43,8 +43,35 @@ export default function SupervisorDialog({
 }: SupervisorDialogProps) {
   const [formData, setFormData] = useState<SupervisorData>(defaultFormData);
   const [errors, setErrors] = useState<Partial<SupervisorData>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [projectsList, setProjectsList] = useState<string[]>([]);
 
   useEffect(() => {
+   const fetchProjects = async () => {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const response = await fetch(`${cleanBaseUrl}/api/projects/all`);
+    if (!response.ok) throw new Error('Failed to fetch projects');
+    const data = await response.json();
+
+    console.log("Fetched Project Data:", data);
+
+    const names = Array.isArray(data)
+      ? data.map((proj: any) => proj.name)
+      : Array.isArray(data.data)
+        ? data.data.map((proj: any) => proj.name)
+        : [];
+
+    setProjectsList(names);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+  }
+};
+
+
+    fetchProjects();
+
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
     } else {
@@ -77,10 +104,13 @@ export default function SupervisorDialog({
     if (!formData.dateOfJoining) newErrors.dateOfJoining = 'Joining date is required';
     if (!formData.experience.trim()) newErrors.experience = 'Experience is required';
     if (!formData.assignedProject.trim()) newErrors.assignedProject = 'Project is required';
-    if (!formData.password.trim()) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Min 6 characters';
+
+    if (mode === 'add') {
+      if (!formData.password.trim()) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Min 6 characters';
+      }
     }
 
     setErrors(newErrors);
@@ -128,7 +158,28 @@ export default function SupervisorDialog({
               <FormInput label="Email" name="emailAddress" type="email" value={formData.emailAddress} error={errors.emailAddress} onChange={handleInputChange} />
             </div>
 
-            <FormInput label="Password" name="password" type="password" value={formData.password} error={errors.password} onChange={handleInputChange} />
+            {mode === 'add' && (
+              <div>
+                <label className="text-sm font-medium">Password</label>
+                <div className="relative mt-1">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-blue-600"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium">Address</label>
@@ -156,10 +207,11 @@ export default function SupervisorDialog({
                 className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               >
                 <option value="">Select project</option>
-                <option value="Highway Bridge">Highway Bridge</option>
-                <option value="Downtown Plaza">Downtown Plaza</option>
-                <option value="Factory Building">Factory Building</option>
-                <option value="Office Complex">Office Complex</option>
+                {projectsList.map((project, index) => (
+                  <option key={index} value={project}>
+                    {project}
+                  </option>
+                ))}
               </select>
               {errors.assignedProject && (
                 <p className="text-red-500 text-sm">{errors.assignedProject}</p>

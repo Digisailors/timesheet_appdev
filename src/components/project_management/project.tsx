@@ -2,6 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { toast, Toaster } from 'sonner';
+<<<<<<< HEAD
+
+import ProjectManagement from "@/components/project_management/ProjectManagement";
+import ProjectDialog from "@/components/project_management/ProjectDialog";
+import SupervisorDialog from "@/components/supervisors/dialog";
+
+import { Project } from "@/components/project_management/ProjectManagement";
+import { ProjectFormData } from "@/components/project_management/ProjectDialog";
+import { SupervisorData } from "@/components/supervisors/dialog";
+
+const ProjectsPage = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+
 
 import { useState } from 'react';
 
@@ -44,10 +57,55 @@ const sampleProjects: Project[] = [
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
 
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [confirmDeleteProject, setConfirmDeleteProject] = useState<Project | null>(null);
+
+  const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
+  const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
+  const generateProjectId = () => `PRJ-${Date.now()}`;
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/api/projects/all`);
+      if (!response.ok) throw new Error('Failed to fetch projects');
+
+      const result = await response.json();
+      if (result.success) {
+        const loadedProjects: Project[] = result.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          code: p.code,
+          location: p.location,
+          employees: 0,
+          startDate: p.startDate,
+          endDate: p.endDate,
+          budget: p.budget,
+          description: p.description,
+          status: p.status,
+          workHours: p.workHours || 160,
+          otHours: p.otHours || 20,
+          lastUpdated: p.lastUpdated || new Date().toISOString(),
+        }));
+        setProjects(loadedProjects);
+      } else {
+        throw new Error(result.message || 'No project data');
+      }
+    } catch (error) {
+      console.error('Fetch failed:', error);
+      toast.error("❌ Error loading project list");
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
@@ -92,6 +150,7 @@ const ProjectsPage = () => {
   // Actions
 
 
+
   const handleCreateProject = () => {
     setEditingProject(null);
     setViewingProject(null);
@@ -99,6 +158,7 @@ const ProjectsPage = () => {
   };
 
   const handleViewDetails = (project: Project) => {
+    console.log('View details clicked for:', project.name); // Debug log
     setViewingProject(project);
     setEditingProject(null);
     setIsDialogOpen(true);
@@ -112,6 +172,7 @@ const ProjectsPage = () => {
 
   const handleDeleteProject = (project: Project) => {
     setConfirmDeleteProject(project);
+
 
 
 
@@ -134,6 +195,7 @@ const ProjectsPage = () => {
       }
 
     }
+
   };
 
   const customConfirm = (message: string): Promise<boolean> => {
@@ -184,7 +246,14 @@ const ProjectsPage = () => {
   };
 
   const handleDialogSubmit = async (formData: ProjectFormData) => {
+    // Don't submit if in view mode
+    if (viewingProject) {
+      console.log('Attempted to submit in view mode - ignoring');
+      return;
+    }
+
     if (editingProject) {
+
 
       // Update
       setProjects(prev =>
@@ -203,6 +272,7 @@ const ProjectsPage = () => {
       );
       // Create
 
+
       try {
         const response = await fetch(`${cleanBaseUrl}/api/projects/update/${editingProject.id}`, {
           method: 'PUT',
@@ -215,6 +285,54 @@ const ProjectsPage = () => {
         setProjects((prev) =>
           prev.map((proj) =>
             proj.id === editingProject.id ? { ...proj, ...formData } : proj
+
+          )
+        );
+
+        toast.success("✅ Project updated successfully");
+      } catch {
+        toast.error("❌ Failed to update project");
+      }
+    } else {
+      try {
+        const response = await fetch(`${cleanBaseUrl}/api/projects/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error('Failed to create project');
+
+        const result = await response.json();
+        const newProject: Project = {
+          id: result.data.id,
+          employees: 0,
+          ...formData,
+          workHours: 160,
+          otHours: 20,
+          lastUpdated: new Date().toISOString(),
+        };
+
+        setProjects((prev) => [...prev, newProject]);
+
+        toast.success("✅ Project created successfully");
+      } catch {
+        const newProject: Project = {
+          id: generateProjectId(),
+          employees: 0,
+          ...formData,
+          workHours: 160,
+          otHours: 20,
+          lastUpdated: new Date().toISOString(),
+        };
+        setProjects((prev) => [...prev, newProject]);
+        toast.success("✅ Project created locally");
+      }
+    }
+
+    handleDialogClose();
+  };
+
           )
         );
 
@@ -288,6 +406,7 @@ const ProjectsPage = () => {
       }
     }
 
+
     handleDialogClose();
   };
   const handleDialogClose = () => {
@@ -295,6 +414,29 @@ const ProjectsPage = () => {
     setEditingProject(null);
     setViewingProject(null);
   };
+
+
+  const handleCloseSupervisorDialog = () => {
+    setIsSupervisorDialogOpen(false);
+  };
+
+  const handleSupervisorSubmit = async (data: SupervisorData, mode: 'add' | 'edit') => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/api/supervisors/${mode === 'add' ? 'create' : `update/${data.emailAddress}`}`, {
+        method: mode === 'add' ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error('Failed to save supervisor');
+
+      toast.success(`✅ Supervisor ${mode === 'add' ? 'created' : 'updated'} successfully`);
+    } catch (error) {
+      console.error(error);
+      toast.error('❌ Failed to save supervisor');
+    }
+  };
+
 
   const getDialogProps = () => {
     if (viewingProject) {
@@ -307,11 +449,15 @@ const ProjectsPage = () => {
         },
         title: `View Project - ${viewingProject.name}`,
 
+        submitLabel: undefined, // Changed from empty string to undefined
+
+
         title: `View Project Details - ${viewingProject.name}`,
         submitLabel: '',
+
         isViewMode: true,
         isUpdateMode: false,
-        projectId: undefined,
+        projectId: viewingProject.id, // Added projectId for view mode
       };
     } else if (editingProject) {
       return {
@@ -356,6 +502,7 @@ const ProjectsPage = () => {
       <Toaster position="bottom-right" toastOptions={{ classNames: { toast: 'bg-green-700 text-white' } }} />
 
       <div className="max-w-7xl mx-auto">
+        {/* 📦 Project List UI */}
         <ProjectManagement
           projects={projects}
           onCreateProject={handleCreateProject}
@@ -364,12 +511,16 @@ const ProjectsPage = () => {
           onDeleteProject={handleDeleteProject}
         />
 
+
+        {/* 📝 Project Dialog */}
+
         {/* 🔍 Project Highlights Section */}
         <div className="mt-6">
           <ProjectHighlights projects={projects} />
         </div>
 
         {/* ✏️ Project Dialog */}
+
         <ProjectDialog
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
@@ -381,6 +532,18 @@ const ProjectsPage = () => {
           isUpdateMode={dialogProps.isUpdateMode}
           projectId={dialogProps.projectId}
         />
+
+
+        {/* 👤 Supervisor Dialog */}
+        <SupervisorDialog
+          isOpen={isSupervisorDialogOpen}
+          onClose={handleCloseSupervisorDialog}
+          mode="add"
+          onSubmit={handleSupervisorSubmit}
+          projects={projects.map(p => p.name)} // 🔁 dynamic dropdown
+        />
+
+        {/* ❌ Delete Confirmation */}
 
         {/* 🧾 Confirmation Modal */}
         {confirmDeleteProject && (
@@ -428,6 +591,7 @@ const ProjectsPage = () => {
           </div>
         )}
       </div>
+
     <div>
       <Toaster 
         position="bottom-right" 
@@ -458,4 +622,8 @@ const ProjectsPage = () => {
   );
 };
 
+
 export default ProjectsPage;
+
+export default ProjectsPage;
+
