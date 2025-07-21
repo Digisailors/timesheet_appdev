@@ -1,6 +1,4 @@
 "use client";
-
-import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,34 +7,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock} from "lucide-react";
+import { Mail, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("email");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
+    const loginData = activeTab === "email"
+      ? { email, password }
+      : { phoneNumber, password };
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`, {
+      const response = await fetch('http://localhost:5088/api/admin/signin', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify(loginData),
       });
 
       const data = await response.json();
@@ -47,18 +46,20 @@ export default function LoginPage() {
       } else {
         const errorMessage = data.message || "Login failed. Please try again.";
         setError(errorMessage);
-        
+
         if (errorMessage.toLowerCase().includes("email")) {
           toast.error("Incorrect email");
         } else if (errorMessage.toLowerCase().includes("password")) {
           toast.error("Incorrect password");
+        } else if (errorMessage.toLowerCase().includes("phone")) {
+          toast.error("Incorrect phone number");
         } else {
           toast.error(errorMessage);
         }
       }
     } catch (error) {
       console.error("Login error:", error);
-       const errorMessage = "The email or password is incorrect. Please check your credentials and try again.";
+      const errorMessage = "The email/phone number or password is incorrect. Please check your credentials and try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -121,22 +122,63 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email field */}
+            {/* Email or Phone Number field */}
             <div>
               <Label
-                htmlFor="email"
+                htmlFor={activeTab === "email" ? "email" : "phoneNumber"}
                 className="text-sm font-medium text-gray-700 mb-2 block"
               >
-                Email
+                {activeTab === "email" ? "Email" : "Phone Number"}
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                {activeTab === "email" ? (
+                  <>
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      required
+                      disabled={isLoading}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      required
+                      disabled={isLoading}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Password field */}
+            <div>
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
                   disabled={isLoading}
@@ -144,30 +186,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-           
-
-{/* Password field with default eye icon */}
-<div>
-  <Label
-    htmlFor="password"
-    className="text-sm font-medium text-gray-700 mb-2 block"
-  >
-    Password
-  </Label>
-  <div className="relative">
-    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-    <Input
-      id="password"
-      type="password"
-      placeholder="Enter your password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-      required
-      disabled={isLoading}
-    />
-  </div>
-</div>
             {/* Login button */}
             <Button
               type="submit"
@@ -183,9 +201,7 @@ export default function LoginPage() {
                 <Checkbox
                   id="remember"
                   checked={rememberMe}
-                  onCheckedChange={(checked) =>
-                    setRememberMe(checked as boolean)
-                  }
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-600">
                   Remember me
@@ -202,7 +218,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <div className="text-center">
               <span className="text-sm text-gray-600">
-                Dont have an account?{" "}
+                Don&#39;t have an account?{" "}
               </span>
               <Link
                 href="/signup"

@@ -1,7 +1,4 @@
 "use client";
-
-import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,17 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Phone } from "lucide-react";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -29,9 +28,16 @@ export default function SignUpPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      agreeToTerms: checked === true,
+    }));
+  };
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match!");
       return;
@@ -44,22 +50,17 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signup`, {
+      const response = await fetch('http://localhost:5088/api/admin/signup', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          name: `${formData.firstName} ${formData.lastName}`,
-          phoneNumber: "", // You can add a phone number field if needed
-        }),
+        body: JSON.stringify(formData), // Send the entire formData object
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok) {
         alert("Account created successfully!");
         router.push("/login");
       } else {
@@ -83,31 +84,6 @@ export default function SignUpPage() {
           height={600}
           alt="Login Image"
         />
-        {/* Logo overlay */}
-        {/* <div className="absolute top-6 left-6 z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-              <div className="w-4 h-4 bg-white transform rotate-45"></div>
-            </div>
-            <span className="text-blue-600 font-bold text-xl">GAMBIT</span>
-          </div>
-          <p className="text-gray-600 text-sm">
-            Engineering Consultancies Pvt Ltd
-          </p>
-        </div> */}
-
-        {/* Bottom text overlay */}
-        {/* <div className="absolute bottom-8 left-6 z-10 text-white max-w-md">
-          <h2 className="text-3xl font-bold mb-4 leading-tight">
-            Join our team and
-            <br />
-            manage your time efficiently
-          </h2>
-          <p className="text-white/90 leading-relaxed">
-            Create your account to start tracking your work hours and boost your
-            productivity with our timesheet app.
-          </p>
-        </div> */}
       </div>
 
       {/* Right side - Sign up form */}
@@ -191,6 +167,30 @@ export default function SignUpPage() {
               </div>
             </div>
 
+            {/* Phone Number field */}
+            <div>
+              <Label
+                htmlFor="phoneNumber"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                Phone Number
+              </Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
             {/* Password fields */}
             <div>
               <Label
@@ -214,7 +214,6 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
-
             <div>
               <Label
                 htmlFor="confirmPassword"
@@ -243,12 +242,7 @@ export default function SignUpPage() {
               <Checkbox
                 id="terms"
                 checked={formData.agreeToTerms}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    agreeToTerms: checked as boolean,
-                  }))
-                }
+                onCheckedChange={handleCheckboxChange}
                 disabled={isLoading}
               />
               <Label htmlFor="terms" className="text-sm text-gray-600">
