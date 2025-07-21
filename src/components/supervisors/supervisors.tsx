@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
 import SupervisorDialog from './dialog';
 import { toast, Toaster } from 'sonner';
@@ -16,7 +16,8 @@ interface Supervisor {
   phoneNumber: string;
   dateOfJoining: string;
   password: string;
-  assignedProjectId?: string; // add this
+  assignedProjectId?: string;
+  address?: string; // Added address property
 }
 
 interface SupervisorData {
@@ -28,11 +29,34 @@ interface SupervisorData {
   dateOfJoining?: string;
   experience?: string;
   assignedProject?: string;
-  assignedProjectId?: string; // add this
+  assignedProjectId?: string;
   password?: string;
 }
 
 interface Project {
+  id: string;
+  name: string;
+  code: string;
+}
+
+// Define proper API response types
+interface SupervisorApiResponse {
+  id: string;
+  fullName: string;
+  emailAddress: string;
+  phoneNumber?: string;
+  specialization?: string;
+  address?: string;
+  dateOfJoining?: string;
+  experience?: string;
+  password?: string;
+  assignedProject?: {
+    id: string;
+    name: string;
+  } | string;
+}
+
+interface ProjectApiResponse {
   id: string;
   name: string;
   code: string;
@@ -49,29 +73,38 @@ export default function SupervisorPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null); // for create/edit
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
 
-  const fetchSupervisors = async () => {
+  const fetchSupervisors = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}/api/supervisors/all`);
       if (!response.ok) throw new Error('Failed to fetch supervisors');
 
       const result = await response.json();
       if (result.success) {
-        const loadedSupervisors: Supervisor[] = result.data.map((s: any) => ({
+        const loadedSupervisors: Supervisor[] = result.data.map((s: SupervisorApiResponse) => ({
           id: s.id,
           name: s.fullName,
           email: s.emailAddress,
           initials: s.fullName.split(' ').map((part: string) => part.charAt(0)).join('').toUpperCase(),
           backgroundColor: 'bg-blue-500',
           department: s.specialization || '',
-          location: s.assignedProject?.name || s.assignedProject || '',
+          location: typeof s.assignedProject === 'object' && s.assignedProject 
+            ? s.assignedProject.name 
+            : typeof s.assignedProject === 'string' 
+            ? s.assignedProject 
+            : '',
           phoneNumber: s.phoneNumber || '',
           dateOfJoining: s.dateOfJoining?.split('T')[0] || '',
           password: s.password || '',
-          assignedProjectId: s.assignedProject?.id || s.assignedProject || ''
+          assignedProjectId: typeof s.assignedProject === 'object' && s.assignedProject 
+            ? s.assignedProject.id 
+            : typeof s.assignedProject === 'string' 
+            ? s.assignedProject 
+            : '',
+          address: s.address || ''
         }));
         setSupervisorList(loadedSupervisors);
       } else {
@@ -81,16 +114,16 @@ export default function SupervisorPage() {
       console.error('Fetch failed:', error);
       toast.error("❌ Error loading supervisor list");
     }
-  };
+  }, [baseUrl]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}/api/projects/all`);
       if (!response.ok) throw new Error('Failed to fetch projects');
 
       const result = await response.json();
       if (result.success) {
-        const loadedProjects: Project[] = result.data.map((p: any) => ({
+        const loadedProjects: Project[] = result.data.map((p: ProjectApiResponse) => ({
           id: p.id,
           name: p.name,
           code: p.code,
@@ -103,12 +136,12 @@ export default function SupervisorPage() {
       console.error('Fetch failed:', error);
       toast.error("❌ Error loading project list");
     }
-  };
+  }, [baseUrl]);
 
   useEffect(() => {
     fetchSupervisors();
     fetchProjects();
-  }, []);
+  }, [fetchSupervisors, fetchProjects]);
 
   const filteredSupervisors = supervisorList.filter(supervisor => {
     const matchesSearch =
@@ -127,7 +160,7 @@ export default function SupervisorPage() {
     emailAddress: supervisor.email,
     specialization: supervisor.department,
     phoneNumber: supervisor.phoneNumber,
-    address:  supervisor.address ?? '',
+    address: supervisor.address ?? '',
     dateOfJoining: supervisor.dateOfJoining,
     experience: '5 Years',
     assignedProject: supervisor.location,
@@ -135,57 +168,64 @@ export default function SupervisorPage() {
     password: supervisor.password
   });
 
-const handleAction = async (action: string, supervisor: Supervisor) => {
-  if (action === 'view' || action === 'edit') {
-    try {
-      const response = await fetch(`${baseUrl}/api/supervisors/${supervisor.id}`);
-      console.log(`📡 Fetching supervisor details for ${action} from:`, `${baseUrl}/api/supervisors/${supervisor.id}`);
+  const handleAction = async (action: string, supervisor: Supervisor) => {
+    if (action === 'view') {
+      setSelectedSupervisor(supervisor);
+      setShowViewDialog(true);
+    } else if (action === 'edit') {
+      try {
+        const response = await fetch(`${baseUrl}/api/supervisors/${supervisor.id}`);
+        console.log(`📡 Fetching supervisor details for ${action} from:`, `${baseUrl}/api/supervisors/${supervisor.id}`);
 
-      if (!response.ok) throw new Error('Failed to fetch supervisor details');
+        if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
-      const result = await response.json();
-      console.log(`✅ API Response (${action}):`, result);
+        const result = await response.json();
+        console.log(`✅ API Response (${action}):`, result);
 
-      if (result.success) {
-        const data = result.data;
+        if (result.success) {
+          const data = result.data;
 
-        const fullSupervisor: Supervisor = {
-          id: data.id,
-          name: data.fullName,
-          email: data.emailAddress,
-          initials: data.fullName
-            .split(' ')
-            .map((part: string) => part.charAt(0))
-            .join('')
-            .toUpperCase(),
-          backgroundColor: 'bg-blue-500',
-          department: data.specialization || '',
-          location: data.assignedProject?.name || '',
-          phoneNumber: data.phoneNumber || '',
-          dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-          password: '', // not shown in view/edit
-          assignedProjectId: data.assignedProject?.id || '',
-          address: data.address || ''
-        };
+          const fullSupervisor: Supervisor = {
+            id: data.id,
+            name: data.fullName,
+            email: data.emailAddress,
+            initials: data.fullName
+              .split(' ')
+              .map((part: string) => part.charAt(0))
+              .join('')
+              .toUpperCase(),
+            backgroundColor: 'bg-blue-500',
+            department: data.specialization || '',
+            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+              ? data.assignedProject.name 
+              : '',
+            phoneNumber: data.phoneNumber || '',
+            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+            password: '', // not shown in view/edit
+            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+              ? data.assignedProject.id 
+              : '',
+            address: data.address || ''
+          };
 
-        console.log(`👤 Parsed Supervisor Object (${action}):`, fullSupervisor);
+          console.log(`👤 Parsed Supervisor Object (${action}):`, fullSupervisor);
 
-        setSelectedSupervisor(fullSupervisor);
-        setDialogMode(action);
-        setShowDialog(true);
-        setSelectedProjectId(fullSupervisor.assignedProjectId || null);
-      } else {
-        toast.error(result.message || `❌ Could not load supervisor details for ${action}`);
+          setSelectedSupervisor(fullSupervisor);
+          setDialogMode('edit');
+          setShowDialog(true);
+          setSelectedProjectId(fullSupervisor.assignedProjectId || null);
+        } else {
+          toast.error(result.message || `❌ Could not load supervisor details for ${action}`);
+        }
+      } catch (error) {
+        console.error(`🚨 ${action} fetch failed:`, error);
+        toast.error(`❌ Error loading supervisor data for ${action}`);
       }
-    } catch (error) {
-      console.error(`🚨 ${action} fetch failed:`, error);
-      toast.error(`❌ Error loading supervisor data for ${action}`);
+    } else if (action === 'delete') {
+      setSupervisorToDelete(supervisor);
+      setConfirmDelete(true);
     }
-  }
-};
-
-
-
+  };
 
   const handleAddSupervisor = () => {
     setSelectedSupervisor(null);
@@ -278,10 +318,11 @@ const handleAction = async (action: string, supervisor: Supervisor) => {
             backgroundColor: 'bg-blue-500',
             department: formData.specialization || '',
             location: formData.assignedProject || '',
-            phoneNumber: formData.phoneNumber,
-            dateOfJoining: formData.dateOfJoining,
-            password: formData.password,
+            phoneNumber: formData.phoneNumber || '',
+            dateOfJoining: formData.dateOfJoining || '',
+            password: formData.password || '',
             assignedProjectId: formData.assignedProjectId,
+            address: formData.address || ''
           };
           setSupervisorList(prev => [...prev, newSupervisor]);
           toast.success('✅ Supervisor added successfully!');
@@ -292,10 +333,11 @@ const handleAction = async (action: string, supervisor: Supervisor) => {
             email: formData.emailAddress,
             department: formData.specialization || '',
             location: formData.assignedProject || '',
-            phoneNumber: formData.phoneNumber,
-            dateOfJoining: formData.dateOfJoining,
-            password: formData.password,
+            phoneNumber: formData.phoneNumber || '',
+            dateOfJoining: formData.dateOfJoining || '',
+            password: formData.password || '',
             assignedProjectId: formData.assignedProjectId,
+            address: formData.address || ''
           };
           setSupervisorList(prev =>
             prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
@@ -303,18 +345,20 @@ const handleAction = async (action: string, supervisor: Supervisor) => {
           toast.success('✅ Supervisor updated successfully!');
         }
         closeDialog();
+        // Refresh the list to get updated data from server
+        fetchSupervisors();
       } else {
         toast.error(result.message || 'Failed to submit form');
       }
     } catch (error) {
       console.error('Error during form submission:', error);
-      toast.error(`Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-     
       <Toaster
         position="bottom-right"
         toastOptions={{
