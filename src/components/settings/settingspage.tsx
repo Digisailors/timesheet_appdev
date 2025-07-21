@@ -11,11 +11,11 @@ import DesignationSettings from "./DesignationSettings";
 import SystemSettings from "./SystemSettings"; // ✅ System tab
 
 const SettingsPage: React.FC = () => {
-i
-  const [activeTab, setActiveTab] = useState<string>("Company");
 
-  const [, setActiveMenuItem] = useState<string>('settings');
-  const [activeTab, setActiveTab] = useState<string>('Company');
+  
+
+  const [, setActiveMenuItem] = useState<string>("settings");
+  const [activeTab, setActiveTab] = useState<string>("Company");
 
   const handleMenuClick = (itemId: string) => {
     setActiveMenuItem(itemId);

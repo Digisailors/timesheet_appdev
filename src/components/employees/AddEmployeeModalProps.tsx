@@ -58,6 +58,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     specialization: ""
   });
 
+  const [errors, setErrors] = React.useState<{[key: string]: string}>({});
+  const [touched, setTouched] = React.useState<{[key: string]: boolean}>({});
+
   React.useEffect(() => {
     if (editingEmployee) {
       const nameParts = editingEmployee.name.split(" ");
@@ -90,7 +93,29 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         specialization: ""
       });
     }
+    // Reset errors when modal opens/closes or editing employee changes
+    setErrors({});
+    setTouched({});
   }, [editingEmployee, isOpen]);
+
+  const validateField = (name: string, value: string) => {
+    switch (name) {
+      case 'firstName':
+        return !value.trim() ? 'First name is required' : '';
+      case 'lastName':
+        return !value.trim() ? 'Last name is required' : '';
+      case 'email':
+        if (!value.trim()) return 'Email is required';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return !emailRegex.test(value) ? 'Please enter a valid email address' : '';
+      case 'designation':
+        return !value.trim() ? 'Designation is required' : '';
+      case 'designationType':
+        return !value.trim() ? 'Designation type is required' : '';
+      default:
+        return '';
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -99,21 +124,70 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Validate field in real time if it was touched
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
-      alert("Please fill in all required fields");
+    // Validate all required fields
+    const newErrors: {[key: string]: string} = {};
+    const requiredFields = ['firstName', 'lastName', 'email', 'designation', 'designationType'];
+    
+    requiredFields.forEach(field => {
+      const error = validateField(field, formData[field as keyof EmployeeFormData]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    // Mark all required fields as touched
+    const newTouched: {[key: string]: boolean} = {};
+    requiredFields.forEach(field => {
+      newTouched[field] = true;
+    });
+    setTouched(prev => ({ ...prev, ...newTouched }));
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    // Instead of API call, just pass formData to parent
+    // If no errors, submit the form
     onSubmit(formData);
-
-    // Close modal after submit
     onClose();
+  };
+
+  const getFieldClassName = (fieldName: string, baseClassName: string) => {
+    const hasError = errors[fieldName] && touched[fieldName];
+    if (hasError) {
+      return baseClassName.replace(
+        'border-gray-300 dark:border-gray-600',
+        'border-red-300 dark:border-red-500'
+      ).replace(
+        'focus:ring-blue-500 focus:border-blue-500',
+        'focus:ring-red-500 focus:border-red-500'
+      );
+    }
+    return baseClassName;
   };
 
   if (!isOpen) return null;
@@ -139,7 +213,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         <form onSubmit={handleSubmit} className="overflow-y-auto px-4 sm:px-6 py-4 flex-1">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* Basic Info Fields */}
+              {/* First Name */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   First Name *
@@ -149,12 +223,17 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter First name"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('firstName', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
                   required
                 />
+                {errors.firstName && touched.firstName && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.firstName}</p>
+                )}
               </div>
 
+              {/* Last Name */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Name *
@@ -164,12 +243,17 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter Last name"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('lastName', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
                   required
                 />
+                {errors.lastName && touched.lastName && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.lastName}</p>
+                )}
               </div>
 
+              {/* Email */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email Address *
@@ -179,12 +263,17 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter Email Address"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('email', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
                   required
                 />
+                {errors.email && touched.email && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.email}</p>
+                )}
               </div>
 
+              {/* Phone Number */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Phone Number
@@ -199,6 +288,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 />
               </div>
 
+              {/* Designation */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Designation *
@@ -208,10 +298,14 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   name="designation"
                   value={formData.designation}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter Designation (e.g., Software Engineer)"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('designation', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
                   required
                 />
+                {errors.designation && touched.designation && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.designation}</p>
+                )}
               </div>
 
               {/* Designation Type */}
@@ -223,7 +317,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   name="designationType"
                   value={formData.designationType}
                   onChange={handleChange}
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onBlur={handleBlur}
+                  className={getFieldClassName('designationType', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
                   required
                 >
                   <option value="">Select Designation Type</option>
@@ -233,8 +328,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   <option value="Rental">Rental</option>
                   <option value="Coaster Driver">Coaster Driver</option>
                 </select>
+                {errors.designationType && touched.designationType && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.designationType}</p>
+                )}
               </div>
 
+              {/* Date of Joining */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Date of Joining
@@ -248,6 +347,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 />
               </div>
 
+              {/* Experience */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Experience

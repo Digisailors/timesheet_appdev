@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     missingEntries: 1
   });
 
-  const [projects, setProjects] = useState([
+  const projects = [
     {
       name: 'Maintenance',
       code: 'MA003',
@@ -58,24 +58,24 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       otHours: 2.0,
       lastUpdated: '5/21/2025'
     }
-  ]);
+  ];
 
-  const [timesheetActivity2, setTimesheetActivity2] = useState([55, 60, 70, 90, 100, 40, 80]);
+  const timesheetActivity2 = [55, 60, 70, 90, 100, 40, 80];
 
-  const [recentActivity, setRecentActivity] = useState([
+  const recentActivity = [
     { id: '1', user: 'John Doe', action: 'checked in', time: 'Today, 8:30 AM', type: 'checkin' },
     { id: '2', user: 'Jane Smith', action: 'checked out', time: 'Today, 5:15 PM', type: 'checkout' },
     { id: '3', user: 'Robert Johnson', action: 'submitted timesheet', time: 'Today, 5:30 PM', type: 'timesheet' },
     { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
     { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' }
-  ]);
+  ];
 
-  const [weeklyStats, setWeeklyStats] = useState({
+  const weeklyStats = {
     totalEntries: 127,
     workHours: 1024,
     otHours: 86,
     activeEmployees: 42
-  });
+  };
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";

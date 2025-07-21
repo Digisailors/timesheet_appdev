@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
       {/* Fixed Sidebar */}
       <Sidebar />
-      
+
       {/* Main Content Area */}
       <div className="ml-64 flex flex-col min-h-screen">
         {/* Fixed Navbar */}
@@ -21,7 +21,7 @@ export default function DashboardPage() {
             userInitial="A"
           />
         </div>
-        
+
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <Supervisor />

@@ -330,10 +330,6 @@ const ProjectsPage = () => {
           onDeleteProject={handleDeleteProject}
         />
 
-        {/* Project Highlights Section */}
-        <div className="mt-6">
-          <ProjectHighlights projects={projects} />
-        </div>
 
         {/* Project Dialog */}
         <ProjectDialog

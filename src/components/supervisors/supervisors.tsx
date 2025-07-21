@@ -18,7 +18,6 @@ interface Supervisor {
   password: string;
 }
 
-// Updated to match the dialog component's interface
 interface SupervisorData {
   fullName: string;
   emailAddress: string;
@@ -50,6 +49,9 @@ export default function SupervisorPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
 
+  // New state to hold selected project ID during create/edit
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
 
   const fetchSupervisors = async () => {
@@ -65,11 +67,11 @@ export default function SupervisorPage() {
           email: s.emailAddress,
           initials: s.fullName.split(' ').map((part: string) => part.charAt(0)).join('').toUpperCase(),
           backgroundColor: 'bg-blue-500',
-          department: s.specialization,
-          location: s.assignedProject,
-          phoneNumber: s.phoneNumber,
-          dateOfJoining: s.dateOfJoining,
-          password: s.password
+          department: s.specialization || '',
+          location: typeof s.assignedProject === 'object' ? s.assignedProject?.name || '' : s.assignedProject || '',
+          phoneNumber: s.phoneNumber || '',
+          dateOfJoining: s.dateOfJoining?.split('T')[0] || '',
+          password: s.password || ''
         }));
         setSupervisorList(loadedSupervisors);
       } else {
@@ -129,6 +131,9 @@ export default function SupervisorPage() {
     dateOfJoining: supervisor.dateOfJoining,
     experience: '5 Years',
     assignedProject: supervisor.location,
+    assignedProjectId: supervisor.location
+      ? projects.find(p => p.name === supervisor.location)?.id
+      : undefined,
     password: supervisor.password
   });
 
@@ -158,6 +163,10 @@ export default function SupervisorPage() {
       setSelectedSupervisor(supervisor);
       setDialogMode('edit');
       setShowDialog(true);
+      
+      // When editing, set the selected project ID
+      const projectId = projects.find(p => p.name === supervisor.location)?.id || null;
+      setSelectedProjectId(projectId);
     } else if (action === 'delete') {
       setSupervisorToDelete(supervisor);
       setConfirmDelete(true);
@@ -168,11 +177,13 @@ export default function SupervisorPage() {
     setSelectedSupervisor(null);
     setDialogMode('add');
     setShowDialog(true);
+    setSelectedProjectId(null); // Reset for new
   };
 
   const closeDialog = () => {
     setShowDialog(false);
     setSelectedSupervisor(null);
+    setSelectedProjectId(null);
   };
 
   const closeViewDialog = () => {
@@ -185,18 +196,10 @@ export default function SupervisorPage() {
       try {
         const response = await fetch(`${baseUrl}/api/supervisors/delete/${supervisorToDelete.id}`, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
 
-        if (!response.ok) {
-          const errorResult = await response.json();
-          throw new Error(errorResult.message || 'Failed to delete supervisor');
-        }
-
         const result = await response.json();
-        
         if (result.success) {
           setSupervisorList(prev => prev.filter(s => s.id !== supervisorToDelete.id));
           toast.success('🗑️ Supervisor deleted successfully!');
@@ -217,95 +220,72 @@ export default function SupervisorPage() {
     setSupervisorToDelete(null);
   };
 
-  const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
-    if (mode === 'add') {
-      try {
-        const response = await fetch(`${baseUrl}/api/supervisors/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fullName: formData.fullName,
-            emailAddress: formData.emailAddress,
-            phoneNumber: formData.phoneNumber,
-            specialization: formData.specialization,
-            address: formData.address,
-            dateOfJoining: formData.dateOfJoining,
-            experience: formData.experience,
-            password: formData.password,
-            assignedProjectId: '0a01c83f-ed45-493e-ac70-eacf0781eec7'
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success && result.data) {
-          const newSupervisor: Supervisor = {
-            id: result.data.id,
-            name: result.data.fullName,
-            email: result.data.emailAddress,
-            initials: result.data.fullName.split(' ').map((part: string) => part[0]).join('').toUpperCase(),
-            backgroundColor: 'bg-blue-500',
-            department: result.data.specialization || '',
-            location: formData.assignedProject || '',
-            phoneNumber: result.data.phoneNumber || '',
-            dateOfJoining: result.data.dateOfJoining ? result.data.dateOfJoining.split('T')[0] : '',
-            password: result.data.password || ''
-          };
-
-          setSupervisorList(prev => [...prev, newSupervisor]);
-          toast.success('✅ Supervisor added successfully!');
-        } else {
-          console.error('Failed to create supervisor:', result.message);
-          toast.error('❌ Failed to create supervisor');
-        }
-      } catch (error) {
-        console.error('Error creating supervisor:', error);
-        toast.error('❌ Error creating supervisor');
-      }
-    } else if (mode === 'edit' && selectedSupervisor) {
-      try {
-        const response = await fetch(`${baseUrl}/api/supervisors/update/${selectedSupervisor.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fullName: formData.fullName,
-            emailAddress: formData.emailAddress,
-            phoneNumber: formData.phoneNumber,
-            specialization: formData.specialization,
-            address: formData.address,
-            dateOfJoining: formData.dateOfJoining,
-            experience: formData.experience,
-            assignedProjectId: formData.assignedProjectId
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          const updatedSupervisor = formDataToSupervisor(formData, selectedSupervisor.id);
-          setSupervisorList(prev =>
-            prev.map(supervisor =>
-              supervisor.id === selectedSupervisor.id ? updatedSupervisor : supervisor
-            )
-          );
-          toast.success('✅ Supervisor updated successfully!');
-        } else {
-          console.error('Failed to update supervisor:', result.message);
-          toast.error('❌ Failed to update supervisor');
-        }
-      } catch (error) {
-        console.error('Error updating supervisor:', error);
-        toast.error('❌ Error updating supervisor');
-      }
-    }
+const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
+  const payload = {
+    fullName: formData.fullName,
+    emailAddress: formData.emailAddress,
+    phoneNumber: formData.phoneNumber,
+    specialization: formData.specialization,
+    address: formData.address,
+    dateOfJoining: formData.dateOfJoining,
+    experience: formData.experience,
+    password: formData.password,
+    assignedProjectId: formData.assignedProjectId,
   };
 
+  const url =
+    mode === 'add'
+      ? `${baseUrl}/api/supervisors/create`
+      : `${baseUrl}/api/supervisors/update/${selectedSupervisor?.id}`;
+  const method = mode === 'add' ? 'POST' : 'PUT';
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success) {
+      if (mode === 'add') {
+        const newSupervisor = {
+          id: result.data.id,
+          ...payload,
+        };
+        setSupervisorList(prev => [...prev, newSupervisor]);
+        toast.success('✅ Supervisor added successfully!');
+      } else if (mode === 'edit' && selectedSupervisor) {
+        const updatedSupervisor = {
+          ...selectedSupervisor,
+          ...payload,
+        };
+        setSupervisorList(prev =>
+          prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
+        );
+        toast.success('✅ Supervisor updated successfully!');
+      }
+      closeDialog(); // Close dialog after success
+    } else {
+      toast.error(result.message || 'Failed to submit form');
+    }
+  } catch (error) {
+    console.error('Error during form submission:', error);
+    toast.error(`Error: ${error.message}`);
+  }
+};
+
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Toaster position="bottom-right" toastOptions={{ classNames: { toast: 'bg-green-700 text-white' } }} />
       <div className="px-6 py-6">
         <div className="flex items-center justify-between mb-6">
@@ -420,14 +400,19 @@ export default function SupervisorPage() {
         isOpen={showDialog}
         onClose={closeDialog}
         mode={dialogMode}
-        initialData={selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined}
-        onSubmit={handleFormSubmit}
+        initialData={
+          selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined
+        }
+        onSubmit={(data) => handleFormSubmit(data, dialogMode)}
         projects={projects.map(p => p.name)}
+        selectedProjectId={selectedProjectId} // Pass the selected project ID
+        setSelectedProjectId={setSelectedProjectId} // Pass setter to dialog
       />
 
       {showViewDialog && selectedSupervisor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            {/* Profile content... (unchanged) */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-xl font-semibold">Supervisor Profile</h3>
               <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
@@ -435,6 +420,7 @@ export default function SupervisorPage() {
               </button>
             </div>
             <div className="p-6 space-y-6">
+              {/* Profile details... (unchanged) */}
               <div className="flex items-center space-x-4 mb-8">
                 <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
                   {selectedSupervisor.initials}
@@ -457,7 +443,7 @@ export default function SupervisorPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (unchanged) */}
       {confirmDelete && supervisorToDelete && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">

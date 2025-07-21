@@ -1,6 +1,12 @@
 import React from "react";
 import { MagnifyingGlassIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 
+interface Project {
+  id: string;
+  name: string;
+  // Add other project properties as needed
+}
+
 interface SearchBarRowProps {
   searchTerm: string;
   setSearchTerm: (v: string) => void;
@@ -8,6 +14,8 @@ interface SearchBarRowProps {
   setSelectedDesignation: (v: string) => void;
   selectedProject: string;
   setSelectedProject: (v: string) => void;
+  projects?: Project[];
+  isLoadingProjects?: boolean;
 }
 
 const SearchBarRow: React.FC<SearchBarRowProps> = ({
@@ -17,6 +25,8 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
   setSelectedDesignation,
   selectedProject,
   setSelectedProject,
+  projects = [],
+  isLoadingProjects = false,
 }) => (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md px-4 sm:px-6 py-4">
     <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -58,14 +68,19 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[180px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+            disabled={isLoadingProjects}
+            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[180px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option>All Projects</option>
-            <option>Driver</option>
-            <option>Plumber</option>
-            <option>Factory Building</option>
-            <option>Office Complex</option>
-            <option>Highway Bridge</option>
+            <option value="All Projects">
+              {isLoadingProjects ? "Loading..." : "All Projects"}
+            </option>
+            
+            {/* API Projects */}
+            {projects.length > 0 && projects.map((project) => (
+              <option key={project.id} value={project.name}>
+                {project.name}
+              </option>
+            ))}
           </select>
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />

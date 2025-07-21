@@ -21,8 +21,15 @@ interface EmployeeFormData {
   dateOfJoining?: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  // Add other project fields as needed
+}
+
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState("All Designations");
   const [selectedProject, setSelectedProject] = useState("All Projects");
@@ -39,11 +46,30 @@ const EmployeesPage: React.FC = () => {
   const [avatarBgs, setAvatarBgs] = useState<{ [key: string]: string }>({});
 
   const generateAvatarBg = (employeeId: string) => {
-  const blueBg = "bg-blue-600"; // fixed blue
-  setAvatarBgs(prev => ({ ...prev, [employeeId]: blueBg }));
-  return blueBg;
-};
+    const blueBg = "bg-blue-600"; // fixed blue
+    setAvatarBgs(prev => ({ ...prev, [employeeId]: blueBg }));
+    return blueBg;
+  };
 
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/api/projects/all`);
+      if (!response.ok) throw new Error('Failed to fetch projects');
+      
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        setProjects(result.data);
+      } else {
+        console.warn("Projects API returned unexpected format:", result);
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to fetch projects");
+      setProjects([]);
+    }
+  };
 
   const fetchEmployees = async () => {
     setIsLoading(true);
@@ -86,6 +112,7 @@ const EmployeesPage: React.FC = () => {
 
   useEffect(() => {
     fetchEmployees();
+    fetchProjects();
   }, []);
 
   const filteredEmployees = employees.filter((employee) => {
@@ -236,6 +263,7 @@ const EmployeesPage: React.FC = () => {
             setSelectedDesignation={setSelectedDesignation}
             selectedProject={selectedProject}
             setSelectedProject={setSelectedProject}
+            projects={projects} // Pass projects to SearchBarRow
           />
         </div>
 
