@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { toast } from "react-hot-toast";
 
 export interface Employee {
   id: string;
@@ -11,11 +12,16 @@ export interface Employee {
   timeFrame: string;
   avatar: string;
   avatarBg: string;
-  joinDate?: string;
+  dateOfJoining?: string;
   experience?: string;
   phoneNumber?: string;
   currentProject?: string;
   designationType?: string;
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  specialization?: string;
+  workingHours?: string;
 }
 
 interface TimesheetEntry {
@@ -29,17 +35,78 @@ interface TimesheetEntry {
 interface EmployeeProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employee: Employee | null;
+  employeeId: string | null; // Changed from employee object to employeeId
 }
 
 const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   isOpen,
   onClose,
-  employee
+  employeeId
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'timesheet'>('overview');
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (!isOpen || !employee) return null;
+  const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  const generateAvatarBg = () => "bg-blue-600"; // Fixed blue background
+
+  // Function to fetch employee by ID
+  const fetchEmployeeById = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const emp = result.data;
+        const fullName = `${emp.firstName} ${emp.lastName}`;
+        const enrichedEmployee: Employee = {
+          ...emp,
+          name: fullName,
+          avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+          avatarBg: generateAvatarBg(),
+          project: emp.specialization || emp.designation,
+          workHours: "160h",
+          timeFrame: "This month",
+          designation: emp.designation || "",
+          designationType: emp.designationType || "",
+          phoneNumber: emp.phoneNumber || "+0000000000",
+          email: emp.email || "",
+          address: emp.address || "Some Address",
+          experience: emp.experience || "0 years",
+          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+          specialization: emp.specialization || emp.designation || "",
+          currentProject: emp.specialization || emp.designation,
+        };
+        setEmployee(enrichedEmployee);
+      } else {
+        toast.error("Failed to fetch employee details");
+        onClose(); // Close modal if fetch fails
+      }
+    } catch (error) {
+      console.error("Error fetching employee by ID:", error);
+      toast.error("Error fetching employee details");
+      onClose(); // Close modal if fetch fails
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch employee data when modal opens or employeeId changes
+  useEffect(() => {
+    if (isOpen && employeeId) {
+      fetchEmployeeById(employeeId);
+    }
+    
+    // Reset employee data when modal closes
+    if (!isOpen) {
+      setEmployee(null);
+      setActiveTab('overview'); // Reset to overview tab
+    }
+  }, [isOpen, employeeId]);
+
+  if (!isOpen) return null;
 
   const timesheetData: TimesheetEntry[] = [
     {
@@ -69,51 +136,63 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     </button>
   );
 
-  const OverviewTab = () => (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-        <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
-            <span className="text-white font-semibold text-xl">{employee.avatar}</span>
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.joinDate || '2023-11-15'}</p>
+  const OverviewTab = () => {
+    if (!employee) return null;
+
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+          <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
+              <span className="text-white font-semibold text-xl">{employee.avatar}</span>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Project</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.currentProject || employee.project}</p>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
             </div>
           </div>
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.dateOfJoining || '2023-11-15'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Project</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.currentProject || employee.project}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email ID</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.email}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Construction Management'}</p>
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.designation}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const TimesheetTab = () => (
     <div className="bg-gray-50 dark:bg-gray-900">
@@ -150,7 +229,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center px-8 py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {employee.name} - Employee Profile
+            {employee ? `${employee.name} - Employee Profile` : 'Employee Profile'}
           </h2>
           <button
             onClick={onClose}
@@ -180,7 +259,20 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {activeTab === 'overview' ? <OverviewTab /> : <TimesheetTab />}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-500 dark:text-gray-400">Loading employee details...</p>
+              </div>
+            </div>
+          ) : employee ? (
+            activeTab === 'overview' ? <OverviewTab /> : <TimesheetTab />
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-gray-500 dark:text-gray-400">Employee details not found</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
