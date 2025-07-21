@@ -36,12 +36,12 @@ const EmployeesPage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
-  const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+  // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
+  const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [avatarBgs, setAvatarBgs] = useState<{ [key: string]: string }>({});
 
@@ -51,9 +51,47 @@ const EmployeesPage: React.FC = () => {
     return blueBg;
   };
 
+  // New function to fetch employee by ID
+  const fetchEmployeeById = async (id: string): Promise<Employee | null> => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const emp = result.data;
+        const fullName = `${emp.firstName} ${emp.lastName}`;
+        const enrichedEmployee: Employee = {
+          ...emp,
+          name: fullName,
+          avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+          avatarBg: generateAvatarBg(emp.id),
+          project: emp.specialization || emp.designation,
+          workHours: "160h",
+          timeFrame: "This month",
+          designation: emp.designation || "",
+          designationType: emp.designationType || "",
+          phoneNumber: emp.phoneNumber || "+0000000000",
+          email: emp.email || "",
+          address: emp.address || "Some Address",
+          experience: emp.experience || "0 years",
+          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+          specialization: emp.specialization || emp.designation || "",
+        };
+        return enrichedEmployee;
+      } else {
+        toast.error("Failed to fetch employee details");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching employee by ID:", error);
+      toast.error("Error fetching employee details");
+      return null;
+    }
+  };
+
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${cleanBaseUrl}/api/projects/all`);
+      const response = await fetch(`${cleanBaseUrl}/projects/all`);
       if (!response.ok) throw new Error('Failed to fetch projects');
       
       const result = await response.json();
@@ -74,7 +112,7 @@ const EmployeesPage: React.FC = () => {
   const fetchEmployees = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${cleanBaseUrl}/api/employees/all`);
+      const response = await fetch(`${cleanBaseUrl}/employees/all`);
       const result = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
@@ -129,19 +167,25 @@ const EmployeesPage: React.FC = () => {
     return matchesSearch && matchesDesignation && matchesProject;
   });
 
+  // Updated handleView function to use employeeId
   const handleView = (id: string) => {
-    const employee = employees.find(emp => emp.id === id);
-    if (employee) {
-      setSelectedEmployee(employee);
-      setIsProfileModalOpen(true);
-    }
+    setSelectedEmployeeId(id);
+    setIsProfileModalOpen(true);
   };
 
-  const handleEdit = (id: string) => {
-    const employee = employees.find(emp => emp.id === id);
-    if (employee) {
-      setEditingEmployee(employee);
-      setIsAddModalOpen(true);
+  // Updated handleEdit function to fetch by ID
+  const handleEdit = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const employee = await fetchEmployeeById(id);
+      if (employee) {
+        setEditingEmployee(employee);
+        setIsAddModalOpen(true);
+      }
+    } catch (error) {
+      toast.error("Failed to load employee details for editing");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -152,7 +196,7 @@ const EmployeesPage: React.FC = () => {
   const performDelete = async (id: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${cleanBaseUrl}/api/employees/delete/${id}`, {
+      const response = await fetch(`${cleanBaseUrl}/employees/delete/${id}`, {
         method: "DELETE",
       });
       const result = await response.json();
@@ -189,8 +233,8 @@ const EmployeesPage: React.FC = () => {
 
       const isEdit = !!editingEmployee;
       const endpoint = isEdit
-        ? `${cleanBaseUrl}/api/employees/update/${editingEmployee.id}`
-        : `${cleanBaseUrl}/api/employees/create`;
+        ? `${cleanBaseUrl}/employees/${editingEmployee.id}`
+        : `${cleanBaseUrl}/employees/create`;
 
       const method = isEdit ? "PUT" : "POST";
 
@@ -306,8 +350,11 @@ const EmployeesPage: React.FC = () => {
 
       <EmployeeProfileModal
         isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        employee={selectedEmployee}
+        onClose={() => {
+          setIsProfileModalOpen(false);
+          setSelectedEmployeeId(null);
+        }}
+        employeeId={selectedEmployeeId}
       />
 
       {/* Confirmation Modal */}

@@ -60,7 +60,16 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     }
   ];
 
-  const timesheetActivity2 = [55, 60, 70, 90, 100, 40, 80];
+  // Convert array to object format expected by TimesheetActivity
+  const timesheetData = {
+    'Sun': 5.5,
+    'Mon': 6.0,
+    'Tue': 7.0,
+    'Wed': 9.0,
+    'Thu': 10.0,
+    'Fri': 4.0,
+    'Sat': 8.0
+  };
 
   const recentActivity = [
     { id: '1', user: 'John Doe', action: 'checked in', time: 'Today, 8:30 AM', type: 'checkin' },
@@ -176,7 +185,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
             <WeeklySnapshot weeklyStats={weeklyStats} />
           </div>
           <div className="space-y-6">
-            <TimesheetActivity timesheetActivity={timesheetActivity2} />
+            <TimesheetActivity timesheetData={timesheetData} />
             <RecentActivity recentActivity={recentActivity} />
           </div>
         </div>

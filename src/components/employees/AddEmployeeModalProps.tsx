@@ -14,6 +14,7 @@ interface Employee {
   specialization?: string;
   project: string;
   workHours: string;
+  workingHours?: string; // Added this field
   timeFrame: string;
   avatar: string;
   avatarBg: string;
@@ -30,6 +31,7 @@ interface EmployeeFormData {
   experience: string;
   dateOfJoining: string;
   specialization: string;
+  workingHours: string; // Added this field
 }
 
 interface AddEmployeeModalProps {
@@ -55,7 +57,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     address: "",
     experience: "",
     dateOfJoining: "",
-    specialization: ""
+    specialization: "",
+    workingHours: "" // Added this field
   });
 
   const [errors, setErrors] = React.useState<{[key: string]: string}>({});
@@ -77,7 +80,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         address: editingEmployee.address || "Some Address",
         experience: editingEmployee.experience || "0 years",
         dateOfJoining: editingEmployee.dateOfJoining || new Date().toISOString().split('T')[0],
-        specialization: editingEmployee.specialization || editingEmployee.project || ""
+        specialization: editingEmployee.specialization || editingEmployee.project || "",
+        workingHours: editingEmployee.workingHours || "" // Added this field
       });
     } else {
       setFormData({
@@ -90,7 +94,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         address: "",
         experience: "",
         dateOfJoining: new Date().toISOString().split('T')[0],
-        specialization: ""
+        specialization: "",
+        workingHours: "" // Added this field
       });
     }
     // Reset errors when modal opens/closes or editing employee changes
@@ -363,7 +368,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
 
               {/* Specialization/Skills */}
-              <div className="col-span-1 md:col-span-2 space-y-2">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Specialization/Skills
                 </label>
@@ -375,6 +380,23 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
                   className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              {/* Working Hours */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Working Hours
+                </label>
+                <select
+                  name="workingHours"
+                  value={formData.workingHours}
+                  onChange={handleChange}
+                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Working Hours</option>
+                  <option value="8hr">8hr</option>
+                  <option value="10hr">10hr</option>
+                </select>
               </div>
 
               {/* Address */}
