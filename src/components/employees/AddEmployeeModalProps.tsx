@@ -106,17 +106,32 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const validateField = (name: string, value: string) => {
     switch (name) {
       case 'firstName':
-        return !value.trim() ? 'First name is required' : '';
+        return !value.trim() ? 'Please fill this field' : '';
       case 'lastName':
-        return !value.trim() ? 'Last name is required' : '';
+        return !value.trim() ? 'Please fill this field' : '';
       case 'email':
-        if (!value.trim()) return 'Email is required';
+        if (!value.trim()) return 'Please fill this field';
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return !emailRegex.test(value) ? 'Please enter a valid email address' : '';
       case 'designation':
-        return !value.trim() ? 'Designation is required' : '';
+        return !value.trim() ? 'Please fill this field' : '';
       case 'designationType':
-        return !value.trim() ? 'Designation type is required' : '';
+        return !value.trim() ? 'Please fill this field' : '';
+      case 'phoneNumber':
+        if (!value.trim()) return 'Please fill this field';
+        const phoneDigits = value.replace(/\D/g, ''); // Remove all non-digit characters
+        if (phoneDigits.length !== 10) return 'Please enter exactly 10 numbers';
+        return '';
+      case 'address':
+        return !value.trim() ? 'Please fill this field' : '';
+      case 'experience':
+        return !value.trim() ? 'Please fill this field' : '';
+      case 'dateOfJoining':
+        return !value.trim() ? 'Please fill this field' : '';
+      case 'specialization':
+        return !value.trim() ? 'Please fill this field' : '';
+      case 'workingHours':
+        return !value.trim() ? 'Please fill this field' : '';
       default:
         return '';
     }
@@ -128,17 +143,36 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Special handling for phone number to allow only digits
+    if (name === 'phoneNumber') {
+      // Remove all non-digit characters and limit to 10 digits
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
+      
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
 
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+      // Validate field in real time if it was touched
+      if (touched[name]) {
+        const error = validateField(name, digitsOnly);
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Validate field in real time if it was touched
-    if (touched[name]) {
-      const error = validateField(name, value);
-      setErrors(prev => ({ ...prev, [name]: error }));
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+
+      // Validate field in real time if it was touched
+      if (touched[name]) {
+        const error = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
     }
   };
 
@@ -153,20 +187,20 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate all required fields
+    // Validate ALL fields - now all are required
     const newErrors: {[key: string]: string} = {};
-    const requiredFields = ['firstName', 'lastName', 'email', 'designation', 'designationType'];
+    const allFields = ['firstName', 'lastName', 'email', 'designation', 'designationType', 'phoneNumber', 'address', 'experience', 'dateOfJoining', 'specialization', 'workingHours'];
     
-    requiredFields.forEach(field => {
+    allFields.forEach(field => {
       const error = validateField(field, formData[field as keyof EmployeeFormData]);
       if (error) {
         newErrors[field] = error;
       }
     });
 
-    // Mark all required fields as touched
+    // Mark all fields as touched
     const newTouched: {[key: string]: boolean} = {};
-    requiredFields.forEach(field => {
+    allFields.forEach(field => {
       newTouched[field] = true;
     });
     setTouched(prev => ({ ...prev, ...newTouched }));
@@ -281,16 +315,22 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               {/* Phone Number */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Phone Number
+                  Phone Number *
                 </label>
                 <input
                   type="tel"
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  placeholder="+1234567890"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onBlur={handleBlur}
+                  placeholder="1234567890"
+                  maxLength={10}
+                  className={getFieldClassName('phoneNumber', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
                 />
+                {errors.phoneNumber && touched.phoneNumber && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.phoneNumber}</p>
+                )}
               </div>
 
               {/* Designation */}
@@ -341,77 +381,102 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               {/* Date of Joining */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Date of Joining
+                  Date of Joining *
                 </label>
                 <input
                   type="date"
                   name="dateOfJoining"
                   value={formData.dateOfJoining}
                   onChange={handleChange}
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onBlur={handleBlur}
+                  className={getFieldClassName('dateOfJoining', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
                 />
+                {errors.dateOfJoining && touched.dateOfJoining && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.dateOfJoining}</p>
+                )}
               </div>
 
               {/* Experience */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Experience
+                  Experience *
                 </label>
                 <input
                   type="text"
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="e.g., 5 years"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('experience', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
                 />
+                {errors.experience && touched.experience && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.experience}</p>
+                )}
               </div>
 
               {/* Specialization/Skills */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Specialization/Skills
+                  Specialization/Skills *
                 </label>
                 <input
                   type="text"
                   name="specialization"
                   value={formData.specialization}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={getFieldClassName('specialization', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
                 />
+                {errors.specialization && touched.specialization && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.specialization}</p>
+                )}
               </div>
 
               {/* Working Hours */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Working Hours
+                  Working Hours *
                 </label>
                 <select
                   name="workingHours"
                   value={formData.workingHours}
                   onChange={handleChange}
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onBlur={handleBlur}
+                  className={getFieldClassName('workingHours', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
                 >
                   <option value="">Select Working Hours</option>
                   <option value="8hr">8hr</option>
                   <option value="10hr">10hr</option>
                 </select>
+                {errors.workingHours && touched.workingHours && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.workingHours}</p>
+                )}
               </div>
 
               {/* Address */}
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Address
+                  Address *
                 </label>
                 <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   placeholder="Enter full address"
                   rows={3}
-                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]"
+                  className={getFieldClassName('address', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]")}
+                  required
                 />
+                {errors.address && touched.address && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.address}</p>
+                )}
               </div>
             </div>
           </div>
