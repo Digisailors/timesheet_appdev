@@ -1,56 +1,28 @@
 "use client";
-import React, { useState, useMemo } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  ColumnDef,
-  flexRender,
-  getPaginationRowModel,
-  Row,
-} from '@tanstack/react-table';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
+import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender } from '@tanstack/react-table';
 import { ViewDialogBox } from "./viewdialogbox";
 import { getColumns } from './columns';
-import { TimeSheet } from '../../types/TimeSheet';
-
-const mockData: TimeSheet[] = [
-  {
-    employee: 'John Doe',
-    checkIn: '07:00',
-    checkOut: '16:45',
-    hours: 8,
-    otHours: 1,
-    travelTime: '00:00',
-    location: 'Site A',
-    project: 'Project Alpha',
-    status: 'Complete',
-  },
-  {
-    employee: 'Jane Smith',
-    checkIn: '08:00',
-    checkOut: '17:30',
-    hours: 9,
-    otHours: 1,
-    travelTime: '00:30',
-    location: 'Site B',
-    project: 'Project Beta',
-    status: 'In Progress',
-  },
-  {
-    employee: 'Bob Johnson',
-    checkIn: '09:00',
-    checkOut: '18:00',
-    hours: 9,
-    otHours: 0,
-    travelTime: '00:45',
-    location: 'Site C',
-    project: 'Project Gamma',
-    status: 'Pending',
-  }
-];
 
 export function DataTable() {
+  interface TimeSheetData {
+    employee: string;
+    checkIn: string;
+    checkOut: string;
+    hours: number;
+    otHours: number;
+    travelTime: string;
+    location: string;
+    project: string;
+    status: string;
+    breakTime: string;
+  }
+
+  const [data, setData] = useState<TimeSheetData[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<TimeSheetData | null>(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
     selectedEmployee: 'all',
@@ -59,15 +31,80 @@ export function DataTable() {
     selectedStatus: 'all'
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('http://localhost:5088/api/timesheet/all');
+        const timesheets = response.data.data.flatMap((timesheet: {
+          employees: { fullName: string }[];
+          onsiteSignIn: string;
+          onsiteSignOut: string;
+          onsiteTravelStart: string;
+          onsiteTravelEnd: string;
+          offsiteTravelStart: string;
+          offsiteTravelEnd: string;
+          onsiteBreakStart: string;
+          onsiteBreakEnd: string;
+          project: { location: string; name: string };
+          status: string;
+        }) => {
+          return timesheet.employees.map((employee) => {
+            const checkInTime = new Date(`1970-01-01T${timesheet.onsiteSignIn}`).getTime();
+            const checkOutTime = new Date(`1970-01-01T${timesheet.onsiteSignOut}`).getTime();
+            const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
+
+            const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
+            const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
+            const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
+
+            const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
+            const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
+            const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+
+            const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
+            const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
+            const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
+
+            // Calculate break time
+            const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
+            const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
+            const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+            const breakMinutes = (breakTimeInHours % 1) * 60;
+            const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, '0')}`;
+
+            return {
+              employee: employee.fullName,
+              checkIn: timesheet.onsiteSignIn.substring(0, 5),
+              checkOut: timesheet.onsiteSignOut.substring(0, 5),
+              hours: Math.floor(hoursWorked),
+              otHours: 0,
+              travelTime: travelTime,
+              location: timesheet.project.location,
+              project: timesheet.project.name,
+              status: timesheet.status,
+              breakTime: breakTime,
+            };
+          });
+        });
+
+        setData(timesheets);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const columns = useMemo(() => getColumns(), []);
 
-  const handleViewClick = (employee: TimeSheet) => {
+  const handleViewClick = (employee: TimeSheetData) => {
     setSelectedEmployee(employee);
     setIsDialogOpen(true);
   };
 
   const filteredData = useMemo(() =>
-    mockData.filter((item) => {
+    data.filter((item: TimeSheetData) => {
       return (
         (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
         (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
@@ -76,13 +113,13 @@ export function DataTable() {
         (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
          item.project.toLowerCase().includes(filters.searchTerm.toLowerCase()))
       );
-    }), [filters]);
+    }), [filters, data]);
 
-  const getActionColumn = React.useCallback((): ColumnDef<TimeSheet> => {
+  const getActionColumn = React.useCallback(() => {
     return {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }: { row: Row<TimeSheet> }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex space-x-2">
           <button
             onClick={() => handleViewClick(row.original)}
@@ -125,9 +162,9 @@ export function DataTable() {
           onChange={(e) => setFilters({ ...filters, selectedEmployee: e.target.value })}
         >
           <option value="all">All Employees</option>
-          <option value="John Doe">John Doe</option>
-          <option value="Jane Smith">Jane Smith</option>
-          <option value="Bob Johnson">Bob Johnson</option>
+          {Array.from(new Set(data.map((item) => item.employee))).map(employee => (
+            <option key={employee} value={employee}>{employee}</option>
+          ))}
         </select>
         <select
           className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
@@ -135,9 +172,9 @@ export function DataTable() {
           onChange={(e) => setFilters({ ...filters, selectedProject: e.target.value })}
         >
           <option value="all">All Projects</option>
-          <option value="Project Alpha">Project Alpha</option>
-          <option value="Project Beta">Project Beta</option>
-          <option value="Project Gamma">Project Gamma</option>
+          {Array.from(new Set(data.map((item) => item.project))).map(project => (
+            <option key={project} value={project}>{project}</option>
+          ))}
         </select>
         <select
           className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
@@ -145,9 +182,9 @@ export function DataTable() {
           onChange={(e) => setFilters({ ...filters, selectedLocation: e.target.value })}
         >
           <option value="all">All Locations</option>
-          <option value="Site A">Site A</option>
-          <option value="Site B">Site B</option>
-          <option value="Site C">Site C</option>
+          {Array.from(new Set(data.map((item) => item.location))).map(location => (
+            <option key={location} value={location}>{location}</option>
+          ))}
         </select>
         <select
           className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
@@ -155,9 +192,9 @@ export function DataTable() {
           onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
         >
           <option value="all">All Statuses</option>
-          <option value="Complete">Complete</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Pending">Pending</option>
+          {Array.from(new Set(data.map((item) => item.status))).map(status => (
+            <option key={status} value={status}>{status}</option>
+          ))}
         </select>
       </div>
       <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
@@ -174,15 +211,23 @@ export function DataTable() {
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={table.getAllColumns().length} className="text-center p-4 text-gray-500 dark:text-gray-400">
+                  No Data Found
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -192,7 +237,6 @@ export function DataTable() {
           onClose={() => setIsDialogOpen(false)}
           employee={{
             name: selectedEmployee.employee,
-            id: "EMP-001",
             project: selectedEmployee.project,
             location: selectedEmployee.location,
             date: "29-05-2025",
@@ -201,7 +245,7 @@ export function DataTable() {
             totalHours: `${selectedEmployee.hours}:00`,
             overtime: `${selectedEmployee.otHours}:00`,
             travelTime: selectedEmployee.travelTime,
-            breakTime: "01:00",
+            breakTime: selectedEmployee.breakTime,
           }}
         />
       )}
