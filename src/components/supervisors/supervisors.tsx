@@ -162,7 +162,7 @@ export default function SupervisorPage() {
     phoneNumber: supervisor.phoneNumber,
     address: supervisor.address ?? '',
     dateOfJoining: supervisor.dateOfJoining,
-    experience: '5 Years',
+    experience: supervisor.experience?? '',
     assignedProject: supervisor.location,
     assignedProjectId: supervisor.assignedProjectId,
     password: supervisor.password
@@ -205,7 +205,8 @@ export default function SupervisorPage() {
             assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
               ? data.assignedProject.id 
               : '',
-            address: data.address || ''
+            address: data.address || '',
+            experience:data.experience || ''
           };
 
           console.log(`👤 Parsed Supervisor Object (${action}):`, fullSupervisor);

@@ -221,14 +221,14 @@ export default function SupervisorDialog({
               <FormInput
                 label="Specialization"
                 name="specialization"
-                value={formData.specialization}
+                value={formData.specialization || ''}
                 error={errors.specialization}
                 onChange={handleInputChange}
               />
               <FormInput
                 label="Phone Number"
                 name="phoneNumber"
-                value={formData.phoneNumber}
+                value={formData.phoneNumber || ''}
                 error={errors.phoneNumber}
                 onChange={handleInputChange}
               />
@@ -244,7 +244,7 @@ export default function SupervisorDialog({
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
-                    value={formData.password}
+                    value={formData.password || ''}
                     onChange={handleInputChange}
                     className="w-full p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 pr-10"
                   />
@@ -279,14 +279,14 @@ export default function SupervisorDialog({
                 label="Date of Joining"
                 name="dateOfJoining"
                 type="date"
-                value={formData.dateOfJoining}
+                value={formData.dateOfJoining || ''}
                 error={errors.dateOfJoining}
                 onChange={handleInputChange}
               />
               <FormInput
                 label="Experience"
                 name="experience"
-                value={formData.experience}
+                value={formData.experience || ''}
                 error={errors.experience}
                 onChange={handleInputChange}
               />
