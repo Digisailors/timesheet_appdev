@@ -1,28 +1,16 @@
 "use client";
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender } from '@tanstack/react-table';
 import { ViewDialogBox } from "./viewdialogbox";
 import { getColumns } from './columns';
+import { ColumnDef } from '@tanstack/react-table';
+import { TimeSheet } from '../../types/TimeSheet';
 
 export function DataTable() {
-  interface TimeSheetData {
-    employee: string;
-    checkIn: string;
-    checkOut: string;
-    hours: number;
-    otHours: number;
-    travelTime: string;
-    location: string;
-    project: string;
-    status: string;
-    breakTime: string;
-  }
-
-  const [data, setData] = useState<TimeSheetData[]>([]);
+  const [data, setData] = useState<TimeSheet[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<TimeSheetData | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
     selectedEmployee: 'all',
@@ -30,6 +18,14 @@ export function DataTable() {
     selectedLocation: 'all',
     selectedStatus: 'all'
   });
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,25 +43,22 @@ export function DataTable() {
           onsiteBreakEnd: string;
           project: { location: string; name: string };
           status: string;
+          timesheetDate: string;
         }) => {
           return timesheet.employees.map((employee) => {
             const checkInTime = new Date(`1970-01-01T${timesheet.onsiteSignIn}`).getTime();
             const checkOutTime = new Date(`1970-01-01T${timesheet.onsiteSignOut}`).getTime();
             const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
-
             const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
             const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
             const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-
             const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
             const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
             const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-
             const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
             const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
             const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
 
-            // Calculate break time
             const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
             const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
             const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
@@ -83,10 +76,10 @@ export function DataTable() {
               project: timesheet.project.name,
               status: timesheet.status,
               breakTime: breakTime,
+              timesheetDate: timesheet.timesheetDate,
             };
           });
         });
-
         setData(timesheets);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -98,13 +91,13 @@ export function DataTable() {
 
   const columns = useMemo(() => getColumns(), []);
 
-  const handleViewClick = (employee: TimeSheetData) => {
+  const handleViewClick = useCallback((employee: TimeSheet) => {
     setSelectedEmployee(employee);
     setIsDialogOpen(true);
-  };
+  }, []);
 
   const filteredData = useMemo(() =>
-    data.filter((item: TimeSheetData) => {
+    data.filter((item: TimeSheet) => {
       return (
         (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
         (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
@@ -115,27 +108,30 @@ export function DataTable() {
       );
     }), [filters, data]);
 
-  const getActionColumn = React.useCallback(() => {
+  const getActionColumn = useCallback((): ColumnDef<TimeSheet> => {
     return {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }: { row: any }) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => handleViewClick(row.original)}
-            className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          >
-            View
-          </button>
-          <button
-            className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          >
-            Edit
-          </button>
-        </div>
-      )
+      cell: ({ row }) => {
+        const employee = row.original;
+        return (
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleViewClick(employee)}
+              className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              View
+            </button>
+            <button
+              className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              Edit
+            </button>
+          </div>
+        );
+      }
     };
-  }, []);
+  }, [handleViewClick]);
 
   const actionColumn = getActionColumn();
   const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
@@ -239,7 +235,7 @@ export function DataTable() {
             name: selectedEmployee.employee,
             project: selectedEmployee.project,
             location: selectedEmployee.location,
-            date: "29-05-2025",
+            date: formatDate(selectedEmployee.timesheetDate),
             checkIn: selectedEmployee.checkIn,
             checkOut: selectedEmployee.checkOut,
             totalHours: `${selectedEmployee.hours}:00`,
