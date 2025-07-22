@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, User, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/Toaster"; 
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -37,38 +39,40 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords don't match!");
       return;
     }
     if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions");
+      toast.error("Please agree to the terms and conditions");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      const response = await fetch('http://localhost:5088/api/admin/signup', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData), // Send the entire formData object
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
-
       if (response.ok) {
-        alert("Account created successfully!");
-        router.push("/login");
+        toast.success("Account created successfully!");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000); // Redirect after 2 seconds
       } else {
-        alert(data.message || "Something went wrong. Please try again.");
+        toast.error(data.message || "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating account:", error);
-      alert("Network error. Please check your connection and try again.");
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +80,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
+      <Toaster />
       {/* Left side - Image and branding */}
       <div className="hidden lg:flex lg:w-1/2 justify-center items-center">
         <Image
@@ -85,7 +90,6 @@ export default function SignUpPage() {
           alt="Login Image"
         />
       </div>
-
       {/* Right side - Sign up form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -96,7 +100,6 @@ export default function SignUpPage() {
             </h1>
             <p className="text-gray-600">Sign up for Time Sheet App</p>
           </div>
-
           <form onSubmit={handleSignUp} className="space-y-6">
             {/* Name fields */}
             <div className="grid grid-cols-2 gap-4">
@@ -142,7 +145,6 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
-
             {/* Email field */}
             <div>
               <Label
@@ -166,7 +168,6 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
-
             {/* Phone Number field */}
             <div>
               <Label
@@ -190,7 +191,6 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
-
             {/* Password fields */}
             <div>
               <Label
@@ -236,7 +236,6 @@ export default function SignUpPage() {
                 />
               </div>
             </div>
-
             {/* Terms checkbox */}
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -249,7 +248,6 @@ export default function SignUpPage() {
                 I agree to the Terms and Conditions
               </Label>
             </div>
-
             {/* Create account button */}
             <Button
               type="submit"
@@ -258,7 +256,6 @@ export default function SignUpPage() {
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
-
             {/* Sign in link */}
             <div className="text-center">
               <span className="text-sm text-gray-600">
