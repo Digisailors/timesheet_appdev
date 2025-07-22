@@ -11,7 +11,18 @@ export interface Employee {
   timeFrame: string;
   avatar: string;
   avatarBg: string;
+
+  // 👇 Add this line
+  designationType?: string;
+
+  // Optional (if these exist too)
+  phoneNumber?: string;
+  address?: string;
+  experience?: string;
+  dateOfJoining?: string;
+  specialization?: string;
 }
+
 
 interface EmployeeRowProps {
   employee: Employee;

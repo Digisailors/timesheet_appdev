@@ -20,11 +20,23 @@ interface EmployeeFormData {
   experience?: string;
   dateOfJoining?: string;
 }
+interface RawEmployee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  designation?: string;
+  designationType?: string;
+  specialization?: string;
+  address?: string;
+  phoneNumber?: string;
+  experience?: string;
+  dateOfJoining?: string;
+}
 
 interface Project {
   id: string;
   name: string;
-  // Add other project fields as needed
 }
 
 const EmployeesPage: React.FC = () => {
@@ -39,19 +51,18 @@ const EmployeesPage: React.FC = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const employeesPerPage = 10;
 
-  // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  const [avatarBgs, setAvatarBgs] = useState<{ [key: string]: string }>({});
+  const [, setAvatarBgs] = useState<{ [key: string]: string }>({});
 
   const generateAvatarBg = (employeeId: string) => {
-    const blueBg = "bg-blue-600"; // fixed blue
+    const blueBg = "bg-blue-600";
     setAvatarBgs(prev => ({ ...prev, [employeeId]: blueBg }));
     return blueBg;
   };
 
-  // New function to fetch employee by ID
   const fetchEmployeeById = async (id: string): Promise<Employee | null> => {
     try {
       const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
@@ -82,8 +93,7 @@ const EmployeesPage: React.FC = () => {
         toast.error("Failed to fetch employee details");
         return null;
       }
-    } catch (error) {
-      console.error("Error fetching employee by ID:", error);
+    } catch {
       toast.error("Error fetching employee details");
       return null;
     }
@@ -92,18 +102,14 @@ const EmployeesPage: React.FC = () => {
   const fetchProjects = async () => {
     try {
       const response = await fetch(`${cleanBaseUrl}/projects/all`);
-      if (!response.ok) throw new Error('Failed to fetch projects');
-      
       const result = await response.json();
-      
+
       if (result.success && Array.isArray(result.data)) {
         setProjects(result.data);
       } else {
-        console.warn("Projects API returned unexpected format:", result);
         setProjects([]);
       }
-    } catch (error) {
-      console.error("Error fetching projects:", error);
+    } catch {
       toast.error("Failed to fetch projects");
       setProjects([]);
     }
@@ -116,14 +122,14 @@ const EmployeesPage: React.FC = () => {
       const result = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
-        const enrichedEmployees = result.data.map((emp: any): Employee => {
+        const enrichedEmployees = result.data.map((emp: RawEmployee): Employee => {
           const fullName = `${emp.firstName} ${emp.lastName}`;
           return {
             ...emp,
             name: fullName,
             avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
             avatarBg: generateAvatarBg(emp.id),
-            project: emp.specialization || emp.designation,
+            project: emp.specialization || emp.designation || "",
             workHours: "160h",
             timeFrame: "This month",
             designation: emp.designation || "",
@@ -136,12 +142,11 @@ const EmployeesPage: React.FC = () => {
             specialization: emp.specialization || emp.designation || "",
           };
         });
-
         setEmployees(enrichedEmployees);
       } else {
         toast.error("Failed to fetch employees");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error fetching employees");
     } finally {
       setIsLoading(false);
@@ -151,7 +156,12 @@ const EmployeesPage: React.FC = () => {
   useEffect(() => {
     fetchEmployees();
     fetchProjects();
+    setCurrentPage(1);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDesignation, selectedProject]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch =
@@ -167,13 +177,16 @@ const EmployeesPage: React.FC = () => {
     return matchesSearch && matchesDesignation && matchesProject;
   });
 
-  // Updated handleView function to use employeeId
+  const indexOfLastEmployee = currentPage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const paginatedEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+  const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
+
   const handleView = (id: string) => {
     setSelectedEmployeeId(id);
     setIsProfileModalOpen(true);
   };
 
-  // Updated handleEdit function to fetch by ID
   const handleEdit = async (id: string) => {
     setIsLoading(true);
     try {
@@ -182,7 +195,7 @@ const EmployeesPage: React.FC = () => {
         setEditingEmployee(employee);
         setIsAddModalOpen(true);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to load employee details for editing");
     } finally {
       setIsLoading(false);
@@ -190,7 +203,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    setConfirmDeleteId(id); // Open confirmation modal
+    setConfirmDeleteId(id);
   };
 
   const performDelete = async (id: string) => {
@@ -206,7 +219,7 @@ const EmployeesPage: React.FC = () => {
       } else {
         toast.error("Delete failed: " + result.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("Error deleting employee.");
     } finally {
       setIsLoading(false);
@@ -233,7 +246,7 @@ const EmployeesPage: React.FC = () => {
 
       const isEdit = !!editingEmployee;
       const endpoint = isEdit
-        ? `${cleanBaseUrl}/employees/${editingEmployee.id}`
+        ? `${cleanBaseUrl}/employees/update/${editingEmployee.id}`
         : `${cleanBaseUrl}/employees/create`;
 
       const method = isEdit ? "PUT" : "POST";
@@ -244,14 +257,12 @@ const EmployeesPage: React.FC = () => {
         body: JSON.stringify(commonData),
       });
 
-      const contentType = response.headers.get("content-type") || "";
-      const result = contentType.includes("application/json")
+      const result = response.headers.get("content-type")?.includes("application/json")
         ? await response.json()
         : null;
 
       if (response.ok && result?.success && result.data) {
         toast.success(`Employee ${isEdit ? "updated" : "added"} successfully!`);
-
         const newEmp = result.data;
 
         const enrichedEmp: Employee = {
@@ -282,7 +293,7 @@ const EmployeesPage: React.FC = () => {
       } else {
         toast.error("❌ Failed: " + (result?.message || "Unknown error"));
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong while submitting.");
     } finally {
       setIsLoading(false);
@@ -307,7 +318,7 @@ const EmployeesPage: React.FC = () => {
             setSelectedDesignation={setSelectedDesignation}
             selectedProject={selectedProject}
             setSelectedProject={setSelectedProject}
-            projects={projects} // Pass projects to SearchBarRow
+            projects={projects}
           />
         </div>
 
@@ -316,26 +327,68 @@ const EmployeesPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Employees ({filteredEmployees.length})
             </h3>
+
             {isLoading ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                Loading employees...
-              </div>
-            ) : filteredEmployees.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading employees...</div>
+            ) : paginatedEmployees.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 No employees found matching your criteria.
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredEmployees.map((employee) => (
-                  <EmployeeRow
-                    key={employee.id}
-                    employee={employee}
-                    onView={handleView}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {paginatedEmployees.map((employee) => (
+                    <EmployeeRow
+                      key={employee.id}
+                      employee={employee}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination - Bottom Right Inside Card */}
+                <div className="flex justify-end mt-6">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                        currentPage === 1
+                          ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                          : "text-black border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      &#8249;
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-medium transition ${
+                          currentPage === page
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "text-black border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                        currentPage === totalPages
+                          ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                          : "text-black border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      &#8250;
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -357,7 +410,6 @@ const EmployeesPage: React.FC = () => {
         employeeId={selectedEmployeeId}
       />
 
-      {/* Confirmation Modal */}
       {confirmDeleteId && (
         <div
           className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30 dark:bg-black/50"
