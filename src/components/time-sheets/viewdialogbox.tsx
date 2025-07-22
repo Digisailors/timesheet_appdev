@@ -6,7 +6,7 @@ interface ViewDialogBoxProps {
   onClose: () => void;
   employee: {
     name: string;
-    id: string;
+    // id: string;
     project: string;
     location: string;
     date: string;
@@ -41,7 +41,7 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
             </div>
             <div>
               <h3 className="font-bold">{employee.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{employee.id}</p>
+              {/* <p className="text-sm text-gray-500 dark:text-gray-400">{employee.id}</p> */}
             </div>
             <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full">
               Regular
