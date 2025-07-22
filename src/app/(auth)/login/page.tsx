@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/Toaster"; 
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("email");
@@ -25,12 +26,10 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    const loginData = activeTab === "email"
-      ? { email, password }
-      : { phoneNumber, password };
+    const loginData = activeTab === "email" ? { email, password } : { phoneNumber, password };
 
     try {
-      const response = await fetch('http://localhost:5088/api/admin/signin', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,11 +41,13 @@ export default function LoginPage() {
 
       if (response.ok && data.success) {
         localStorage.setItem("user", JSON.stringify(data.data));
-        router.push("/dashboard");
+        toast.success("Login successful!");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000); // Redirect after 2 seconds
       } else {
         const errorMessage = data.message || "Login failed. Please try again.";
         setError(errorMessage);
-
         if (errorMessage.toLowerCase().includes("email")) {
           toast.error("Incorrect email");
         } else if (errorMessage.toLowerCase().includes("password")) {
@@ -69,6 +70,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
+      <Toaster /> {/* Include the Toaster component */}
       {/* Left side - Image */}
       <div className="hidden lg:flex lg:w-1/2 justify-center items-center">
         <Image
@@ -78,18 +80,14 @@ export default function LoginPage() {
           alt="Login Image"
         />
       </div>
-
       {/* Right side - Login form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Welcome text */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Hi, Welcome
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Hi, Welcome</h1>
             <p className="text-gray-600">Please login to Time Sheet App</p>
           </div>
-
           {/* Tab buttons */}
           <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
             <button
@@ -113,14 +111,12 @@ export default function LoginPage() {
               Log in with Mobile
             </button>
           </div>
-
           {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
               {error}
             </div>
           )}
-
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email or Phone Number field */}
             <div>
@@ -162,13 +158,9 @@ export default function LoginPage() {
                 )}
               </div>
             </div>
-
             {/* Password field */}
             <div>
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700 mb-2 block"
-              >
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
                 Password
               </Label>
               <div className="relative">
@@ -185,7 +177,6 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-
             {/* Login button */}
             <Button
               type="submit"
@@ -194,7 +185,6 @@ export default function LoginPage() {
             >
               {isLoading ? "Signing in..." : "Login"}
             </Button>
-
             {/* Remember me and Forgot password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -207,23 +197,14 @@ export default function LoginPage() {
                   Remember me
                 </Label>
               </div>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-blue-600 hover:underline"
-              >
+              <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
                 Forgot Password?
               </Link>
             </div>
-
             {/* Sign up link */}
             <div className="text-center">
-              <span className="text-sm text-gray-600">
-                Don&#39;t have an account?{" "}
-              </span>
-              <Link
-                href="/signup"
-                className="text-sm text-blue-600 hover:underline font-medium"
-              >
+              <span className="text-sm text-gray-600">Don&#39;t have an account? </span>
+              <Link href="/signup" className="text-sm text-blue-600 hover:underline font-medium">
                 Sign up
               </Link>
             </div>
