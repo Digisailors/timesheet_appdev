@@ -9,4 +9,6 @@ export interface TimeSheet {
   location: string;
   project: string;
   status: string;
+  breakTime: string;
+  timesheetDate: string;
 }
