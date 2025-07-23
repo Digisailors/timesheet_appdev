@@ -30,9 +30,11 @@ export function DataTable() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5088/api/timesheet/all');
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`);
         const timesheets = response.data.data.flatMap((timesheet: {
-          employees: { fullName: string }[];
+          employees: {
+            timeCalculations: any; fullName: string 
+}[];
           onsiteSignIn: string;
           onsiteSignOut: string;
           onsiteTravelStart: string;
@@ -69,8 +71,8 @@ export function DataTable() {
               employee: employee.fullName,
               checkIn: timesheet.onsiteSignIn.substring(0, 5),
               checkOut: timesheet.onsiteSignOut.substring(0, 5),
-              hours: Math.floor(hoursWorked),
-              otHours: 0,
+              hours: employee.timeCalculations.totalDutyHrs,
+              otHours: employee.timeCalculations.ot,
               travelTime: travelTime,
               location: timesheet.project.location,
               project: timesheet.project.name,
@@ -238,8 +240,8 @@ export function DataTable() {
             date: formatDate(selectedEmployee.timesheetDate),
             checkIn: selectedEmployee.checkIn,
             checkOut: selectedEmployee.checkOut,
-            totalHours: `${selectedEmployee.hours}:00`,
-            overtime: `${selectedEmployee.otHours}:00`,
+            totalHours: `${selectedEmployee.hours}`,
+            overtime: `${selectedEmployee.otHours}`,
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
           }}

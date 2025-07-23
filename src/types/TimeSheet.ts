@@ -1,5 +1,6 @@
 // src/types/TimeSheet.ts
 export interface TimeSheet {
+  timeCalculations: any;
   employee: string;
   checkIn: string;
   checkOut: string;
