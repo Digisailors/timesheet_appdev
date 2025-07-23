@@ -20,6 +20,7 @@ interface EmployeeFormData {
   experience?: string;
   dateOfJoining?: string;
 }
+
 interface RawEmployee {
   id: string;
   firstName: string;
@@ -43,7 +44,7 @@ const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDesignation, setSelectedDesignation] = useState("All Designations");
+  const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -164,17 +165,14 @@ const EmployeesPage: React.FC = () => {
   }, [searchTerm, selectedDesignation, selectedProject]);
 
   const filteredEmployees = employees.filter((employee) => {
-    const matchesSearch =
-      employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesDesignation =
-      selectedDesignation === "All Designations" || employee.designation === selectedDesignation;
+      selectedDesignation === "All Designations Types" || employee.designationType === selectedDesignation;
 
-    const matchesProject =
-      selectedProject === "All Projects" || employee.project === selectedProject;
+    const matchesSearch =
+      searchTerm.trim() === "" ||
+      employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase());
 
-    return matchesSearch && matchesDesignation && matchesProject;
+    return matchesDesignation && matchesSearch;
   });
 
   const indexOfLastEmployee = currentPage * employeesPerPage;
@@ -285,7 +283,7 @@ const EmployeesPage: React.FC = () => {
 
         setEmployees((prev) => {
           const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);
-          return isEdit ? [...filtered, enrichedEmp] : [enrichedEmp, ...prev];
+          return [enrichedEmp, ...filtered];
         });
 
         setIsAddModalOpen(false);
@@ -319,6 +317,10 @@ const EmployeesPage: React.FC = () => {
             selectedProject={selectedProject}
             setSelectedProject={setSelectedProject}
             projects={projects}
+            isLoadingProjects={isLoading}
+            showSearchInput={true}
+            showDesignationFilter={true}
+            showProjectFilter={false}
           />
         </div>
 
@@ -348,7 +350,6 @@ const EmployeesPage: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Pagination - Bottom Right Inside Card */}
                 <div className="flex justify-end mt-6">
                   <div className="flex flex-wrap gap-2 items-center">
                     <button
