@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 
@@ -22,8 +21,6 @@ export interface ProjectDialogProps {
   title?: string;
   submitLabel?: string;
   isViewMode?: boolean;
-  projectId?: string;
-  isUpdateMode?: boolean;
 }
 
 const ProjectDialog: React.FC<ProjectDialogProps> = ({
@@ -34,8 +31,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   title = 'Create New Project',
   submitLabel = 'Create Project',
   isViewMode = false,
-  projectId,
-  isUpdateMode = false
 }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
@@ -45,7 +40,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     startDate: '',
     endDate: '',
     budget: '',
-    status: 'active'
+    status: 'active',
   });
 
   const [errors, setErrors] = useState<Partial<ProjectFormData>>({});
@@ -61,7 +56,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         startDate: initialData.startDate || '',
         endDate: initialData.endDate || '',
         budget: initialData.budget || '',
-        status: initialData.status || 'active'
+        status: initialData.status || 'active',
       });
       setErrors({});
     }
@@ -81,14 +76,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     if (formData.endDate && formData.startDate && new Date(formData.endDate) < new Date(formData.startDate)) {
       newErrors.endDate = 'End date must be after start date';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isViewMode) return; // Don't submit in view mode
+    if (isViewMode) return;
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -107,15 +101,15 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       startDate: '',
       endDate: '',
       budget: '',
-      status: 'active'
+      status: 'active',
     });
     setErrors({});
   };
 
   const handleInputChange = (field: keyof ProjectFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -126,15 +120,14 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
-          <button 
-            onClick={handleClose} 
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" 
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-6 h-6" />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -156,7 +149,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Project Code*
@@ -177,7 +169,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Location*
@@ -197,7 +188,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
             />
             {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description
@@ -214,7 +204,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               readOnly={isViewMode}
             />
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -237,7 +226,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </div>
               {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Expected End Date
@@ -260,7 +248,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -281,7 +268,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               />
               {errors.budget && <p className="text-red-500 text-sm mt-1">{errors.budget}</p>}
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Status
@@ -301,18 +287,17 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </select>
             </div>
           </div>
-
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <button 
-              type="button" 
-              onClick={handleClose} 
+            <button
+              type="button"
+              onClick={handleClose}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
             >
               {isViewMode ? 'Close' : 'Cancel'}
             </button>
             {!isViewMode && submitLabel && (
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 disabled={isSubmitting}
               >
