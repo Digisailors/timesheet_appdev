@@ -367,10 +367,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   required
                 >
                   <option value="">Select Designation Type</option>
-                  <option value="Regular">Regular</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Temporary">Temporary</option>
-                  <option value="Rental">Rental</option>
+                  <option value="Regular Employee">Regular Employee</option>
+                  <option value="Rental Employee">Rental Employee</option>
+                  <option value="Regular Driver">Regular Driver</option>
                   <option value="Coaster Driver">Coaster Driver</option>
                 </select>
                 {errors.designationType && touched.designationType && (
