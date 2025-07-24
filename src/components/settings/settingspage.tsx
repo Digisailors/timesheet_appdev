@@ -14,12 +14,9 @@ const SettingsPage: React.FC = () => {
 
   
 
-  const [, setActiveMenuItem] = useState<string>("settings");
+  const [ ] = useState<string>("settings");
   const [activeTab, setActiveTab] = useState<string>("Company");
 
-  const handleMenuClick = (itemId: string) => {
-    setActiveMenuItem(itemId);
-  };
 
 
   const handleTabChange = (tab: string) => {

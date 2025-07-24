@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Eye, Users, Plus, Search } from 'lucide-react';
-import SupervisorDialog from './dialog'; // Fixed import path
+import SupervisorDialog from './dialog';
 
 export interface Supervisor {
   id: string;
@@ -17,13 +17,18 @@ export interface Supervisor {
   password: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 const SupervisorList = () => {
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState('All Projects');
-  const [projectOptions, setProjectOptions] = useState<string[]>(['All Projects']);
-  const [searchTerm, setSearchTerm] = useState(''); // Added missing searchTerm state
+  const [projectOptions, setProjectOptions] = useState<Project[]>([{ id: 'all', name: 'All Projects' }]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
@@ -58,8 +63,13 @@ const SupervisorList = () => {
         const result = await response.json();
         
         if (result.success && result.data) {
-          const projectNames = result.data.map((project: { name: string }) => project.name);
-          setProjectOptions(['All Projects', ...projectNames]);
+          setProjectOptions([
+            { id: 'all', name: 'All Projects' },
+            ...result.data.map((project: { id: string, name: string }) => ({
+              id: project.id,
+              name: project.name
+            }))
+          ]);
         } else {
           console.error('Failed to load projects:', result.message);
         }
@@ -71,17 +81,22 @@ const SupervisorList = () => {
     fetchProjects();
   }, [cleanBaseUrl]);
 
-  // Filter supervisors by search term and selected project
-  const filteredSupervisors = supervisors.filter(supervisor =>
-    (supervisor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supervisor.specialization.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (selectedProject === 'All Projects' || supervisor.assignedProject === selectedProject)
-  );
+ // Filter supervisors by search term and selected project
+const filteredSupervisors = supervisors.filter(supervisor => 
+  (
+    supervisor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supervisor.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+  ) &&
+  (
+    selectedProject === 'All Projects' || 
+    supervisor.assignedProject === selectedProject
+  )
+);
 
   const handleAddSupervisor = () => {
-    // Add supervisor logic here
-    console.log('Add supervisor clicked');
+    setIsDialogOpen(true);
+    setSelectedSupervisor(null);
   };
 
   return (
@@ -126,8 +141,8 @@ const SupervisorList = () => {
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {projectOptions.map((project) => (
-                  <option key={project} value={project}>
-                    {project}
+                  <option key={project.id} value={project.name}>
+                    {project.name}
                   </option>
                 ))}
               </select>
@@ -213,34 +228,34 @@ const SupervisorList = () => {
           )}
         </div>
 
-        {/* Dialog for viewing supervisor details */}
-        {selectedSupervisor && (
-          <SupervisorDialog
-            isOpen={isDialogOpen}
-            onClose={() => {
-              setIsDialogOpen(false);
-              setSelectedSupervisor(null);
-            }}
-            mode="edit"
-            initialData={{
-              fullName: selectedSupervisor.fullName,
-              emailAddress: selectedSupervisor.emailAddress,
-              specialization: selectedSupervisor.specialization,
-              phoneNumber: selectedSupervisor.phoneNumber,
-              address: selectedSupervisor.address,
-              dateOfJoining: selectedSupervisor.dateOfJoining,
-              experience: selectedSupervisor.experience,
-              assignedProject: selectedSupervisor.assignedProject,
-              password: selectedSupervisor.password
-            }}
-            onSubmit={(data, mode) => {
-              console.log('Form submitted:', data, mode);
-              setIsDialogOpen(false);
-              setSelectedSupervisor(null);
-            }}
-            projects={projectOptions.filter(p => p !== 'All Projects')}
-          />
-        )}
+        {/* Dialog for viewing/editing supervisor details */}
+        <SupervisorDialog
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setSelectedSupervisor(null);
+          }}
+          mode={selectedSupervisor ? 'edit' : 'add'}
+          initialData={selectedSupervisor ? {
+            fullName: selectedSupervisor.fullName,
+            emailAddress: selectedSupervisor.emailAddress,
+            specialization: selectedSupervisor.specialization,
+            phoneNumber: selectedSupervisor.phoneNumber,
+            address: selectedSupervisor.address,
+            dateOfJoining: selectedSupervisor.dateOfJoining,
+            experience: selectedSupervisor.experience,
+            assignedProject: selectedSupervisor.assignedProject,
+            password: selectedSupervisor.password
+          } : undefined}
+          onSubmit={(data, mode) => {
+            console.log('Form submitted:', data, mode);
+            setIsDialogOpen(false);
+            setSelectedSupervisor(null);
+            // Here you would typically call an API to update/add the supervisor
+            // and then refresh the supervisor list
+          }}
+          projects={projectOptions.filter(p => p.id !== 'all')}
+        />
       </div>
     </div>
   );
