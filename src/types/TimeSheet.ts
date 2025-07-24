@@ -1,6 +1,10 @@
-// src/types/TimeSheet.ts
+export interface TimeCalculations {
+  totalDutyHrs: number;
+  ot: number;
+}
+
 export interface TimeSheet {
-  timeCalculations: any;
+  timeCalculations: TimeCalculations;
   employee: string;
   checkIn: string;
   checkOut: string;
@@ -12,4 +16,5 @@ export interface TimeSheet {
   status: string;
   breakTime: string;
   timesheetDate: string;
+  updatedAt: string;
 }
