@@ -7,7 +7,16 @@ import { getColumns } from './columns';
 import { ColumnDef } from '@tanstack/react-table';
 import { TimeSheet } from '../../types/TimeSheet';
 
-export function DataTable() {
+interface DataTableProps {
+  selectedDate: Date | undefined;
+}
+
+interface TimeCalculations {
+  totalDutyHrs: number;
+  ot: number;
+}
+
+export function DataTable({ selectedDate }: DataTableProps) {
   const [data, setData] = useState<TimeSheet[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
@@ -33,8 +42,9 @@ export function DataTable() {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`);
         const timesheets = response.data.data.flatMap((timesheet: {
           employees: {
-            timeCalculations: any; fullName: string 
-}[];
+            timeCalculations: TimeCalculations;
+            fullName: string;
+          }[];
           onsiteSignIn: string;
           onsiteSignOut: string;
           onsiteTravelStart: string;
@@ -46,11 +56,9 @@ export function DataTable() {
           project: { location: string; name: string };
           status: string;
           timesheetDate: string;
+          updatedAt: string;
         }) => {
           return timesheet.employees.map((employee) => {
-            const checkInTime = new Date(`1970-01-01T${timesheet.onsiteSignIn}`).getTime();
-            const checkOutTime = new Date(`1970-01-01T${timesheet.onsiteSignOut}`).getTime();
-            const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
             const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
             const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
             const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
@@ -60,7 +68,6 @@ export function DataTable() {
             const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
             const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
             const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
-
             const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
             const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
             const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
@@ -79,6 +86,7 @@ export function DataTable() {
               status: timesheet.status,
               breakTime: breakTime,
               timesheetDate: timesheet.timesheetDate,
+              updatedAt: timesheet.updatedAt,
             };
           });
         });
@@ -98,17 +106,22 @@ export function DataTable() {
     setIsDialogOpen(true);
   }, []);
 
-  const filteredData = useMemo(() =>
-    data.filter((item: TimeSheet) => {
+  const filteredData = useMemo(() => {
+    return data.filter((item: TimeSheet) => {
+      const itemDate = new Date(item.updatedAt).toDateString();
+      const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
+
       return (
         (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
         (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
         (filters.selectedLocation === 'all' || item.location === filters.selectedLocation) &&
         (filters.selectedStatus === 'all' || item.status === filters.selectedStatus) &&
         (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-         item.project.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+         item.project.toLowerCase().includes(filters.searchTerm.toLowerCase())) &&
+        (!selectedDateString || itemDate === selectedDateString)
       );
-    }), [filters, data]);
+    });
+  }, [filters, data, selectedDate]);
 
   const getActionColumn = useCallback((): ColumnDef<TimeSheet> => {
     return {

@@ -1,8 +1,7 @@
-"use client";
+// TimeSheetPage.tsx
 import React, { useState } from "react";
 import { format } from "date-fns";
 import Image from "next/image";
-
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { DataTable } from "@/components/time-sheets/dataTable";
@@ -18,15 +17,12 @@ const TimeSheetPage = () => {
   return (
     <div className="flex-1 flex flex-col">
       <div className="p-2">
-        {/* Header */}
         <div className="px-1 py-2 mb-1">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h1 className="text-xl font-bold text-blue-800 dark:text-blue-400">
               Daily Timesheet Viewer
             </h1>
-
             <div className="flex items-center gap-2">
-              {/* Calendar Button */}
               <div className="relative">
                 <button
                   onClick={() => setShowCalendar(!showCalendar)}
@@ -37,8 +33,6 @@ const TimeSheetPage = () => {
                     {format(date || new Date(), "dd-MM-yyyy")}
                   </span>
                 </button>
-
-                {/* Calendar Dropdown */}
                 {showCalendar && (
                   <div className="absolute right-0 top-full mt-1 z-50 border rounded-lg shadow-lg p-0 bg-white dark:bg-gray-800 dark:border-gray-700">
                     <Calendar
@@ -59,8 +53,6 @@ const TimeSheetPage = () => {
                   </div>
                 )}
               </div>
-
-              {/* Export Button */}
               <button
                 onClick={handleExport}
                 className="px-2 py-1 text-white bg-blue-800 dark:bg-blue-600 rounded-md hover:opacity-90 transition flex items-center gap-1 text-sm"
@@ -77,10 +69,8 @@ const TimeSheetPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Timesheet Table */}
         <div className="bg-white dark:bg-gray-900 p-2 rounded-md shadow">
-          <DataTable />
+          <DataTable selectedDate={date} />
         </div>
       </div>
     </div>
