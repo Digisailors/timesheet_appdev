@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-hot-toast";
 
@@ -51,8 +51,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
   const generateAvatarBg = () => "bg-blue-600"; // Fixed blue background
 
-  // Function to fetch employee by ID
-  const fetchEmployeeById = async (id: string) => {
+  // Function to fetch employee by ID - wrapped with useCallback
+  const fetchEmployeeById = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
       const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
@@ -91,7 +91,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [cleanBaseUrl, onClose]);
 
   // Fetch employee data when modal opens or employeeId changes
   useEffect(() => {
@@ -104,7 +104,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       setEmployee(null);
       setActiveTab('overview'); // Reset to overview tab
     }
-  }, [isOpen, employeeId]);
+  }, [isOpen, employeeId, fetchEmployeeById]);
 
   if (!isOpen) return null;
 

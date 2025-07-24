@@ -17,7 +17,8 @@ interface Supervisor {
   dateOfJoining: string;
   password: string;
   assignedProjectId?: string;
-  address?: string; // Added address property
+  address?: string;
+  experience?: string;
 }
 
 interface SupervisorData {
@@ -75,11 +76,11 @@ export default function SupervisorPage() {
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const fetchSupervisors = useCallback(async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/supervisors/all`);
+      const response = await fetch(`${baseUrl}/supervisors/all`);
       if (!response.ok) throw new Error('Failed to fetch supervisors');
 
       const result = await response.json();
@@ -104,7 +105,8 @@ export default function SupervisorPage() {
             : typeof s.assignedProject === 'string' 
             ? s.assignedProject 
             : '',
-          address: s.address || ''
+          address: s.address || '',
+          experience: s.experience || ''
         }));
         setSupervisorList(loadedSupervisors);
       } else {
@@ -118,7 +120,7 @@ export default function SupervisorPage() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/projects/all`);
+      const response = await fetch(`${baseUrl}/projects/all`);
       if (!response.ok) throw new Error('Failed to fetch projects');
 
       const result = await response.json();
@@ -162,7 +164,7 @@ export default function SupervisorPage() {
     phoneNumber: supervisor.phoneNumber,
     address: supervisor.address ?? '',
     dateOfJoining: supervisor.dateOfJoining,
-    experience: supervisor.experience?? '',
+    experience: supervisor.experience ?? '',
     assignedProject: supervisor.location,
     assignedProjectId: supervisor.assignedProjectId,
     password: supervisor.password
@@ -174,8 +176,8 @@ export default function SupervisorPage() {
       setShowViewDialog(true);
     } else if (action === 'edit') {
       try {
-        const response = await fetch(`${baseUrl}/api/supervisors/${supervisor.id}`);
-        console.log(`📡 Fetching supervisor details for ${action} from:`, `${baseUrl}/api/supervisors/${supervisor.id}`);
+        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+        console.log(`📡 Fetching supervisor details for ${action} from:`, `${baseUrl}/supervisors/${supervisor.id}`);
 
         if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
@@ -201,12 +203,12 @@ export default function SupervisorPage() {
               : '',
             phoneNumber: data.phoneNumber || '',
             dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-            password: '', // not shown in view/edit
+            password: '',
             assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
               ? data.assignedProject.id 
               : '',
             address: data.address || '',
-            experience:data.experience || ''
+            experience: data.experience || ''
           };
 
           console.log(`👤 Parsed Supervisor Object (${action}):`, fullSupervisor);
@@ -249,7 +251,7 @@ export default function SupervisorPage() {
   const confirmDeleteSupervisor = async () => {
     if (supervisorToDelete) {
       try {
-        const response = await fetch(`${baseUrl}/api/supervisors/delete/${supervisorToDelete.id}`, {
+        const response = await fetch(`${baseUrl}/supervisors/delete/${supervisorToDelete.id}`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -289,8 +291,8 @@ export default function SupervisorPage() {
 
     const url =
       mode === 'add'
-        ? `${baseUrl}/api/supervisors/create`
-        : `${baseUrl}/api/supervisors/update/${selectedSupervisor?.id}`;
+        ? `${baseUrl}/supervisors/create`
+        : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
     const method = mode === 'add' ? 'POST' : 'PUT';
 
     try {
@@ -323,7 +325,8 @@ export default function SupervisorPage() {
             dateOfJoining: formData.dateOfJoining || '',
             password: formData.password || '',
             assignedProjectId: formData.assignedProjectId,
-            address: formData.address || ''
+            address: formData.address || '',
+            experience: formData.experience || ''
           };
           setSupervisorList(prev => [...prev, newSupervisor]);
           toast.success('✅ Supervisor added successfully!');
@@ -338,7 +341,8 @@ export default function SupervisorPage() {
             dateOfJoining: formData.dateOfJoining || '',
             password: formData.password || '',
             assignedProjectId: formData.assignedProjectId,
-            address: formData.address || ''
+            address: formData.address || '',
+            experience: formData.experience || ''
           };
           setSupervisorList(prev =>
             prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
@@ -346,7 +350,6 @@ export default function SupervisorPage() {
           toast.success('✅ Supervisor updated successfully!');
         }
         closeDialog();
-        // Refresh the list to get updated data from server
         fetchSupervisors();
       } else {
         toast.error(result.message || 'Failed to submit form');
@@ -515,7 +518,7 @@ export default function SupervisorPage() {
               </div>
               <div className="grid grid-cols-2 gap-8">
                 <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>5 Years</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>

@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import Sidebar from "@/components/ui/sidebar"; // currently unused
+ // currently unused
 
 import ProjectSelector from "./ProjectSelector";
 import ProjectSummary from "./ProjectSummary";
