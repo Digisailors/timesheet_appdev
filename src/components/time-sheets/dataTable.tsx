@@ -17,6 +17,48 @@ interface TimeCalculations {
   ot: number;
 }
 
+interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  designation: string;
+  designationType: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  location: string;
+}
+
+interface TimeSheetData {
+  id: string;
+  project: Project;
+  employees: Employee[];
+  timesheetDate: string;
+  onsiteTravelStart: string;
+  onsiteTravelEnd: string;
+  onsiteSignIn: string;
+  onsiteBreakStart: string;
+  onsiteBreakEnd: string;
+  onsiteSignOut: string;
+  offsiteTravelStart: string;
+  offsiteTravelEnd: string;
+  remarks: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  isHoliday: boolean;
+  normalHrs: string;
+  breakHrs: string;
+  totalDutyHrs: string;
+  totalTravelHrs: string;
+  overtime: string;
+  supervisorName: string;
+}
+
 export function DataTable({ selectedDate }: DataTableProps) {
   const [data, setData] = useState<TimeSheet[]>([]);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -42,60 +84,45 @@ export function DataTable({ selectedDate }: DataTableProps) {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`);
-        const timesheets = response.data.data.flatMap((timesheet: {
-          employees: {
-            timeCalculations: TimeCalculations;
-            fullName: string;
-          }[];
-          onsiteSignIn: string;
-          onsiteSignOut: string;
-          onsiteTravelStart: string;
-          onsiteTravelEnd: string;
-          offsiteTravelStart: string;
-          offsiteTravelEnd: string;
-          onsiteBreakStart: string;
-          onsiteBreakEnd: string;
-          project: { location: string; name: string };
-          status: string;
-          timesheetDate: string;
-          updatedAt: string;
-        }) => {
-          return timesheet.employees.map((employee) => {
-            const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
-            const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
-            const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-            const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
-            const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
-            const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-            const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
-            const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-            const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
-            const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
-            const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
-            const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-            const breakMinutes = (breakTimeInHours % 1) * 60;
-            const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, '0')}`;
-            return {
-              employee: employee.fullName,
-              checkIn: timesheet.onsiteSignIn.substring(0, 5),
-              checkOut: timesheet.onsiteSignOut.substring(0, 5),
-              hours: employee.timeCalculations.totalDutyHrs,
-              otHours: employee.timeCalculations.ot,
-              travelTime: travelTime,
-              location: timesheet.project.location,
-              project: timesheet.project.name,
-              status: timesheet.status,
-              breakTime: breakTime,
-              timesheetDate: timesheet.timesheetDate,
-              updatedAt: timesheet.updatedAt,
-            };
-          });
+        const timesheets = response.data.data.map((timesheet: TimeSheetData) => {
+          const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
+          const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
+          const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
+          const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
+          const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
+          const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+          const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
+          const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
+          const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
+
+          const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
+          const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
+          const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+          const breakMinutes = (breakTimeInHours % 1) * 60;
+          const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, '0')}`;
+
+          return {
+            employee: timesheet.employees[0].fullName,
+            checkIn: timesheet.onsiteSignIn.substring(0, 5),
+            checkOut: timesheet.onsiteSignOut.substring(0, 5),
+            hours: parseFloat(timesheet.totalDutyHrs),
+            otHours: parseFloat(timesheet.overtime),
+            travelTime: travelTime,
+            location: timesheet.project.location,
+            project: timesheet.project.name,
+            status: timesheet.status,
+            breakTime: breakTime,
+            timesheetDate: timesheet.timesheetDate,
+            updatedAt: timesheet.updatedAt,
+          };
         });
+
         setData(timesheets);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
+
     fetchData();
   }, []);
 
@@ -124,7 +151,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
     breakTime: string;
   }) => {
     if (!selectedEmployee) return;
-    
+
     const updatedTimeSheet: TimeSheet = {
       ...selectedEmployee,
       employee: updatedEmployee.name,
@@ -139,7 +166,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
       breakTime: updatedEmployee.breakTime,
     };
 
-    setData(prevData => prevData.map(emp => 
+    setData(prevData => prevData.map(emp =>
       emp.employee === selectedEmployee.employee ? updatedTimeSheet : emp
     ));
   }, [selectedEmployee]);
