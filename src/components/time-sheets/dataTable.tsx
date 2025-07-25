@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender } from '@tanstack/react-table';
 import { ViewDialogBox } from "./viewdialogbox";
+import { EditDialogBox } from './EditDialogBox';
 import { getColumns } from './columns';
 import { ColumnDef } from '@tanstack/react-table';
 import { TimeSheet } from '../../types/TimeSheet';
@@ -18,7 +19,8 @@ interface TimeCalculations {
 
 export function DataTable({ selectedDate }: DataTableProps) {
   const [data, setData] = useState<TimeSheet[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
@@ -73,7 +75,6 @@ export function DataTable({ selectedDate }: DataTableProps) {
             const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
             const breakMinutes = (breakTimeInHours % 1) * 60;
             const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, '0')}`;
-
             return {
               employee: employee.fullName,
               checkIn: timesheet.onsiteSignIn.substring(0, 5),
@@ -95,7 +96,6 @@ export function DataTable({ selectedDate }: DataTableProps) {
         console.error('Error fetching data:', error);
       }
     };
-
     fetchData();
   }, []);
 
@@ -103,14 +103,51 @@ export function DataTable({ selectedDate }: DataTableProps) {
 
   const handleViewClick = useCallback((employee: TimeSheet) => {
     setSelectedEmployee(employee);
-    setIsDialogOpen(true);
+    setIsViewDialogOpen(true);
   }, []);
+
+  const handleEditClick = useCallback((employee: TimeSheet) => {
+    setSelectedEmployee(employee);
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleSave = useCallback((updatedEmployee: {
+    name: string;
+    project: string;
+    location: string;
+    date: string;
+    checkIn: string;
+    checkOut: string;
+    totalHours: string;
+    overtime: string;
+    travelTime: string;
+    breakTime: string;
+  }) => {
+    if (!selectedEmployee) return;
+    
+    const updatedTimeSheet: TimeSheet = {
+      ...selectedEmployee,
+      employee: updatedEmployee.name,
+      project: updatedEmployee.project,
+      location: updatedEmployee.location,
+      timesheetDate: updatedEmployee.date,
+      checkIn: updatedEmployee.checkIn,
+      checkOut: updatedEmployee.checkOut,
+      hours: parseFloat(updatedEmployee.totalHours),
+      otHours: parseFloat(updatedEmployee.overtime),
+      travelTime: updatedEmployee.travelTime,
+      breakTime: updatedEmployee.breakTime,
+    };
+
+    setData(prevData => prevData.map(emp => 
+      emp.employee === selectedEmployee.employee ? updatedTimeSheet : emp
+    ));
+  }, [selectedEmployee]);
 
   const filteredData = useMemo(() => {
     return data.filter((item: TimeSheet) => {
       const itemDate = new Date(item.updatedAt).toDateString();
       const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
-
       return (
         (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
         (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
@@ -138,6 +175,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
               View
             </button>
             <button
+              onClick={() => handleEditClick(employee)}
               className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               Edit
@@ -146,7 +184,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
         );
       }
     };
-  }, [handleViewClick]);
+  }, [handleViewClick, handleEditClick]);
 
   const actionColumn = getActionColumn();
   const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
@@ -244,8 +282,8 @@ export function DataTable({ selectedDate }: DataTableProps) {
       </div>
       {selectedEmployee && (
         <ViewDialogBox
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
+          isOpen={isViewDialogOpen}
+          onClose={() => setIsViewDialogOpen(false)}
           employee={{
             name: selectedEmployee.employee,
             project: selectedEmployee.project,
@@ -258,6 +296,25 @@ export function DataTable({ selectedDate }: DataTableProps) {
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
           }}
+        />
+      )}
+      {selectedEmployee && (
+        <EditDialogBox
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          employee={{
+            name: selectedEmployee.employee,
+            project: selectedEmployee.project,
+            location: selectedEmployee.location,
+            date: formatDate(selectedEmployee.timesheetDate),
+            checkIn: selectedEmployee.checkIn,
+            checkOut: selectedEmployee.checkOut,
+            totalHours: `${selectedEmployee.hours}`,
+            overtime: `${selectedEmployee.otHours}`,
+            travelTime: selectedEmployee.travelTime,
+            breakTime: selectedEmployee.breakTime,
+          }}
+          onSave={handleSave}
         />
       )}
     </div>
