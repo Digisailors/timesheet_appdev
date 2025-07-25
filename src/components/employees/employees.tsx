@@ -100,66 +100,65 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  // Move functions inside useEffect to avoid dependency issues
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch(`${cleanBaseUrl}/projects/all`);
-        const result = await response.json();
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/projects/all`);
+      const result = await response.json();
 
-        if (result.success && Array.isArray(result.data)) {
-          setProjects(result.data);
-        } else {
-          setProjects([]);
-        }
-      } catch {
-        toast.error("Failed to fetch projects");
+      if (result.success && Array.isArray(result.data)) {
+        setProjects(result.data);
+      } else {
         setProjects([]);
       }
-    };
+    } catch {
+      toast.error("Failed to fetch projects");
+      setProjects([]);
+    }
+  };
 
-    const fetchEmployees = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${cleanBaseUrl}/employees/all`);
-        const result = await response.json();
+  const fetchEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${cleanBaseUrl}/employees/all`);
+      const result = await response.json();
 
-        if (result.success && Array.isArray(result.data)) {
-          const enrichedEmployees = result.data.map((emp: RawEmployee): Employee => {
-            const fullName = `${emp.firstName} ${emp.lastName}`;
-            return {
-              ...emp,
-              name: fullName,
-              avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
-              avatarBg: generateAvatarBg(emp.id),
-              project: emp.specialization || emp.designation || "",
-              workHours: "160h",
-              timeFrame: "This month",
-              designation: emp.designation || "",
-              designationType: emp.designationType || "",
-              phoneNumber: emp.phoneNumber || "+0000000000",
-              email: emp.email || "",
-              address: emp.address || "Some Address",
-              experience: emp.experience || "0 years",
-              dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-              specialization: emp.specialization || emp.designation || "",
-            };
-          });
-          setEmployees(enrichedEmployees);
-        } else {
-          toast.error("Failed to fetch employees");
-        }
-      } catch {
-        toast.error("Error fetching employees");
-      } finally {
-        setIsLoading(false);
+      if (result.success && Array.isArray(result.data)) {
+        const enrichedEmployees = result.data.map((emp: RawEmployee): Employee => {
+          const fullName = `${emp.firstName} ${emp.lastName}`;
+          return {
+            ...emp,
+            name: fullName,
+            avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+            avatarBg: generateAvatarBg(emp.id),
+            project: emp.specialization || emp.designation || "",
+            workHours: "160h",
+            timeFrame: "This month",
+            designation: emp.designation || "",
+            designationType: emp.designationType || "",
+            phoneNumber: emp.phoneNumber || "+0000000000",
+            email: emp.email || "",
+            address: emp.address || "Some Address",
+            experience: emp.experience || "0 years",
+            dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+            specialization: emp.specialization || emp.designation || "",
+          };
+        });
+        setEmployees(enrichedEmployees);
+      } else {
+        toast.error("Failed to fetch employees");
       }
-    };
+    } catch {
+      toast.error("Error fetching employees");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchEmployees();
     fetchProjects();
     setCurrentPage(1);
-  }, [cleanBaseUrl]); // Only cleanBaseUrl as dependency since it's from env
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
