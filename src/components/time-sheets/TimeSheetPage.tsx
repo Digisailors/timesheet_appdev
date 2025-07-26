@@ -1,4 +1,3 @@
-// TimeSheetPage.tsx
 import React, { useState } from "react";
 import { format } from "date-fns";
 import Image from "next/image";
@@ -9,9 +8,19 @@ import { DataTable } from "@/components/time-sheets/dataTable";
 const TimeSheetPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
   const handleExport = () => {
-    alert(`Exporting data for ${format(date || new Date(), "dd-MM-yyyy")}`);
+    setShowDialog(true);
+  };
+
+  const handleConfirmExport = () => {
+    // Add your export logic here
+    setShowDialog(false);
+  };
+
+  const handleCancelExport = () => {
+    setShowDialog(false);
   };
 
   return (
@@ -73,6 +82,30 @@ const TimeSheetPage = () => {
           <DataTable selectedDate={date} />
         </div>
       </div>
+
+      {showDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+            <p className="text-gray-800 text-lg">
+              Exporting data for {format(date || new Date(), "dd-MM-yyyy")}
+            </p>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={handleCancelExport}
+                className="px-4 py-2 mr-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmExport}
+                className="px-4 py-2 text-white bg-blue-800 rounded hover:bg-blue-700"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

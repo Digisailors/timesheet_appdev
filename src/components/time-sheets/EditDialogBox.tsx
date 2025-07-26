@@ -15,6 +15,7 @@ interface EditDialogBoxProps {
     overtime: string;
     travelTime: string;
     breakTime: string;
+    supervisorName: string;
   };
   onSave: (updatedEmployee: {
     name: string;
@@ -27,6 +28,7 @@ interface EditDialogBoxProps {
     overtime: string;
     travelTime: string;
     breakTime: string;
+    supervisorName: string;
   }) => void;
 }
 
@@ -89,7 +91,8 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
               />
             </div>
           </div>
-          <div className="mb-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
             <label className="text-sm text-gray-500 dark:text-gray-400">Date</label>
             <input
               type="text"
@@ -98,6 +101,17 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
               onChange={handleChange}
               className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
             />
+            </div>
+            <div>
+            <label className="text-sm text-gray-500 dark:text-gray-400">Supervisor Name</label>
+              <input
+                type="text"
+                name="supervisorName"
+                value={editedEmployee.supervisorName}
+                onChange={handleChange}
+                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
