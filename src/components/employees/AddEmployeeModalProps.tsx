@@ -39,13 +39,15 @@ interface AddEmployeeModalProps {
   onClose: () => void;
   onSubmit: (employeeData: EmployeeFormData) => void;
   editingEmployee?: Employee | null;
+  employees?: Employee[]; // Add this prop to pass existing employees
 }
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  editingEmployee
+  editingEmployee,
+  employees = [] // Default to empty array
 }) => {
   const [formData, setFormData] = React.useState<EmployeeFormData>({
     firstName: "",
@@ -103,6 +105,17 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     setTouched({});
   }, [editingEmployee, isOpen]);
 
+  const checkEmailExists = (email: string): boolean => {
+    if (!email.trim()) return false;
+    
+    // If editing, exclude the current employee's email from the check
+    const emailsToCheck = editingEmployee 
+      ? employees.filter(emp => emp.id !== editingEmployee.id)
+      : employees;
+    
+    return emailsToCheck.some(emp => emp.email.toLowerCase() === email.toLowerCase());
+  };
+
   const validateField = (name: string, value: string) => {
     switch (name) {
       case 'firstName':
@@ -112,7 +125,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       case 'email':
         if (!value.trim()) return 'Please fill this field';
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return !emailRegex.test(value) ? 'Please enter a valid email address' : '';
+        if (!emailRegex.test(value)) return 'Please enter a valid email address';
+        if (checkEmailExists(value)) return 'This email already exists';
+        return '';
       case 'designation':
         return !value.trim() ? 'Please fill this field' : '';
       case 'designationType':
