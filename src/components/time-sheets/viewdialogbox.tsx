@@ -1,10 +1,11 @@
 "use client";
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 interface ViewDialogBoxProps {
   isOpen: boolean;
   onClose: () => void;
   employee: {
+    supervisorName: ReactNode;
     name: string;
     // id: string;
     project: string;
@@ -61,11 +62,16 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
           </div>
 
           {/* Date */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="mb-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
             <p className="font-bold">{employee.date}</p>
           </div>
-
+          <div className="mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Supervisor</p>
+            <p className="font-bold">{employee.supervisorName}</p>
+          </div>
+          </div>
           {/* Check-in/out */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>

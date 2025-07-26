@@ -112,8 +112,9 @@ export function DataTable({ selectedDate }: DataTableProps) {
             project: timesheet.project.name,
             status: timesheet.status,
             breakTime: breakTime,
+            // timesheetDate: timesheet.timesheetDate,
             timesheetDate: timesheet.timesheetDate,
-            updatedAt: timesheet.updatedAt,
+            supervisorName: timesheet.supervisorName,
           };
         });
 
@@ -149,6 +150,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
     overtime: string;
     travelTime: string;
     breakTime: string;
+    supervisorName: string;
   }) => {
     if (!selectedEmployee) return;
 
@@ -164,6 +166,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
       otHours: parseFloat(updatedEmployee.overtime),
       travelTime: updatedEmployee.travelTime,
       breakTime: updatedEmployee.breakTime,
+      supervisorName: updatedEmployee.supervisorName,
     };
 
     setData(prevData => prevData.map(emp =>
@@ -173,7 +176,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
 
   const filteredData = useMemo(() => {
     return data.filter((item: TimeSheet) => {
-      const itemDate = new Date(item.updatedAt).toDateString();
+      const itemDate = new Date(item.timesheetDate).toDateString();
       const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
       return (
         (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
@@ -322,6 +325,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
             overtime: `${selectedEmployee.otHours}`,
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
+            supervisorName: selectedEmployee.supervisorName,
           }}
         />
       )}
@@ -340,6 +344,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
             overtime: `${selectedEmployee.otHours}`,
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
+            supervisorName: selectedEmployee.supervisorName,
           }}
           onSave={handleSave}
         />

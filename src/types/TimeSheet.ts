@@ -4,6 +4,7 @@ export interface TimeCalculations {
 }
 
 export interface TimeSheet {
+  supervisorName: string;
   timeCalculations: TimeCalculations;
   employee: string;
   checkIn: string;
