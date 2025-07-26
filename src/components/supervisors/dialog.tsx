@@ -203,6 +203,7 @@ export default function SupervisorDialog({
                 value={formData.fullName}
                 error={errors.fullName}
                 onChange={handleInputChange}
+                placeholder="Enter full name"
                 required
               />
               <FormInput
@@ -212,6 +213,7 @@ export default function SupervisorDialog({
                 value={formData.emailAddress}
                 error={errors.emailAddress}
                 onChange={handleInputChange}
+                placeholder="Enter email address"
                 required
               />
             </div>
@@ -224,6 +226,7 @@ export default function SupervisorDialog({
                 value={formData.specialization || ''}
                 error={errors.specialization}
                 onChange={handleInputChange}
+                placeholder="Enter specialization"
               />
               <FormInput
                 label="Phone Number"
@@ -231,6 +234,7 @@ export default function SupervisorDialog({
                 value={formData.phoneNumber || ''}
                 error={errors.phoneNumber}
                 onChange={handleInputChange}
+                placeholder="Enter phone number"
               />
             </div>
 
@@ -246,6 +250,7 @@ export default function SupervisorDialog({
                     name="password"
                     value={formData.password || ''}
                     onChange={handleInputChange}
+                    placeholder="Enter password"
                     className="w-full p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 pr-10"
                   />
                   <button
@@ -268,6 +273,7 @@ export default function SupervisorDialog({
                 rows={3}
                 value={formData.address ?? ''}
                 onChange={handleInputChange}
+                placeholder="Enter address"
                 className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
@@ -282,6 +288,7 @@ export default function SupervisorDialog({
                 value={formData.dateOfJoining || ''}
                 error={errors.dateOfJoining}
                 onChange={handleInputChange}
+                placeholder=""
               />
               <FormInput
                 label="Experience"
@@ -289,6 +296,7 @@ export default function SupervisorDialog({
                 value={formData.experience || ''}
                 error={errors.experience}
                 onChange={handleInputChange}
+                placeholder="Enter experience (e.g., 5 years)"
               />
             </div>
 
@@ -342,6 +350,7 @@ const FormInput = ({
   value,
   error,
   onChange,
+  placeholder,
   required = false
 }: {
   label: string;
@@ -350,6 +359,7 @@ const FormInput = ({
   value: string;
   error?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
   required?: boolean;
 }) => (
   <div>
@@ -361,6 +371,7 @@ const FormInput = ({
       name={name}
       value={value}
       onChange={onChange}
+      placeholder={placeholder}
       className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
     />
     {error && <p className="text-red-500 text-sm">{error}</p>}
