@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-hot-toast";
@@ -35,7 +37,7 @@ interface TimesheetEntry {
 interface EmployeeProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employeeId: string | null; // Changed from employee object to employeeId
+  employeeId: string | null;
 }
 
 const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
@@ -46,12 +48,12 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'timesheet'>('overview');
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [timesheetData, setTimesheetData] = useState<TimesheetEntry[]>([]);
 
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const generateAvatarBg = () => "bg-blue-600"; // Fixed blue background
+  const generateAvatarBg = () => "bg-blue-600";
 
-  // Function to fetch employee by ID - wrapped with useCallback
   const fetchEmployeeById = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
@@ -82,42 +84,55 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         setEmployee(enrichedEmployee);
       } else {
         toast.error("Failed to fetch employee details");
-        onClose(); // Close modal if fetch fails
+        onClose();
       }
     } catch (error) {
       console.error("Error fetching employee by ID:", error);
       toast.error("Error fetching employee details");
-      onClose(); // Close modal if fetch fails
+      onClose();
     } finally {
       setIsLoading(false);
     }
   }, [cleanBaseUrl, onClose]);
 
-  // Fetch employee data when modal opens or employeeId changes
   useEffect(() => {
     if (isOpen && employeeId) {
       fetchEmployeeById(employeeId);
+
+      const fetchTimesheetData = async () => {
+        try {
+          const response = await fetch(`http://localhost:5088/api/timesheet/employeehistory/${employeeId}`);
+          const result = await response.json();
+
+          if (result.success && Array.isArray(result.data)) {
+            const formatted = result.data.map((entry: any) => ({
+              date: entry.timesheetDate,
+              project: entry.project?.name || 'No Project Assigned',
+              hours: `${entry.totalDutyHrs} hours`,
+              type: `Regular: ${entry.normalHrs}h, OT: ${entry.overtime}h`,
+              description: entry.project?.name || 'No Project Assigned'
+            }));
+            setTimesheetData(formatted);
+          } else {
+            setTimesheetData([]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch timesheet data:", error);
+          setTimesheetData([]);
+        }
+      };
+
+      fetchTimesheetData();
     }
-    
-    // Reset employee data when modal closes
+
     if (!isOpen) {
       setEmployee(null);
-      setActiveTab('overview'); // Reset to overview tab
+      setActiveTab('overview');
+      setTimesheetData([]);
     }
   }, [isOpen, employeeId, fetchEmployeeById]);
 
   if (!isOpen) return null;
-
-  const timesheetData: TimesheetEntry[] = [
-    {
-      date: "May 29, 2024",
-      project: "Highway Bridge",
-      hours: "8.5 hours",
-      type: "Regular: 8h, OT: 0.5h",
-      description: "Highway Bridge construction work"
-    },
-    // ... more entries
-  ];
 
   const TabButton: React.FC<{
     tab: 'overview' | 'timesheet';
@@ -197,27 +212,31 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   const TimesheetTab = () => (
     <div className="bg-gray-50 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-        <div className="space-y-3">
-          {timesheetData.map((entry, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.date}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project}</p>
-                  </div>
-                  <div className="text-right ml-4">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.hours}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{entry.type}</p>
+        {timesheetData.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400 text-center">No timesheet data available</p>
+        ) : (
+          <div className="space-y-3">
+            {timesheetData.map((entry, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.date}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project}</p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.hours}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{entry.type}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -225,8 +244,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="relative w-full max-w-4xl mx-4 md:mx-auto max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden flex flex-col">
-        
-        {/* Header */}
+
         <div className="flex justify-between items-center px-8 py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {employee ? `${employee.name} - Employee Profile` : 'Employee Profile'}
@@ -239,7 +257,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="w-full px-8 py-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-2 p-1 rounded-lg bg-gray-200 dark:bg-gray-700">
             <TabButton
@@ -257,7 +274,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">

@@ -175,7 +175,39 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         const error = validateField(name, digitsOnly);
         setErrors(prev => ({ ...prev, [name]: error }));
       }
-    } else {
+    } 
+    // Special handling for designation type to auto-select working hours
+    else if (name === 'designationType') {
+      let autoWorkingHours = '';
+      
+      // Auto-select working hours based on designation type
+      if (value === 'Rental Employee' || value === 'Coaster Driver') {
+        autoWorkingHours = '10hr';
+      } else if (value === 'Regular Employee' || value === 'Regular Driver') {
+        autoWorkingHours = '8hr';
+      }
+      
+      setFormData((prev) => ({ 
+        ...prev, 
+        [name]: value,
+        workingHours: autoWorkingHours
+      }));
+
+      // Clear errors for both fields when designation type changes
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+      if (errors['workingHours'] && autoWorkingHours) {
+        setErrors(prev => ({ ...prev, workingHours: '' }));
+      }
+
+      // Validate designation type field in real time if it was touched
+      if (touched[name]) {
+        const error = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
+    } 
+    else {
       setFormData((prev) => ({ ...prev, [name]: value }));
 
       // Clear error when user starts typing
