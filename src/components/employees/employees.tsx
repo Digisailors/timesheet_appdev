@@ -400,6 +400,7 @@ const EmployeesPage: React.FC = () => {
         onClose={handleCloseModal}
         onSubmit={handleAddEmployeeSubmit}
         editingEmployee={editingEmployee}
+        employees={employees}
       />
 
       <EmployeeProfileModal
