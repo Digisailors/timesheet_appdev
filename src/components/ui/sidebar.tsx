@@ -33,6 +33,7 @@ const menuItems: MenuItem[] = [
   { id: 'supervisor-management', label: 'Supervisor Management', href: '/supervisors', icon: UserGroupIcon },
   { id: 'project-management', label: 'Project Management', href: '/projects', icon: FolderIcon },
   { id: 'timesheets', label: 'Time-sheets', href: '/timesheets', icon: DocumentTextIcon },
+  { id: 'vacations', label: 'Vacations', href: '/vacations', icon: ChartBarIcon },
   { id: 'reports', label: 'Reports', href: '/reports', icon: ChartBarIcon },
   { id: 'settings', label: 'Settings', href: '/settings', icon: CogIcon }
 ];
