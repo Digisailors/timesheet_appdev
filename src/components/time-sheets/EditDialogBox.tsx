@@ -16,6 +16,7 @@ interface EditDialogBoxProps {
     travelTime: string;
     breakTime: string;
     supervisorName: string;
+    remarks: string;
   };
   onSave: (updatedEmployee: {
     name: string;
@@ -29,17 +30,19 @@ interface EditDialogBoxProps {
     travelTime: string;
     breakTime: string;
     supervisorName: string;
+    remarks: string;
+    status: string;
   }) => void;
 }
 
 export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, employee, onSave }) => {
-  const [editedEmployee, setEditedEmployee] = useState(employee);
+  const [editedEmployee, setEditedEmployee] = useState({ ...employee, status: 'draft' });
 
   useEffect(() => {
-    setEditedEmployee(employee);
+    setEditedEmployee({ ...employee, status: editedEmployee.status });
   }, [employee]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEditedEmployee(prev => ({ ...prev, [name]: value }));
   };
@@ -93,17 +96,17 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-            <label className="text-sm text-gray-500 dark:text-gray-400">Date</label>
-            <input
-              type="text"
-              name="date"
-              value={editedEmployee.date}
-              onChange={handleChange}
-              className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-            />
+              <label className="text-sm text-gray-500 dark:text-gray-400">Date</label>
+              <input
+                type="text"
+                name="date"
+                value={editedEmployee.date}
+                onChange={handleChange}
+                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+              />
             </div>
             <div>
-            <label className="text-sm text-gray-500 dark:text-gray-400">Supervisor Name</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Supervisor Name</label>
               <input
                 type="text"
                 name="supervisorName"
@@ -178,6 +181,32 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
                   className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
                 />
               </div>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="text-sm text-gray-500 dark:text-gray-400">Status</label>
+            <select
+              name="status"
+              value={editedEmployee.status}
+              onChange={handleChange}
+              className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+            >
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div className="gap-4 mb-4">
+            <div>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Remarks</label>
+              <input
+                type="text"
+                name="remarks"
+                value={editedEmployee.remarks}
+                onChange={handleChange}
+                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+              />
             </div>
           </div>
           <div className="flex justify-end space-x-2">

@@ -5,9 +5,9 @@ interface ViewDialogBoxProps {
   isOpen: boolean;
   onClose: () => void;
   employee: {
-    supervisorName: ReactNode;
+    remarks: string;
+    supervisorName: string;
     name: string;
-    // id: string;
     project: string;
     location: string;
     date: string;
@@ -42,7 +42,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
             </div>
             <div>
               <h3 className="font-bold">{employee.name}</h3>
-              {/* <p className="text-sm text-gray-500 dark:text-gray-400">{employee.id}</p> */}
             </div>
             <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full">
               Regular
@@ -63,15 +62,16 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
 
           {/* Date */}
           <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="mb-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-            <p className="font-bold">{employee.date}</p>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
+              <p className="font-bold">{employee.date}</p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Supervisor</p>
+              <p className="font-bold">{employee.supervisorName}</p>
+            </div>
           </div>
-          <div className="mb-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Supervisor</p>
-            <p className="font-bold">{employee.supervisorName}</p>
-          </div>
-          </div>
+
           {/* Check-in/out */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -103,6 +103,24 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Break Time</p>
                 <p className="font-bold text-gray-500 dark:text-gray-300">{employee.breakTime}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 mb-4">
+            <div>
+              <p className="text-sm font-bold text-black-500 dark:text-gray-400">Remarks</p>
+              <p className="font">{employee.remarks}</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-black-500 dark:text-gray-400">Today Salary</p>
+              <div className="flex justify-between">
+                <p className="font text-sm">For Normal Hrs (31.19 SAR)</p>
+                <p className="font text-sm mr-10">For OT Hours (12.02 SAR)</p>
+              </div>
+              <div className="flex justify-between">
+                <p className="font-bold">SAR 208.00</p>
+                <p className="font-bold mr-10">SAR 69.57</p>
               </div>
             </div>
           </div>

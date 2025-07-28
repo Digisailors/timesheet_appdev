@@ -115,6 +115,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
             // timesheetDate: timesheet.timesheetDate,
             timesheetDate: timesheet.timesheetDate,
             supervisorName: timesheet.supervisorName,
+            remarks: timesheet.remarks,
           };
         });
 
@@ -140,6 +141,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
   }, []);
 
   const handleSave = useCallback((updatedEmployee: {
+    remarks: string;
     name: string;
     project: string;
     location: string;
@@ -167,6 +169,7 @@ export function DataTable({ selectedDate }: DataTableProps) {
       travelTime: updatedEmployee.travelTime,
       breakTime: updatedEmployee.breakTime,
       supervisorName: updatedEmployee.supervisorName,
+      remarks: updatedEmployee.remarks,
     };
 
     setData(prevData => prevData.map(emp =>
@@ -204,12 +207,12 @@ export function DataTable({ selectedDate }: DataTableProps) {
             >
               View
             </button>
-            <button
+            {/* <button
               onClick={() => handleEditClick(employee)}
               className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               Edit
-            </button>
+            </button> */}
           </div>
         );
       }
@@ -326,10 +329,11 @@ export function DataTable({ selectedDate }: DataTableProps) {
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
             supervisorName: selectedEmployee.supervisorName,
+            remarks: selectedEmployee.remarks,
           }}
         />
       )}
-      {selectedEmployee && (
+      {/* {selectedEmployee && (
         <EditDialogBox
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
@@ -345,10 +349,11 @@ export function DataTable({ selectedDate }: DataTableProps) {
             travelTime: selectedEmployee.travelTime,
             breakTime: selectedEmployee.breakTime,
             supervisorName: selectedEmployee.supervisorName,
+            remarks: selectedEmployee.remarks,
           }}
           onSave={handleSave}
         />
-      )}
+      )} */}
     </div>
   );
 }
