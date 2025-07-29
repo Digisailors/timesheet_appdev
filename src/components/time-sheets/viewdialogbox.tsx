@@ -1,5 +1,5 @@
 "use client";
-import React, { ReactNode } from 'react';
+import React from 'react';
 
 interface ViewDialogBoxProps {
   isOpen: boolean;
@@ -34,7 +34,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               &times;
             </button>
           </div>
-
           {/* Avatar and Name */}
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
@@ -47,7 +46,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               Regular
             </span>
           </div>
-
           {/* Project / Location */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -59,7 +57,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <p className="font-bold">{employee.location}</p>
             </div>
           </div>
-
           {/* Date */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="mb-4">
@@ -71,7 +68,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <p className="font-bold">{employee.supervisorName}</p>
             </div>
           </div>
-
           {/* Check-in/out */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -83,7 +79,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <p className="font-bold">{employee.checkOut}</p>
             </div>
           </div>
-
           {/* Hours Breakdown */}
           <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-4">
             <h3 className="text-lg font-bold text-center mb-2">Hours Breakdown</h3>
@@ -106,7 +101,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               </div>
             </div>
           </div>
-
           <div className="flex flex-col gap-4 mb-4">
             <div>
               <p className="text-sm font-bold text-black-500 dark:text-gray-400">Remarks</p>
