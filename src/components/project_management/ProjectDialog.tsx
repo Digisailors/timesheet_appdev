@@ -5,11 +5,16 @@ export interface ProjectFormData {
   name: string;
   code: string;
   location: string;
+  normalTravelHour: string;
   description: string;
   startDate: string;
   endDate: string;
   budget: string;
   status: 'active' | 'completed' | 'pending' | 'cancelled';
+
+  clientName: string;
+  poContactNumber: string;
+  typeOfWork: string;
 }
 
 export interface ProjectDialogProps {
@@ -35,11 +40,15 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     name: '',
     code: '',
     location: '',
+    normalTravelHour: '',
     description: '',
     startDate: '',
     endDate: '',
     budget: '',
     status: 'active',
+    clientName: '',
+    poContactNumber: '',
+    typeOfWork: '',
   });
 
   const [errors, setErrors] = useState<Partial<ProjectFormData>>({});
@@ -51,11 +60,15 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         name: initialData.name || '',
         code: initialData.code || '',
         location: initialData.location || '',
+        normalTravelHour: initialData.normalTravelHour || '',
         description: initialData.description || '',
         startDate: initialData.startDate || '',
         endDate: initialData.endDate || '',
         budget: initialData.budget || '',
         status: initialData.status || 'active',
+        clientName: initialData.clientName || '',
+        poContactNumber: initialData.poContactNumber || '',
+        typeOfWork: initialData.typeOfWork || '',
       });
       setErrors({});
     }
@@ -95,11 +108,15 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       name: '',
       code: '',
       location: '',
+      normalTravelHour: '',
       description: '',
       startDate: '',
       endDate: '',
       budget: '',
       status: 'active',
+      clientName: '',
+      poContactNumber: '',
+      typeOfWork: '',
     });
     setErrors({});
   };
@@ -155,19 +172,78 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location*</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => handleInputChange('location', e.target.value)}
-              placeholder="Enter project location"
-              className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
-              disabled={isViewMode}
-              readOnly={isViewMode}
-            />
-            {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location*</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                placeholder="Enter project location"
+                className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
+                disabled={isViewMode}
+                readOnly={isViewMode}
+              />
+              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Normal Travel Hour</label>
+              <input
+                type="text"
+                value={formData.normalTravelHour}
+                onChange={(e) => handleInputChange('normalTravelHour', e.target.value)}
+                placeholder="Enter travel hours"
+                className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
+                disabled={isViewMode}
+                readOnly={isViewMode}
+              />
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client Name</label>
+              <input
+                type="text"
+                value={formData.clientName}
+                onChange={(e) => handleInputChange('clientName', e.target.value)}
+                placeholder="Enter client name"
+                className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
+                disabled={isViewMode}
+                readOnly={isViewMode}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Po/Contact Number</label>
+              <input
+                type="text"
+                value={formData.poContactNumber}
+                onChange={(e) => handleInputChange('poContactNumber', e.target.value)}
+                placeholder="Enter contact number"
+                className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
+                disabled={isViewMode}
+                readOnly={isViewMode}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type of Work</label>
+            <select
+              value={formData.typeOfWork}
+              onChange={(e) => handleInputChange('typeOfWork', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
+              disabled={isViewMode}
+            >
+              <option value="">Select Type</option>
+              <option value="Construction">Construction</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Installation">Installation</option>
+              <option value="Inspection">Inspection</option>
+            </select>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
@@ -180,6 +256,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               readOnly={isViewMode}
             />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date*</label>
@@ -212,6 +289,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget ($)*</label>
@@ -241,6 +319,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </select>
             </div>
           </div>
+
           <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"

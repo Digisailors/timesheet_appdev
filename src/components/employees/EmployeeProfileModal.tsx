@@ -379,7 +379,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <option value="Regular Employee">Regular Employee</option>
                 <option value="Rental Employee">Rental Employee</option>
                 <option value="Regular Driver">Regular Driver</option>
-                <option value="Coaster Driver">Coaster Driver</option>
+                <option value="Coaster driver">Coaster driver</option>
               </select>
             </div>
             <div>
@@ -523,10 +523,7 @@ const OverviewTab = () => {
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
               <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Project</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.currentProject || employee.project}</p>
-            </div>
+            
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
               <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
