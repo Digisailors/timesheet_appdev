@@ -170,66 +170,55 @@ export default function SupervisorPage() {
     password: supervisor.password
   });
 
-  const handleAction = async (action: string, supervisor: Supervisor) => {
-    if (action === 'view') {
-      setSelectedSupervisor(supervisor);
-      setShowViewDialog(true);
-    } else if (action === 'edit') {
-      try {
-        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
-        console.log(`📡 Fetching supervisor details for ${action} from:`, `${baseUrl}/supervisors/${supervisor.id}`);
+  // Update the handleAction function in SupervisorPage
+const handleAction = async (action: string, supervisor: Supervisor) => {
+  if (action === 'view') {
+    try {
+      const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+      if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
-        if (!response.ok) throw new Error('Failed to fetch supervisor details');
-
-        const result = await response.json();
-        console.log(`✅ API Response (${action}):`, result);
-
-        if (result.success) {
-          const data = result.data;
-
-          const fullSupervisor: Supervisor = {
-            id: data.id,
-            name: data.fullName,
-            email: data.emailAddress,
-            initials: data.fullName
-              .split(' ')
-              .map((part: string) => part.charAt(0))
-              .join('')
-              .toUpperCase(),
-            backgroundColor: 'bg-blue-500',
-            department: data.specialization || '',
-            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
-              ? data.assignedProject.name 
-              : '',
-            phoneNumber: data.phoneNumber || '',
-            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-            password: '',
-            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
-              ? data.assignedProject.id 
-              : '',
-            address: data.address || '',
-            experience: data.experience || ''
-          };
-
-          console.log(`👤 Parsed Supervisor Object (${action}):`, fullSupervisor);
-
-          setSelectedSupervisor(fullSupervisor);
-          setDialogMode('edit');
-          setShowDialog(true);
-          setSelectedProjectId(fullSupervisor.assignedProjectId || null);
-        } else {
-          toast.error(result.message || `❌ Could not load supervisor details for ${action}`);
-        }
-      } catch (error) {
-        console.error(`🚨 ${action} fetch failed:`, error);
-        toast.error(`❌ Error loading supervisor data for ${action}`);
+      const result = await response.json();
+      if (result.success) {
+        const data = result.data;
+        const fullSupervisor: Supervisor = {
+          id: data.id,
+          name: data.fullName,
+          email: data.emailAddress,
+          initials: data.fullName
+            .split(' ')
+            .map((part: string) => part.charAt(0))
+            .join('')
+            .toUpperCase(),
+          backgroundColor: 'bg-blue-500',
+          department: data.specialization || '',
+          location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+            ? data.assignedProject.name 
+            : '',
+          phoneNumber: data.phoneNumber || '',
+          dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+          password: '',
+          assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+            ? data.assignedProject.id 
+            : '',
+          address: data.address || '',
+          experience: data.experience || ''
+        };
+        setSelectedSupervisor(fullSupervisor);
+        setShowViewDialog(true);
+      } else {
+        toast.error(result.message || '❌ Could not load supervisor details');
       }
-    } else if (action === 'delete') {
-      setSupervisorToDelete(supervisor);
-      setConfirmDelete(true);
+    } catch (error) {
+      console.error('View fetch failed:', error);
+      toast.error('❌ Error loading supervisor data');
     }
-  };
-
+  } else if (action === 'edit') {
+    // ... keep the existing edit logic ...
+  } else if (action === 'delete') {
+    setSupervisorToDelete(supervisor);
+    setConfirmDelete(true);
+  }
+};
   const handleAddSupervisor = () => {
     setSelectedSupervisor(null);
     setDialogMode('add');
@@ -495,39 +484,46 @@ export default function SupervisorPage() {
       />
 
       {/* View Supervisor Details Dialog */}
-      {showViewDialog && selectedSupervisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
-            {/* Profile Content */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-xl font-semibold">Supervisor Profile</h3>
-              <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                <X size={20} className="text-gray-400 dark:text-gray-300" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Profile details */}
-              <div className="flex items-center space-x-4 mb-8">
-                <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
-                  {selectedSupervisor.initials}
-                </div>
-                <div>
-                  <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-8">
-                <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
-              </div>
-            </div>
+     {/* View Supervisor Details Dialog */}
+{showViewDialog && selectedSupervisor && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
+      {/* Profile Content */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+        <h3 className="text-xl font-semibold">Supervisor Profile</h3>
+        <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+          <X size={20} className="text-gray-400 dark:text-gray-300" />
+        </button>
+      </div>
+      <div className="p-6 space-y-6">
+        {/* Profile details */}
+        <div className="flex items-center space-x-4 mb-8">
+          <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
+            {selectedSupervisor.initials}
+          </div>
+          <div>
+            <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
+            <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
           </div>
         </div>
-      )}
+        <div className="grid grid-cols-2 gap-8">
+          <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
+          {selectedSupervisor.address && (
+            <div className="col-span-2">
+              <p className="text-sm text-gray-500 mb-2">Address</p>
+              <p>{selectedSupervisor.address}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && supervisorToDelete && (
