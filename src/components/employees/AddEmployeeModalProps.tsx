@@ -15,6 +15,10 @@ interface Employee {
   project: string;
   workHours: string;
   workingHours?: string; // Added this field
+  normalHours?: string; // Added this field
+  otHours?: string; // Added this field
+  perHourRate?: string; // API field
+  overtimeRate?: string; // API field
   timeFrame: string;
   avatar: string;
   avatarBg: string;
@@ -32,12 +36,31 @@ interface EmployeeFormData {
   dateOfJoining: string;
   specialization: string;
   workingHours: string; // Added this field
+  normalHours: string; // Added this field
+  otHours: string; // Added this field
+}
+
+// API payload interface
+interface EmployeeAPIPayload {
+  firstName: string;
+  lastName: string;
+  designation: string;
+  designationType: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+  experience: string;
+  dateOfJoining: string;
+  specialization: string;
+  workingHours: string;
+  perHourRate: string; // API expects this field name
+  overtimeRate: string; // API expects this field name
 }
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (employeeData: EmployeeFormData) => void;
+  onSubmit: (employeeData: EmployeeAPIPayload) => void; // Updated to use API payload type
   editingEmployee?: Employee | null;
   employees?: Employee[]; // Add this prop to pass existing employees
 }
@@ -60,7 +83,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     experience: "",
     dateOfJoining: "",
     specialization: "",
-    workingHours: "" // Added this field
+    workingHours: "", // Added this field
+    normalHours: "", // Added this field
+    otHours: "" // Added this field
   });
 
   const [errors, setErrors] = React.useState<{[key: string]: string}>({});
@@ -83,7 +108,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         experience: editingEmployee.experience || "0 years",
         dateOfJoining: editingEmployee.dateOfJoining || new Date().toISOString().split('T')[0],
         specialization: editingEmployee.specialization || editingEmployee.project || "",
-        workingHours: editingEmployee.workingHours || "" // Added this field
+        workingHours: editingEmployee.workingHours || "", // Added this field
+        normalHours: editingEmployee.perHourRate || editingEmployee.normalHours || "", // Map from API field
+        otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "" // Map from API field
       });
     } else {
       setFormData({
@@ -97,7 +124,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         experience: "",
         dateOfJoining: new Date().toISOString().split('T')[0],
         specialization: "",
-        workingHours: "" // Added this field
+        workingHours: "", // Added this field
+        normalHours: "", // Added this field
+        otHours: "" // Added this field
       });
     }
     // Reset errors when modal opens/closes or editing employee changes
@@ -147,6 +176,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         return !value.trim() ? 'Please fill this field' : '';
       case 'workingHours':
         return !value.trim() ? 'Please fill this field' : '';
+      case 'normalHours':
+        if (!value.trim()) return 'Please fill this field';
+        const normalHoursNum = parseFloat(value);
+        if (isNaN(normalHoursNum) || normalHoursNum < 0) return 'Please enter a valid number';
+        return '';
+      case 'otHours':
+        if (!value.trim()) return 'Please fill this field';
+        const otHoursNum = parseFloat(value);
+        if (isNaN(otHoursNum) || otHoursNum < 0) return 'Please enter a valid number';
+        return '';
       default:
         return '';
     }
@@ -176,6 +215,27 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         setErrors(prev => ({ ...prev, [name]: error }));
       }
     } 
+    // Special handling for normalHours and otHours to allow only numbers with decimals
+    else if (name === 'normalHours' || name === 'otHours') {
+      // Allow only numbers with decimal points
+      const numericValue = value.replace(/[^0-9.]/g, '');
+      // Prevent multiple decimal points
+      const parts = numericValue.split('.');
+      const formattedValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+      
+      setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+      
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+
+      // Validate field in real time if it was touched
+      if (touched[name]) {
+        const error = validateField(name, formattedValue);
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
+    }
     // Special handling for designation type to auto-select working hours
     else if (name === 'designationType') {
       let autoWorkingHours = '';
@@ -236,7 +296,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 
     // Validate ALL fields - now all are required
     const newErrors: {[key: string]: string} = {};
-    const allFields = ['firstName', 'lastName', 'email', 'designation', 'designationType', 'phoneNumber', 'address', 'experience', 'dateOfJoining', 'specialization', 'workingHours'];
+    const allFields = ['firstName', 'lastName', 'email', 'designation', 'designationType', 'phoneNumber', 'address', 'experience', 'dateOfJoining', 'specialization', 'workingHours', 'normalHours', 'otHours'];
     
     allFields.forEach(field => {
       const error = validateField(field, formData[field as keyof EmployeeFormData]);
@@ -257,8 +317,25 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       return;
     }
 
-    // If no errors, submit the form
-    onSubmit(formData);
+    // Map form data to API payload format
+    const apiPayload: EmployeeAPIPayload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      designation: formData.designation,
+      designationType: formData.designationType,
+      phoneNumber: formData.phoneNumber,
+      email: formData.email,
+      address: formData.address,
+      experience: formData.experience,
+      dateOfJoining: formData.dateOfJoining,
+      specialization: formData.specialization,
+      workingHours: formData.workingHours.replace('hr', ''), // Remove 'hr' suffix for API
+      perHourRate: formData.normalHours, // Map normalHours to perHourRate
+      overtimeRate: formData.otHours // Map otHours to overtimeRate
+    };
+
+    // If no errors, submit the form with mapped data
+    onSubmit(apiPayload);
     onClose();
   };
 
@@ -505,6 +582,46 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 )}
               </div>
 
+              {/* Per Hour Rate (Normal Hours) */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Per Hour Rate *
+                </label>
+                <input
+                  type="text"
+                  name="normalHours"
+                  value={formData.normalHours}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter amount (e.g., 700)"
+                  className={getFieldClassName('normalHours', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
+                />
+                {errors.normalHours && touched.normalHours && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.normalHours}</p>
+                )}
+              </div>
+
+              {/* Overtime Rate (OT Hours) */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Overtime Rate *
+                </label>
+                <input
+                  type="text"
+                  name="otHours"
+                  value={formData.otHours}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter amount (e.g., 104)"
+                  className={getFieldClassName('otHours', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
+                />
+                {errors.otHours && touched.otHours && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.otHours}</p>
+                )}
+              </div>
+
               {/* Address */}
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -538,8 +655,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-            >
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto">
               {isEditing ? "Update Employee" : "Add Employee"}
             </button>
           </div>

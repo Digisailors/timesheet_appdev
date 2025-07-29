@@ -24,6 +24,8 @@ export interface Employee {
   address?: string;
   specialization?: string;
   workingHours?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
 }
 
 interface TimesheetEntry {
@@ -38,21 +40,110 @@ interface EmployeeProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   employeeId: string | null;
+  mode?: 'view' | 'create';
+  onEmployeeCreated?: (employee: Employee) => void;
+}
+
+// New interface for create employee form
+interface CreateEmployeeData {
+  firstName: string;
+  lastName: string;
+  designation: string;
+  designationType: string;
+  phoneNumber: string;
+  workingHours: string;
+  email: string;
+  address: string;
+  experience: string;
+  dateOfJoining: string;
+  specialization: string;
+  perHourRate: string;
+  overtimeRate: string;
 }
 
 const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   isOpen,
   onClose,
-  employeeId
+  employeeId,
+  mode = 'view',
+  onEmployeeCreated
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'timesheet'>('overview');
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timesheetData, setTimesheetData] = useState<TimesheetEntry[]>([]);
+  
+  // Form state for create employee
+  const [createFormData, setCreateFormData] = useState<CreateEmployeeData>({
+    firstName: '',
+    lastName: '',
+    designation: '',
+    designationType: '',
+    phoneNumber: '',
+    workingHours: '',
+    email: '',
+    address: '',
+    experience: '',
+    dateOfJoining: '',
+    specialization: '',
+    perHourRate: '',
+    overtimeRate: ''
+  });
 
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const generateAvatarBg = () => "bg-blue-600";
+
+  // New function to create employee
+  const createEmployee = async (employeeData: CreateEmployeeData): Promise<Employee | null> => {
+    try {
+      const response = await fetch(`${cleanBaseUrl}/employees/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(employeeData),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const emp = result.data;
+        const fullName = `${emp.firstName} ${emp.lastName}`;
+        const enrichedEmployee: Employee = {
+          ...emp,
+          name: fullName,
+          avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+          avatarBg: generateAvatarBg(),
+          project: emp.specialization || emp.designation,
+          workHours: "160h",
+          timeFrame: "This month",
+          designation: emp.designation || "",
+          designationType: emp.designationType || "",
+          phoneNumber: emp.phoneNumber || "+0000000000",
+          email: emp.email || "",
+          address: emp.address || "Some Address",
+          experience: emp.experience || "0 years",
+          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+          specialization: emp.specialization || emp.designation || "",
+          currentProject: emp.specialization || emp.designation,
+         perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
+         overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
+
+        };
+
+        toast.success("Employee created successfully!");
+        return enrichedEmployee;
+      } else {
+        toast.error(result.message || "Failed to create employee");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      toast.error("Error creating employee");
+      return null;
+    }
+  };
 
   const fetchEmployeeById = useCallback(async (id: string) => {
     setIsLoading(true);
@@ -80,6 +171,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
           specialization: emp.specialization || emp.designation || "",
           currentProject: emp.specialization || emp.designation,
+          perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
+          overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
         };
         setEmployee(enrichedEmployee);
       } else {
@@ -95,13 +188,59 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }
   }, [cleanBaseUrl, onClose]);
 
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCreateFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const newEmployee = await createEmployee(createFormData);
+      if (newEmployee) {
+        setEmployee(newEmployee);
+        setActiveTab('overview');
+        if (onEmployeeCreated) {
+          onEmployeeCreated(newEmployee);
+        }
+        // Reset form
+        setCreateFormData({
+          firstName: '',
+          lastName: '',
+          designation: '',
+          designationType: '',
+          phoneNumber: '',
+          workingHours: '',
+          email: '',
+          address: '',
+          experience: '',
+          dateOfJoining: '',
+          specialization: '',
+          perHourRate: '',
+          overtimeRate: ''
+        });
+      }
+    } catch (error) {
+      console.error("Error creating employee:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (isOpen && employeeId) {
+    if (isOpen && mode === 'view' && employeeId) {
       fetchEmployeeById(employeeId);
 
       const fetchTimesheetData = async () => {
         try {
-          const response = await fetch(`http://localhost:5088/api/timesheet/employeehistory/${employeeId}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/employeehistory/${employeeId}`);
           const result = await response.json();
 
           if (result.success && Array.isArray(result.data)) {
@@ -125,12 +264,16 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       fetchTimesheetData();
     }
 
+    if (isOpen && mode === 'create') {
+      setActiveTab('overview');
+    }
+
     if (!isOpen) {
       setEmployee(null);
       setActiveTab('overview');
       setTimesheetData([]);
     }
-  }, [isOpen, employeeId, fetchEmployeeById]);
+  }, [isOpen, employeeId, fetchEmployeeById, mode]);
 
   if (!isOpen) return null;
 
@@ -151,63 +294,275 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     </button>
   );
 
-  const OverviewTab = () => {
-    if (!employee) return null;
-
-    return (
-      <div className="bg-gray-50 dark:bg-gray-900">
-        <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-          <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-            <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
-              <span className="text-white font-semibold text-xl">{employee.avatar}</span>
+  const CreateEmployeeForm = () => (
+    <div className="bg-gray-50 dark:bg-gray-900">
+      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+        <form onSubmit={handleCreateSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                First Name *
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                value={createFormData.firstName}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
             <div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Last Name *
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={createFormData.lastName}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={createFormData.email}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={createFormData.phoneNumber}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Designation *
+              </label>
+              <input
+                type="text"
+                name="designation"
+                value={createFormData.designation}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Designation Type *
+              </label>
+              <select
+                name="designationType"
+                value={createFormData.designationType}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select Type</option>
+                <option value="Regular Employee">Regular Employee</option>
+                <option value="Rental Employee">Rental Employee</option>
+                <option value="Regular Driver">Regular Driver</option>
+                <option value="Coaster Driver">Coaster Driver</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Working Hours *
+              </label>
+              <input
+                type="number"
+                name="workingHours"
+                value={createFormData.workingHours}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Experience *
+              </label>
+              <input
+                type="text"
+                name="experience"
+                value={createFormData.experience}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., 4 years"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Date of Joining *
+              </label>
+              <input
+                type="date"
+                name="dateOfJoining"
+                value={createFormData.dateOfJoining}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Specialization *
+              </label>
+              <input
+                type="text"
+                name="specialization"
+                value={createFormData.specialization}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Normal Hour Rate (₹) *
+              </label>
+              <input
+                type="number"
+                name="perHourRate"
+                value={createFormData.perHourRate}
+                onChange={handleInputChange}
+                required
+                step="numbers"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                OT Hour Rate (₹) *
+              </label>
+              <input
+                type="number"
+                name="overtimeRate"
+                value={createFormData.overtimeRate}
+                onChange={handleInputChange}
+                required
+                step="numbers"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.dateOfJoining || '2023-11-15'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Project</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.currentProject || employee.project}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Address *
+            </label>
+            <input
+              type="text"
+              name="address"
+              value={createFormData.address}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div className="flex justify-end space-x-4 pt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Creating...' : 'Create Employee'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+const OverviewTab = () => {
+  if (!employee) return null;
+
+  return (
+    <div className="bg-gray-50 dark:bg-gray-900">
+      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+        <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+          <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
+            <span className="text-white font-semibold text-xl">{employee.avatar}</span>
+          </div>
+          <div>
+            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.dateOfJoining || '2023-11-15'}</p>
             </div>
-            <div className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.designation}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Project</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.currentProject || employee.project}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Normal Hour Rate</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.perHourRate}</p>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.designation}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">OT Hour Rate</label>
+              <p className="text-sm text-gray-900 dark:text-white">{employee.overtimeRate}</p>
             </div>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   const TimesheetTab = () => (
     <div className="bg-gray-50 dark:bg-gray-900">
@@ -247,7 +602,12 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
         <div className="flex justify-between items-center px-8 py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {employee ? `${employee.name} - Employee Profile` : 'Employee Profile'}
+            {mode === 'create' 
+              ? 'Create New Employee' 
+              : employee 
+                ? `${employee.name} - Employee Profile` 
+                : 'Employee Profile'
+            }
           </h2>
           <button
             onClick={onClose}
@@ -259,18 +619,39 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
         <div className="w-full px-8 py-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-2 p-1 rounded-lg bg-gray-200 dark:bg-gray-700">
-            <TabButton
-              tab="overview"
-              label="Overview"
-              isActive={activeTab === 'overview'}
-              onClick={() => setActiveTab('overview')}
-            />
-            <TabButton
-              tab="timesheet"
-              label="Timesheet History"
-              isActive={activeTab === 'timesheet'}
-              onClick={() => setActiveTab('timesheet')}
-            />
+            {mode === 'create' ? (
+              <>
+                <TabButton
+                  tab="overview"
+                  label="Create Employee"
+                  isActive={activeTab === 'overview'}
+                  onClick={() => setActiveTab('overview')}
+                />
+                {employee && (
+                  <TabButton
+                    tab="timesheet"
+                    label="View Created"
+                    isActive={activeTab === 'timesheet'}
+                    onClick={() => setActiveTab('timesheet')}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <TabButton
+                  tab="overview"
+                  label="Overview"
+                  isActive={activeTab === 'overview'}
+                  onClick={() => setActiveTab('overview')}
+                />
+                <TabButton
+                  tab="timesheet"
+                  label="Timesheet History"
+                  isActive={activeTab === 'timesheet'}
+                  onClick={() => setActiveTab('timesheet')}
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -279,9 +660,13 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-500 dark:text-gray-400">Loading employee details...</p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {mode === 'create' ? 'Creating employee...' : 'Loading employee details...'}
+                </p>
               </div>
             </div>
+          ) : mode === 'create' ? (
+            activeTab === 'overview' ? <CreateEmployeeForm /> : employee ? <OverviewTab /> : <CreateEmployeeForm />
           ) : employee ? (
             activeTab === 'overview' ? <OverviewTab /> : <TimesheetTab />
           ) : (
