@@ -315,7 +315,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      saveAs(blob, "Timesheet.xlsx");
+      const selectedDateString = selectedDate ? formatDate(selectedDate.toISOString()) : formatDate(new Date().toISOString());
+
+      saveAs(blob, `Timesheet_${selectedDateString}.xlsx`);
     }, [filteredData]);
 
     useImperativeHandle(ref, () => ({
