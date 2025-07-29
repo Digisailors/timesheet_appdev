@@ -77,7 +77,6 @@ const ProjectsPage = () => {
           name: p.name,
           code: p.code,
           location: p.location,
-          employees: p.employees || 0,
           startDate: p.startDate,
           endDate: p.endDate,
           budget: p.budget,
@@ -181,10 +180,10 @@ const ProjectsPage = () => {
             endDate: result.data.endDate || "",
             budget: result.data.budget?.toString() || "",
             status: result.data.status,
-            employees: 0,
             workHours: 160,
             otHours: 20,
             lastUpdated: result.data.createdAt || new Date().toISOString(),
+            employees: 0
           }
           setProjects((prev) => [...prev, newProject])
           toast.success("✅ Project created successfully")

@@ -131,8 +131,8 @@ const EmployeesPage: React.FC = () => {
             avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
             avatarBg: generateAvatarBg(emp.id),
             project: emp.specialization || emp.designation || "",
-            workHours: "160h",
-            timeFrame: "This month",
+            workHours: "",
+            timeFrame: "",
             designation: emp.designation || "",
             designationType: emp.designationType || "",
             phoneNumber: emp.phoneNumber || "+0000000000",
@@ -400,7 +400,6 @@ const EmployeesPage: React.FC = () => {
         onClose={handleCloseModal}
         onSubmit={handleAddEmployeeSubmit}
         editingEmployee={editingEmployee}
-        employees={employees}
       />
 
       <EmployeeProfileModal
