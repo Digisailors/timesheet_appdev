@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import CreateVacationForm from "@/components/vacations/CreateVacations"
 
 interface VacationEntry {
   id: number
@@ -91,8 +92,9 @@ export default function VacationManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
-
-  const filteredData = vacationData.filter((employee) => {
+ const [showCreateForm, setShowCreateForm] = useState(false);
+ 
+ const filteredData = vacationData.filter((employee) => {
     const matchesSearch =
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.leaveType.toLowerCase().includes(searchTerm.toLowerCase())
@@ -127,9 +129,32 @@ export default function VacationManagement() {
     <div className="min-h-screen bg-gray-50 p-0">
       <div className="max-w-9xl mx-auto space-y-6 p-6">
          {/* Vacation Mode Heading - Made more prominent */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Vacation Mode</h2>
+          <Button
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-md shadow-none"
+              onClick={() => setShowCreateForm(true)}
+          >
+            <span className="text-xl font-bold">+</span>
+            <span>Create Vacation</span>
+          </Button>
         </div>
+
+ {/* Show CreateVacationForm as a modal/dialog with blur background */}
+        {showCreateForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+              <button
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl"
+                onClick={() => setShowCreateForm(false)}
+                aria-label="Close"
+              >
+                &times;
+              </button>
+              <CreateVacationForm />
+            </div>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
