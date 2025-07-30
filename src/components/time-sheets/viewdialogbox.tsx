@@ -17,6 +17,10 @@ interface ViewDialogBoxProps {
     overtime: string;
     travelTime: string;
     breakTime: string;
+    perHourRate: string;
+    overtimeRate: string;
+    regularTimeSalary: string;
+    overTimeSalary: string;
   };
 }
 
@@ -109,12 +113,12 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
             <div>
               <p className="text-sm font-bold text-black-500 dark:text-gray-400">Today Salary</p>
               <div className="flex justify-between">
-                <p className="font text-sm">For Normal Hrs (31.19 SAR)</p>
-                <p className="font text-sm mr-10">For OT Hours (12.02 SAR)</p>
+                <p className="font text-sm">For Normal Hrs ({employee.perHourRate} SAR)</p>
+                <p className="font text-sm ml-3">For OT Hours ({employee.overtimeRate} SAR)</p>
               </div>
               <div className="flex justify-between">
-                <p className="font-bold">SAR 208.00</p>
-                <p className="font-bold mr-10">SAR 69.57</p>
+                <p className="font-bold">SAR {employee.regularTimeSalary}</p>
+                <p className="font-bold mr-24">SAR {employee.overTimeSalary}</p>
               </div>
             </div>
           </div>
