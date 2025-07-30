@@ -1,20 +1,29 @@
 "use client";
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender } from '@tanstack/react-table';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import axios from "axios";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+} from "@tanstack/react-table";
 import { ViewDialogBox } from "./viewdialogbox";
-import { EditDialogBox } from './EditDialogBox';
-import { getColumns } from './columns';
-import { ColumnDef } from '@tanstack/react-table';
-import { TimeSheet } from '../../types/TimeSheet';
+// import { EditDialogBox } from './EditDialogBox';
+import { getColumns } from "./columns";
+import { TimeSheet } from "../../types/TimeSheet";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 interface DataTableProps {
   selectedDate: Date | undefined;
-}
-
-interface TimeCalculations {
-  totalDutyHrs: number;
-  ot: number;
 }
 
 interface Employee {
@@ -47,7 +56,7 @@ interface TimeSheetData {
   offsiteTravelStart: string;
   offsiteTravelEnd: string;
   remarks: string;
-  status: string;
+  // status: string;
   createdAt: string;
   updatedAt: string;
   isHoliday: boolean;
@@ -59,301 +68,409 @@ interface TimeSheetData {
   supervisorName: string;
 }
 
-export function DataTable({ selectedDate }: DataTableProps) {
-  const [data, setData] = useState<TimeSheet[]>([]);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
-  const [filters, setFilters] = useState({
-    searchTerm: '',
-    selectedEmployee: 'all',
-    selectedProject: 'all',
-    selectedLocation: 'all',
-    selectedStatus: 'all'
-  });
+export interface DataTableHandle {
+  exportExcel: () => void;
+}
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`);
-        const timesheets = response.data.data.map((timesheet: TimeSheetData) => {
-          const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
-          const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
-          const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-          const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
-          const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
-          const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-          const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
-          const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-          const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, '0')}`;
-
-          const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
-          const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
-          const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-          const breakMinutes = (breakTimeInHours % 1) * 60;
-          const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, '0')}`;
-
-          return {
-            employee: timesheet.employees[0].fullName,
-            checkIn: timesheet.onsiteSignIn.substring(0, 5),
-            checkOut: timesheet.onsiteSignOut.substring(0, 5),
-            hours: parseFloat(timesheet.totalDutyHrs),
-            otHours: parseFloat(timesheet.overtime),
-            travelTime: travelTime,
-            location: timesheet.project.location,
-            project: timesheet.project.name,
-            status: timesheet.status,
-            breakTime: breakTime,
-            // timesheetDate: timesheet.timesheetDate,
-            timesheetDate: timesheet.timesheetDate,
-            supervisorName: timesheet.supervisorName,
-            remarks: timesheet.remarks,
-          };
-        });
-
-        setData(timesheets);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const columns = useMemo(() => getColumns(), []);
-
-  const handleViewClick = useCallback((employee: TimeSheet) => {
-    setSelectedEmployee(employee);
-    setIsViewDialogOpen(true);
-  }, []);
-
-  const handleEditClick = useCallback((employee: TimeSheet) => {
-    setSelectedEmployee(employee);
-    setIsEditDialogOpen(true);
-  }, []);
-
-  const handleSave = useCallback((updatedEmployee: {
-    remarks: string;
-    name: string;
-    project: string;
-    location: string;
-    date: string;
-    checkIn: string;
-    checkOut: string;
-    totalHours: string;
-    overtime: string;
-    travelTime: string;
-    breakTime: string;
-    supervisorName: string;
-  }) => {
-    if (!selectedEmployee) return;
-
-    const updatedTimeSheet: TimeSheet = {
-      ...selectedEmployee,
-      employee: updatedEmployee.name,
-      project: updatedEmployee.project,
-      location: updatedEmployee.location,
-      timesheetDate: updatedEmployee.date,
-      checkIn: updatedEmployee.checkIn,
-      checkOut: updatedEmployee.checkOut,
-      hours: parseFloat(updatedEmployee.totalHours),
-      otHours: parseFloat(updatedEmployee.overtime),
-      travelTime: updatedEmployee.travelTime,
-      breakTime: updatedEmployee.breakTime,
-      supervisorName: updatedEmployee.supervisorName,
-      remarks: updatedEmployee.remarks,
-    };
-
-    setData(prevData => prevData.map(emp =>
-      emp.employee === selectedEmployee.employee ? updatedTimeSheet : emp
-    ));
-  }, [selectedEmployee]);
-
-  const filteredData = useMemo(() => {
-    return data.filter((item: TimeSheet) => {
-      const itemDate = new Date(item.timesheetDate).toDateString();
-      const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
-      return (
-        (filters.selectedEmployee === 'all' || item.employee === filters.selectedEmployee) &&
-        (filters.selectedProject === 'all' || item.project === filters.selectedProject) &&
-        (filters.selectedLocation === 'all' || item.location === filters.selectedLocation) &&
-        (filters.selectedStatus === 'all' || item.status === filters.selectedStatus) &&
-        (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-         item.project.toLowerCase().includes(filters.searchTerm.toLowerCase())) &&
-        (!selectedDateString || itemDate === selectedDateString)
-      );
+export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
+  function DataTable({ selectedDate }, ref) {
+    const [data, setData] = useState<TimeSheet[]>([]);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    // const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(
+      null
+    );
+    const [filters, setFilters] = useState({
+      searchTerm: "",
+      selectedEmployee: "all",
+      selectedProject: "all",
+      selectedLocation: "all",
+      selectedStatus: "all",
     });
-  }, [filters, data, selectedDate]);
 
-  const getActionColumn = useCallback((): ColumnDef<TimeSheet> => {
-    return {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const employee = row.original;
-        return (
-          <div className="flex space-x-2">
-            <button
-              onClick={() => handleViewClick(employee)}
-              className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              View
-            </button>
-            {/* <button
-              onClick={() => handleEditClick(employee)}
-              className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              Edit
-            </button> */}
-          </div>
-        );
-      }
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
     };
-  }, [handleViewClick, handleEditClick]);
 
-  const actionColumn = getActionColumn();
-  const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`
+          );
+          const timesheets = response.data.data.map(
+            (timesheet: TimeSheetData) => {
+              const travelStartTime1 = new Date(
+                `1970-01-01T${timesheet.onsiteTravelStart}`
+              ).getTime();
+              const travelEndTime1 = new Date(
+                `1970-01-01T${timesheet.onsiteTravelEnd}`
+              ).getTime();
+              const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
+              const travelStartTime2 = new Date(
+                `1970-01-01T${timesheet.offsiteTravelStart}`
+              ).getTime();
+              const travelEndTime2 = new Date(
+                `1970-01-01T${timesheet.offsiteTravelEnd}`
+              ).getTime();
+              const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+              const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
+              const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
+              const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(
+                totalTravelMinutes
+              )
+                .toString()
+                .padStart(2, "0")}`;
 
-  const table = useReactTable({
-    data: filteredData,
-    columns: tableColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+              const breakStartTime = new Date(
+                `1970-01-01T${timesheet.onsiteBreakStart}`
+              ).getTime();
+              const breakEndTime = new Date(
+                `1970-01-01T${timesheet.onsiteBreakEnd}`
+              ).getTime();
+              const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+              const breakMinutes = (breakTimeInHours % 1) * 60;
+              const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes)
+                .toString()
+                .padStart(2, "0")}`;
 
-  return (
-    <div className="bg-white dark:bg-gray-900 p-4 rounded-md shadow">
-      <div className="flex flex-wrap items-center py-4 gap-4">
-        <input
-          placeholder="Search..."
-          className="max-w-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
-          value={filters.searchTerm}
-          onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
-        />
-        <select
-          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
-          value={filters.selectedEmployee}
-          onChange={(e) => setFilters({ ...filters, selectedEmployee: e.target.value })}
-        >
-          <option value="all">All Employees</option>
-          {Array.from(new Set(data.map((item) => item.employee))).map(employee => (
-            <option key={employee} value={employee}>{employee}</option>
-          ))}
-        </select>
-        <select
-          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
-          value={filters.selectedProject}
-          onChange={(e) => setFilters({ ...filters, selectedProject: e.target.value })}
-        >
-          <option value="all">All Projects</option>
-          {Array.from(new Set(data.map((item) => item.project))).map(project => (
-            <option key={project} value={project}>{project}</option>
-          ))}
-        </select>
-        <select
-          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
-          value={filters.selectedLocation}
-          onChange={(e) => setFilters({ ...filters, selectedLocation: e.target.value })}
-        >
-          <option value="all">All Locations</option>
-          {Array.from(new Set(data.map((item) => item.location))).map(location => (
-            <option key={location} value={location}>{location}</option>
-          ))}
-        </select>
-        <select
-          className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
-          value={filters.selectedStatus}
-          onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
-        >
-          <option value="all">All Statuses</option>
-          {Array.from(new Set(data.map((item) => item.status))).map(status => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
-      </div>
-      <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 dark:bg-gray-800">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="text-left p-2 text-gray-600 dark:text-gray-300 border-b dark:border-gray-700">
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
+              return {
+                employee: timesheet.employees[0].fullName,
+                checkIn: timesheet.onsiteSignIn.substring(0, 5),
+                checkOut: timesheet.onsiteSignOut.substring(0, 5),
+                hours: parseFloat(timesheet.totalDutyHrs),
+                otHours: parseFloat(timesheet.overtime),
+                travelTime: travelTime,
+                location: timesheet.project.location,
+                project: timesheet.project.name,
+                // status: timesheet.status,
+                breakTime: breakTime,
+                timesheetDate: timesheet.timesheetDate,
+                supervisorName: timesheet.supervisorName,
+                remarks: timesheet.remarks,
+              };
+            }
+          );
+
+          setData(timesheets);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+
+      fetchData();
+    }, []);
+
+    const columns = useMemo(() => getColumns(), []);
+
+    const handleViewClick = useCallback((employee: TimeSheet) => {
+      setSelectedEmployee(employee);
+      setIsViewDialogOpen(true);
+    }, []);
+
+    const handleEditClick = useCallback((employee: TimeSheet) => {
+      setSelectedEmployee(employee);
+      // setIsEditDialogOpen(true);
+    }, []);
+
+    // const handleSave = useCallback(
+    //   (updatedEmployee: {
+    //     remarks: string;
+    //     name: string;
+    //     project: string;
+    //     location: string;
+    //     date: string;
+    //     checkIn: string;
+    //     checkOut: string;
+    //     totalHours: string;
+    //     overtime: string;
+    //     travelTime: string;
+    //     breakTime: string;
+    //     supervisorName: string;
+    //   }) => {
+    //     if (!selectedEmployee) return;
+
+    //     const updatedTimeSheet: TimeSheet = {
+    //       ...selectedEmployee,
+    //       employee: updatedEmployee.name,
+    //       project: updatedEmployee.project,
+    //       location: updatedEmployee.location,
+    //       timesheetDate: updatedEmployee.date,
+    //       checkIn: updatedEmployee.checkIn,
+    //       checkOut: updatedEmployee.checkOut,
+    //       hours: parseFloat(updatedEmployee.totalHours),
+    //       otHours: parseFloat(updatedEmployee.overtime),
+    //       travelTime: updatedEmployee.travelTime,
+    //       breakTime: updatedEmployee.breakTime,
+    //       supervisorName: updatedEmployee.supervisorName,
+    //       remarks: updatedEmployee.remarks,
+    //     };
+
+    //     setData((prevData) =>
+    //       prevData.map((emp) =>
+    //         emp.employee === selectedEmployee.employee ? updatedTimeSheet : emp
+    //       )
+    //     );
+    //   },
+    //   [selectedEmployee]
+    // );
+
+    const filteredData = useMemo(() => {
+      return data.filter((item: TimeSheet) => {
+        const itemDate = new Date(item.timesheetDate).toDateString();
+        const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
+        return (
+          (filters.selectedEmployee === "all" || item.employee === filters.selectedEmployee) &&
+          (filters.selectedProject === "all" || item.project === filters.selectedProject) &&
+          (filters.selectedLocation === "all" || item.location === filters.selectedLocation) &&
+          // (filters.selectedStatus === "all" || item.status === filters.selectedStatus) &&
+          (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+            item.project.toLowerCase().includes(filters.searchTerm.toLowerCase())) &&
+          (!selectedDateString || itemDate === selectedDateString)
+        );
+      });
+    }, [filters, data, selectedDate]);
+
+    const getActionColumn = useCallback((): ColumnDef<TimeSheet> => {
+      return {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const employee = row.original;
+          return (
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleViewClick(employee)}
+                className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              >
+                View
+              </button>
+              {/* <button
+                  onClick={() => handleEditClick(employee)}
+                  className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  Edit
+                </button> */}
+            </div>
+          );
+        },
+      };
+    }, [handleViewClick, handleEditClick]);
+
+    const actionColumn = getActionColumn();
+    const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
+
+    const table = useReactTable({
+      data: filteredData,
+      columns: tableColumns,
+      getCoreRowModel: getCoreRowModel(),
+      getPaginationRowModel: getPaginationRowModel(),
+    });
+
+    // Excel export function using exceljs
+    const exportExcel = useCallback(async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Timesheet");
+
+      worksheet.columns = [
+        { header: "Employee", key: "employee", width: 20 },
+        { header: "Project", key: "project", width: 20 },
+        { header: "Location", key: "location", width: 15 },
+        { header: "Date", key: "date", width: 15 },
+        { header: "Check In", key: "checkIn", width: 10 },
+        { header: "Check Out", key: "checkOut", width: 10 },
+        { header: "Total Hours", key: "hours", width: 12 },
+        { header: "Overtime", key: "otHours", width: 10 },
+        { header: "Travel Time", key: "travelTime", width: 12 },
+        { header: "Break Time", key: "breakTime", width: 12 },
+        { header: "Supervisor", key: "supervisorName", width: 18 },
+        { header: "Remarks", key: "remarks", width: 22 },
+        // { header: "Status", key: "status", width: 10 },
+      ];
+
+      // Prepare rows for export
+      const exportData = filteredData.map((row) => ({
+        employee: row.employee,
+        project: row.project,
+        location: row.location,
+        date: formatDate(row.timesheetDate),
+        checkIn: row.checkIn,
+        checkOut: row.checkOut,
+        hours: row.hours,
+        otHours: row.otHours,
+        travelTime: row.travelTime,
+        breakTime: row.breakTime,
+        supervisorName: row.supervisorName,
+        remarks: row.remarks,
+        // status: row.status,
+      }));
+
+      worksheet.addRows(exportData);
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const selectedDateString = selectedDate ? formatDate(selectedDate.toISOString()) : formatDate(new Date().toISOString());
+
+      saveAs(blob, `Timesheet_${selectedDateString}.xlsx`);
+    }, [filteredData]);
+
+    useImperativeHandle(ref, () => ({
+      exportExcel,
+    }));
+
+    return (
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-md shadow">
+        <div className="flex flex-wrap items-center py-4 gap-4">
+          <input
+            placeholder="Search..."
+            className="max-w-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            value={filters.searchTerm}
+            onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
+          />
+          <select
+            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            value={filters.selectedEmployee}
+            onChange={(e) => setFilters({ ...filters, selectedEmployee: e.target.value })}
+          >
+            <option value="all">All Employees</option>
+            {Array.from(new Set(data.map((item) => item.employee))).map((employee) => (
+              <option key={employee} value={employee}>
+                {employee}
+              </option>
             ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+          </select>
+          <select
+            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            value={filters.selectedProject}
+            onChange={(e) => setFilters({ ...filters, selectedProject: e.target.value })}
+          >
+            <option value="all">All Projects</option>
+            {Array.from(new Set(data.map((item) => item.project))).map((project) => (
+              <option key={project} value={project}>
+                {project}
+              </option>
+            ))}
+          </select>
+          <select
+            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            value={filters.selectedLocation}
+            onChange={(e) => setFilters({ ...filters, selectedLocation: e.target.value })}
+          >
+            <option value="all">All Locations</option>
+            {Array.from(new Set(data.map((item) => item.location))).map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
+          {/* <select
+            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            value={filters.selectedStatus}
+            onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
+          >
+            <option value="all">All Statuses</option>
+            {Array.from(new Set(data.map((item) => item.status))).map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select> */}
+        </div>
+        <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-100 dark:bg-gray-800">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="text-left p-2 text-gray-600 dark:text-gray-300 border-b dark:border-gray-700"
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
                   ))}
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="text-center p-4 text-gray-500 dark:text-gray-400">
-                  No Data Found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200"
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={table.getAllColumns().length}
+                    className="text-center p-4 text-gray-500 dark:text-gray-400"
+                  >
+                    No Data Found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {selectedEmployee && (
+          <ViewDialogBox
+            isOpen={isViewDialogOpen}
+            onClose={() => setIsViewDialogOpen(false)}
+            employee={{
+              name: selectedEmployee.employee,
+              project: selectedEmployee.project,
+              location: selectedEmployee.location,
+              date: formatDate(selectedEmployee.timesheetDate),
+              checkIn: selectedEmployee.checkIn,
+              checkOut: selectedEmployee.checkOut,
+              totalHours: `${selectedEmployee.hours}`,
+              overtime: `${selectedEmployee.otHours}`,
+              travelTime: selectedEmployee.travelTime,
+              breakTime: selectedEmployee.breakTime,
+              supervisorName: selectedEmployee.supervisorName,
+              remarks: selectedEmployee.remarks,
+            }}
+          />
+        )}
+        {/* {selectedEmployee && (
+          <EditDialogBox
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+            employee={{
+              name: selectedEmployee.employee,
+              project: selectedEmployee.project,
+              location: selectedEmployee.location,
+              date: formatDate(selectedEmployee.timesheetDate),
+              checkIn: selectedEmployee.checkIn,
+              checkOut: selectedEmployee.checkOut,
+              totalHours: `${selectedEmployee.hours}`,
+              overtime: `${selectedEmployee.otHours}`,
+              travelTime: selectedEmployee.travelTime,
+              breakTime: selectedEmployee.breakTime,
+              supervisorName: selectedEmployee.supervisorName,
+              remarks: selectedEmployee.remarks,
+            }}
+            onSave={handleSave}
+          />
+        )} */}
       </div>
-      {selectedEmployee && (
-        <ViewDialogBox
-          isOpen={isViewDialogOpen}
-          onClose={() => setIsViewDialogOpen(false)}
-          employee={{
-            name: selectedEmployee.employee,
-            project: selectedEmployee.project,
-            location: selectedEmployee.location,
-            date: formatDate(selectedEmployee.timesheetDate),
-            checkIn: selectedEmployee.checkIn,
-            checkOut: selectedEmployee.checkOut,
-            totalHours: `${selectedEmployee.hours}`,
-            overtime: `${selectedEmployee.otHours}`,
-            travelTime: selectedEmployee.travelTime,
-            breakTime: selectedEmployee.breakTime,
-            supervisorName: selectedEmployee.supervisorName,
-            remarks: selectedEmployee.remarks,
-          }}
-        />
-      )}
-      {/* {selectedEmployee && (
-        <EditDialogBox
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          employee={{
-            name: selectedEmployee.employee,
-            project: selectedEmployee.project,
-            location: selectedEmployee.location,
-            date: formatDate(selectedEmployee.timesheetDate),
-            checkIn: selectedEmployee.checkIn,
-            checkOut: selectedEmployee.checkOut,
-            totalHours: `${selectedEmployee.hours}`,
-            overtime: `${selectedEmployee.otHours}`,
-            travelTime: selectedEmployee.travelTime,
-            breakTime: selectedEmployee.breakTime,
-            supervisorName: selectedEmployee.supervisorName,
-            remarks: selectedEmployee.remarks,
-          }}
-          onSave={handleSave}
-        />
-      )} */}
-    </div>
-  );
-}
+    );
+  }
+);

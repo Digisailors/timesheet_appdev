@@ -91,48 +91,54 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const [errors, setErrors] = React.useState<{[key: string]: string}>({});
   const [touched, setTouched] = React.useState<{[key: string]: boolean}>({});
 
-  React.useEffect(() => {
-    if (editingEmployee) {
-      const nameParts = editingEmployee.name.split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
+React.useEffect(() => {
+  if (editingEmployee) {
+    const nameParts = editingEmployee.name.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
 
-      setFormData({
-        firstName,
-        lastName,
-        designation: editingEmployee.designation || "",
-        designationType: editingEmployee.designationType || "",
-        phoneNumber: editingEmployee.phoneNumber || "+0000000000",
-        email: editingEmployee.email || "",
-        address: editingEmployee.address || "Some Address",
-        experience: editingEmployee.experience || "0 years",
-        dateOfJoining: editingEmployee.dateOfJoining || new Date().toISOString().split('T')[0],
-        specialization: editingEmployee.specialization || editingEmployee.project || "",
-        workingHours: editingEmployee.workingHours || "", // Added this field
-        normalHours: editingEmployee.perHourRate || editingEmployee.normalHours || "", // Map from API field
-        otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "" // Map from API field
-      });
-    } else {
-      setFormData({
-        firstName: "",
-        lastName: "",
-        designation: "",
-        designationType: "",
-        phoneNumber: "",
-        email: "",
-        address: "",
-        experience: "",
-        dateOfJoining: new Date().toISOString().split('T')[0],
-        specialization: "",
-        workingHours: "", // Added this field
-        normalHours: "", // Added this field
-        otHours: "" // Added this field
-      });
+    // Fix for working hours - ensure it has the 'hr' suffix for the select dropdown
+    let workingHoursValue = editingEmployee.workingHours || "";
+    if (workingHoursValue && !workingHoursValue.includes('hr')) {
+      workingHoursValue = workingHoursValue + 'hr';
     }
-    // Reset errors when modal opens/closes or editing employee changes
-    setErrors({});
-    setTouched({});
-  }, [editingEmployee, isOpen]);
+
+    setFormData({
+      firstName,
+      lastName,
+      designation: editingEmployee.designation || "",
+      designationType: editingEmployee.designationType || "",
+      phoneNumber: editingEmployee.phoneNumber || "+0000000000",
+      email: editingEmployee.email || "",
+      address: editingEmployee.address || "Some Address",
+      experience: editingEmployee.experience || "0 years",
+      dateOfJoining: editingEmployee.dateOfJoining || new Date().toISOString().split('T')[0],
+      specialization: editingEmployee.specialization || editingEmployee.project || "",
+      workingHours: workingHoursValue, // Fixed this field
+      normalHours: editingEmployee.perHourRate || editingEmployee.normalHours || "", // Map from API field
+      otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "" // Map from API field
+    });
+  } else {
+    setFormData({
+      firstName: "",
+      lastName: "",
+      designation: "",
+      designationType: "",
+      phoneNumber: "",
+      email: "",
+      address: "",
+      experience: "",
+      dateOfJoining: new Date().toISOString().split('T')[0],
+      specialization: "",
+      workingHours: "", // Added this field
+      normalHours: "", // Added this field
+      otHours: "" // Added this field
+    });
+  }
+  // Reset errors when modal opens/closes or editing employee changes
+  setErrors({});
+  setTouched({});
+}, [editingEmployee, isOpen]);
 
   const checkEmailExists = (email: string): boolean => {
     if (!email.trim()) return false;
