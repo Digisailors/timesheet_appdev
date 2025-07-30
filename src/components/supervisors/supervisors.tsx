@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Eye, Edit, Trash2, Users, X } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Trash2, Users, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import SupervisorDialog from './dialog';
 import { toast, Toaster } from 'sonner';
 
@@ -75,6 +75,10 @@ export default function SupervisorPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // You can make this configurable
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -157,6 +161,21 @@ export default function SupervisorPage() {
     return matchesSearch && matchesProject;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentSupervisors = filteredSupervisors.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedProject]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
     fullName: supervisor.name,
     emailAddress: supervisor.email,
@@ -170,55 +189,95 @@ export default function SupervisorPage() {
     password: supervisor.password
   });
 
-  // Update the handleAction function in SupervisorPage
-const handleAction = async (action: string, supervisor: Supervisor) => {
-  if (action === 'view') {
-    try {
-      const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
-      if (!response.ok) throw new Error('Failed to fetch supervisor details');
+  const handleAction = async (action: string, supervisor: Supervisor) => {
+    if (action === 'view') {
+      try {
+        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+        if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
-      const result = await response.json();
-      if (result.success) {
-        const data = result.data;
-        const fullSupervisor: Supervisor = {
-          id: data.id,
-          name: data.fullName,
-          email: data.emailAddress,
-          initials: data.fullName
-            .split(' ')
-            .map((part: string) => part.charAt(0))
-            .join('')
-            .toUpperCase(),
-          backgroundColor: 'bg-blue-500',
-          department: data.specialization || '',
-          location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
-            ? data.assignedProject.name 
-            : '',
-          phoneNumber: data.phoneNumber || '',
-          dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-          password: '',
-          assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
-            ? data.assignedProject.id 
-            : '',
-          address: data.address || '',
-          experience: data.experience || ''
-        };
-        setSelectedSupervisor(fullSupervisor);
-        setShowViewDialog(true);
-      } else {
-        toast.error(result.message || '❌ Could not load supervisor details');
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data;
+          const fullSupervisor: Supervisor = {
+            id: data.id,
+            name: data.fullName,
+            email: data.emailAddress,
+            initials: data.fullName
+              .split(' ')
+              .map((part: string) => part.charAt(0))
+              .join('')
+              .toUpperCase(),
+            backgroundColor: 'bg-blue-500',
+            department: data.specialization || '',
+            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+              ? data.assignedProject.name 
+              : '',
+            phoneNumber: data.phoneNumber || '',
+            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+            password: '',
+            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+              ? data.assignedProject.id 
+              : '',
+            address: data.address || '',
+            experience: data.experience || ''
+          };
+          setSelectedSupervisor(fullSupervisor);
+          setShowViewDialog(true);
+        } else {
+          toast.error(result.message || '❌ Could not load supervisor details');
+        }
+      } catch (error) {
+        console.error('View fetch failed:', error);
+        toast.error('❌ Error loading supervisor data');
       }
-    } catch (error) {
-      console.error('View fetch failed:', error);
-      toast.error('❌ Error loading supervisor data');
+    } else if (action === 'edit') {
+      try {
+        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+        if (!response.ok) throw new Error('Failed to fetch supervisor details');
+
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data;
+          const fullSupervisor: Supervisor = {
+            id: data.id,
+            name: data.fullName,
+            email: data.emailAddress,
+            initials: data.fullName
+              .split(' ')
+              .map((part: string) => part.charAt(0))
+              .join('')
+              .toUpperCase(),
+            backgroundColor: 'bg-blue-500',
+            department: data.specialization || '',
+            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+              ? data.assignedProject.name 
+              : '',
+            phoneNumber: data.phoneNumber || '',
+            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+            password: data.password || '',
+            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+              ? data.assignedProject.id 
+              : '',
+            address: data.address || '',
+            experience: data.experience || ''
+          };
+          setSelectedSupervisor(fullSupervisor);
+          setSelectedProjectId(fullSupervisor.assignedProjectId || null);
+          setDialogMode('edit');
+          setShowDialog(true);
+        } else {
+          toast.error(result.message || '❌ Could not load supervisor details');
+        }
+      } catch (error) {
+        console.error('Edit fetch failed:', error);
+        toast.error('❌ Error loading supervisor data');
+      }
+    } else if (action === 'delete') {
+      setSupervisorToDelete(supervisor);
+      setConfirmDelete(true);
     }
-  } else if (action === 'edit') {
-    // ... keep the existing edit logic ...
-  } else if (action === 'delete') {
-    setSupervisorToDelete(supervisor);
-    setConfirmDelete(true);
-  }
-};
+  };
+
   const handleAddSupervisor = () => {
     setSelectedSupervisor(null);
     setDialogMode('add');
@@ -403,70 +462,125 @@ const handleAction = async (action: string, supervisor: Supervisor) => {
           </div>
         </div>
 
-        {/* Supervisors List */}
-        <div className="mb-4">
-          <h3 className="text-lg font-medium">Supervisors ({filteredSupervisors.length})</h3>
-        </div>
+        {/* Main Content Card */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          {/* Supervisors List Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-medium">
+              Supervisors ({filteredSupervisors.length})
+              {filteredSupervisors.length > itemsPerPage && (
+                <span className="text-sm text-gray-500 ml-2">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredSupervisors.length)} of {filteredSupervisors.length}
+                </span>
+              )}
+            </h3>
+          </div>
 
-        <div className="space-y-4">
-          {filteredSupervisors.map((supervisor) => (
-            <div
-              key={supervisor.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-full ${supervisor.backgroundColor} flex items-center justify-center`}>
-                    <span className="text-white font-medium text-lg">{supervisor.initials}</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-lg">{supervisor.name}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{supervisor.email}</p>
+          {/* Supervisors List */}
+          <div className="p-4">
+            <div className="space-y-4 mb-6">
+              {currentSupervisors.map((supervisor) => (
+                <div
+                  key={supervisor.id}
+                  className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        {supervisor.department}
-                      </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        {supervisor.location}
-                      </span>
+                      <div className={`w-12 h-12 rounded-full ${supervisor.backgroundColor} flex items-center justify-center`}>
+                        <span className="text-white font-medium text-lg">{supervisor.initials}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-lg">{supervisor.name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{supervisor.email}</p>
+                        <div className="flex items-center space-x-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
+                            {supervisor.department}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
+                            {supervisor.location}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleAction('view', supervisor)}
+                        className="p-2 border border-gray-500 dark:border-gray-400 text-gray-500 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors"
+                        title="View"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleAction('edit', supervisor)}
+                        className="p-2 border border-gray-500 dark:border-gray-400 text-gray-500 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleAction('delete', supervisor)}
+                        className="p-2 border border-red-500 text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-400 dark:hover:bg-red-900 transition-colors rounded-lg"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+              ))}
+            </div>
+
+            {filteredSupervisors.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No supervisors found</h3>
+                <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination inside card */}
+          {totalPages > 1 && (
+            <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex items-center space-x-1">
                   <button
-                    onClick={() => handleAction('view', supervisor)}
-                    className="p-2 border border-gray-500 dark:border-gray-400 text-gray-500 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors"
-                    title="View"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                   >
-                    <Eye className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
                   <button
-                    onClick={() => handleAction('edit', supervisor)}
-                    className="p-2 border border-gray-500 dark:border-gray-400 text-gray-500 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg transition-colors"
-                    title="Edit"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                   >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleAction('delete', supervisor)}
-                    className="p-2 border border-red-500 text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-400 dark:hover:bg-red-900 transition-colors rounded-lg"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
-
-        {filteredSupervisors.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No supervisors found</h3>
-            <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
-          </div>
-        )}
       </div>
 
       {/* Supervisor Add/Edit Dialog */}
@@ -484,46 +598,45 @@ const handleAction = async (action: string, supervisor: Supervisor) => {
       />
 
       {/* View Supervisor Details Dialog */}
-     {/* View Supervisor Details Dialog */}
-{showViewDialog && selectedSupervisor && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
-      {/* Profile Content */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
-        <h3 className="text-xl font-semibold">Supervisor Profile</h3>
-        <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-          <X size={20} className="text-gray-400 dark:text-gray-300" />
-        </button>
-      </div>
-      <div className="p-6 space-y-6">
-        {/* Profile details */}
-        <div className="flex items-center space-x-4 mb-8">
-          <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
-            {selectedSupervisor.initials}
-          </div>
-          <div>
-            <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
-            <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-8">
-          <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
-          {selectedSupervisor.address && (
-            <div className="col-span-2">
-              <p className="text-sm text-gray-500 mb-2">Address</p>
-              <p>{selectedSupervisor.address}</p>
+      {showViewDialog && selectedSupervisor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            {/* Profile Content */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="text-xl font-semibold">Supervisor Profile</h3>
+              <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                <X size={20} className="text-gray-400 dark:text-gray-300" />
+              </button>
             </div>
-          )}
+            <div className="p-6 space-y-6">
+              {/* Profile details */}
+              <div className="flex items-center space-x-4 mb-8">
+                <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
+                  {selectedSupervisor.initials}
+                </div>
+                <div>
+                  <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
+                  <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
+                {selectedSupervisor.address && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-500 mb-2">Address</p>
+                    <p>{selectedSupervisor.address}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && supervisorToDelete && (
