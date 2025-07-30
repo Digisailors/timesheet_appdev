@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Bell } from "lucide-react"
+// import { Bell } from "lucide-react"
 import { Search, Check, Clock, X, Heart, Filter } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -119,32 +119,16 @@ export default function VacationManagement() {
       .toUpperCase()
   }
 
-  const formatDateRange = (startDate: string, endDate: string) => {
-    return `${startDate} to ${endDate}`
-  }
+  // const formatDateRange = (startDate: string, endDate: string) => {
+  //   return `${startDate} to ${endDate}`
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 p-0">
-      {/* Header - minimal, thin border, small font, tight padding */}
-      <div className="w-full flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 h-[70px]">
-        <span className="text-lg text-gray-800 font-bold tracking-wide">Vacation Management</span>
-        <div className="flex items-center gap-6">
-          <Bell className="h-5 w-5 text-gray-500" />
-          <Avatar className="h-6 w-6 ml-1 mr-4">
-            <AvatarImage src="/placeholder.svg?height=24&width=24" />
-            <AvatarFallback className="text-xs">AU</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col leading-tight ml-2">
-            <span className="text-xs text-gray-700">Admin User</span>
-            <span className="text-[10px] text-gray-400">Site Manager</span>
-          </div>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto space-y-6 p-6">
+      <div className="max-w-9xl mx-auto space-y-6 p-6">
          {/* Vacation Mode Heading - Made more prominent */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Vacation Mode</h2>
-   
         </div>
 
         {/* Summary Cards */}

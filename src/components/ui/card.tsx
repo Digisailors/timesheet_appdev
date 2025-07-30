@@ -6,9 +6,11 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
     <div ref={ref} className={cn("rounded-lg border bg-white shadow-sm", className)} {...props} />
   )
 )
+Card.displayName = "Card"
 
 export const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn("p-4", className)} {...props} />
   )
 )
+CardContent.displayName = "CardContent"

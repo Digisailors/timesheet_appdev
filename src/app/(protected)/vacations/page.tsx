@@ -12,7 +12,7 @@ export default function DashboardPage() {
       
       {/* Main Content Area */}
       <div className="ml-64 flex flex-col min-h-screen">
-        {/* Fixed Navbar
+        {/* Fixed Navbar */}
         <div className="sticky top-0 z-30">
           <Navbar
             title="Vacations Management"
@@ -20,7 +20,7 @@ export default function DashboardPage() {
             userRole="Site Manager"
             userInitial="A"
           />
-        </div> */}
+        </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
