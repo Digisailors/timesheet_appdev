@@ -19,4 +19,8 @@ export interface TimeSheet {
   breakTime: string;
   timesheetDate: string;
   updatedAt: string;
+  perHourRate: string;
+  overtimeRate: string;
+  regularTimeSalary: string;
+  overTimeSalary: string;
 }

@@ -33,6 +33,8 @@ interface Employee {
   fullName: string;
   designation: string;
   designationType: string;
+  perHourRate: string;
+  overtimeRate: string;
 }
 
 interface Project {
@@ -66,6 +68,10 @@ interface TimeSheetData {
   totalTravelHrs: string;
   overtime: string;
   supervisorName: string;
+  perHourRate: string;
+  overtimeRate: string;
+  regularTimeSalary: string;
+  overTimeSalary: string;
 }
 
 export interface DataTableHandle {
@@ -152,6 +158,10 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                 timesheetDate: timesheet.timesheetDate,
                 supervisorName: timesheet.supervisorName,
                 remarks: timesheet.remarks,
+                perHourRate: timesheet.employees[0].perHourRate,
+                overtimeRate: timesheet.employees[0].overtimeRate,
+                regularTimeSalary: timesheet.regularTimeSalary,
+                overTimeSalary: timesheet.overTimeSalary,
               };
             }
           );
@@ -446,6 +456,10 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               breakTime: selectedEmployee.breakTime,
               supervisorName: selectedEmployee.supervisorName,
               remarks: selectedEmployee.remarks,
+              perHourRate: selectedEmployee.perHourRate,
+              overtimeRate: selectedEmployee.overtimeRate,
+              regularTimeSalary: selectedEmployee.regularTimeSalary,
+              overTimeSalary: selectedEmployee.overTimeSalary,
             }}
           />
         )}
