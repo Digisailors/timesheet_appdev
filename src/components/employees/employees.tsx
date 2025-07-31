@@ -46,6 +46,7 @@ const EmployeesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("All Job Titles");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -162,7 +163,7 @@ const EmployeesPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedDesignation, selectedProject]);
+  }, [searchTerm, selectedDesignation, selectedProject, selectedJobTitle]); // ✅ include job title in filters
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesDesignation =
@@ -172,7 +173,10 @@ const EmployeesPage: React.FC = () => {
       searchTerm.trim() === "" ||
       employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase());
 
-    return matchesDesignation && matchesSearch;
+    const matchesJobTitle =
+      selectedJobTitle === "All Job Titles" || employee.specialization === selectedJobTitle; // ✅ filter logic
+
+    return matchesDesignation && matchesSearch && matchesJobTitle;
   });
 
   const indexOfLastEmployee = currentPage * employeesPerPage;
@@ -316,6 +320,8 @@ const EmployeesPage: React.FC = () => {
             setSelectedDesignation={setSelectedDesignation}
             selectedProject={selectedProject}
             setSelectedProject={setSelectedProject}
+            selectedJobTitle={selectedJobTitle}
+            setSelectedJobTitle={setSelectedJobTitle}
             projects={projects}
             isLoadingProjects={isLoading}
             showSearchInput={true}
