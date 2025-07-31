@@ -596,13 +596,27 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     );
   };
 
-  const TimesheetTab = () => (
+ const TimesheetTab = () => {
+  const handleExportClick = () => {
+    if (timesheetData.length === 0) {
+      toast.error("No timesheet data available", {
+        style: {
+          background: 'white',
+          color: 'black',
+        },
+      });
+      return;
+    }
+    exportToExcel();
+  };
+
+  return (
     <div className="bg-gray-50 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 mr-4">
           <button
-            onClick={exportToExcel}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            onClick={handleExportClick}
+            className="px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Export to Excel
           </button>
@@ -635,6 +649,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       </div>
     </div>
   );
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
