@@ -1,10 +1,9 @@
-'use client';
-
 import React, { useState, useEffect, useCallback } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-hot-toast";
+import ExcelJS from 'exceljs';
 
-export interface Employee {
+interface Employee {
   id: string;
   name: string;
   email: string;
@@ -29,11 +28,27 @@ export interface Employee {
 }
 
 interface TimesheetEntry {
-  date: string;
-  project: string;
-  hours: string;
+  id: string;
+  project: {
+    id: string;
+    name: string;
+    location: string;
+  };
+  employees: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+  }[];
+  timesheetDate: string;
+  onsiteSignIn: string;
+  onsiteSignOut: string;
+  totalDutyHrs: string;
+  overtime: string;
+  supervisorName: string;
   type: string;
   description: string;
+  normalHrs: string;
 }
 
 interface EmployeeProfileModalProps {
@@ -44,7 +59,6 @@ interface EmployeeProfileModalProps {
   onEmployeeCreated?: (employee: Employee) => void;
 }
 
-// New interface for create employee form
 interface CreateEmployeeData {
   firstName: string;
   lastName: string;
@@ -72,8 +86,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timesheetData, setTimesheetData] = useState<TimesheetEntry[]>([]);
-  
-  // Form state for create employee
   const [createFormData, setCreateFormData] = useState<CreateEmployeeData>({
     firstName: '',
     lastName: '',
@@ -91,10 +103,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   });
 
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
   const generateAvatarBg = () => "bg-blue-600";
 
-  // New function to create employee
   const createEmployee = async (employeeData: CreateEmployeeData): Promise<Employee | null> => {
     try {
       const response = await fetch(`${cleanBaseUrl}/employees/create`, {
@@ -104,9 +114,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         },
         body: JSON.stringify(employeeData),
       });
-
       const result = await response.json();
-
       if (result.success && result.data) {
         const emp = result.data;
         const fullName = `${emp.firstName} ${emp.lastName}`;
@@ -127,11 +135,9 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
           specialization: emp.specialization || emp.designation || "",
           currentProject: emp.specialization || emp.designation,
-         perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
-         overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
-
+          perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
+          overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
         };
-
         toast.success("Employee created successfully!");
         return enrichedEmployee;
       } else {
@@ -150,7 +156,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     try {
       const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
       const result = await response.json();
-
       if (result.success && result.data) {
         const emp = result.data;
         const fullName = `${emp.firstName} ${emp.lastName}`;
@@ -188,7 +193,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }
   }, [cleanBaseUrl, onClose]);
 
-  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCreateFormData(prev => ({
@@ -197,11 +201,9 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }));
   };
 
-  // Handle form submission
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       const newEmployee = await createEmployee(createFormData);
       if (newEmployee) {
@@ -210,7 +212,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         if (onEmployeeCreated) {
           onEmployeeCreated(newEmployee);
         }
-        // Reset form
         setCreateFormData({
           firstName: '',
           lastName: '',
@@ -234,24 +235,63 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }
   };
 
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Timesheet');
+
+    // Define columns including the new fields
+    worksheet.columns = [
+      { header: 'Full Name', key: 'fullName', width: 25 },
+      { header: 'Project Name', key: 'name', width: 25 },
+      { header: 'Location', key: 'location', width: 20 },
+      { header: 'Date', key: 'timesheetDate', width: 20 },
+      { header: 'Check In', key: 'onsiteSignIn', width: 15 },
+      { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
+      { header: 'Hours', key: 'totalDutyHrs', width: 10 },
+      { header: 'Overtime', key: 'overtime', width: 10 },
+      { header: 'Supervisor', key: 'supervisorName', width: 20 },
+      { header: 'Type', key: 'type', width: 20 },
+      { header: 'Description', key: 'description', width: 50 },
+    ];
+
+    // Add rows with the new fields
+    timesheetData.forEach((entry) => {
+      worksheet.addRow({
+        fullName: entry.employees[0].fullName,
+        name: entry.project.name,
+        location: entry.project.location,
+        timesheetDate: entry.timesheetDate,
+        onsiteSignIn: entry.onsiteSignIn,
+        onsiteSignOut: entry.onsiteSignOut,
+        totalDutyHrs: entry.totalDutyHrs,
+        overtime: entry.overtime,
+        supervisorName: entry.supervisorName,
+        type: `${entry.normalHrs}h, OT: ${entry.overtime}h`,
+        description: entry.project.name,
+      });
+    });
+
+    // Generate Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'TimesheetHistory.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     if (isOpen && mode === 'view' && employeeId) {
       fetchEmployeeById(employeeId);
-
       const fetchTimesheetData = async () => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/employeehistory/${employeeId}`);
           const result = await response.json();
-
           if (result.success && Array.isArray(result.data)) {
-            const formatted = result.data.map((entry: any) => ({
-              date: entry.timesheetDate,
-              project: entry.project?.name || 'No Project Assigned',
-              hours: `${entry.totalDutyHrs} hours`,
-              type: `Regular: ${entry.normalHrs}h, OT: ${entry.overtime}h`,
-              description: entry.project?.name || 'No Project Assigned'
-            }));
-            setTimesheetData(formatted);
+            setTimesheetData(result.data);
           } else {
             setTimesheetData([]);
           }
@@ -260,14 +300,11 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           setTimesheetData([]);
         }
       };
-
       fetchTimesheetData();
     }
-
     if (isOpen && mode === 'create') {
       setActiveTab('overview');
     }
-
     if (!isOpen) {
       setEmployee(null);
       setActiveTab('overview');
@@ -287,8 +324,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       onClick={onClick}
       className={`px-8 py-3 text-sm font-medium flex-1 text-center transition-all duration-200 rounded-lg
         ${isActive
-        ? 'bg-white text-gray-900 dark:bg-gray-800 dark:text-white shadow'
-        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+          ? 'bg-white text-gray-900 dark:bg-gray-800 dark:text-white shadow'
+          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
     >
       {label}
     </button>
@@ -498,72 +535,78 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     </div>
   );
 
-const OverviewTab = () => {
-  if (!employee) return null;
-
-  return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-        <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
-            <span className="text-white font-semibold text-xl">{employee.avatar}</span>
-          </div>
-          <div>
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.dateOfJoining || '2023-11-15'}</p>
+  const OverviewTab = () => {
+    if (!employee) return null;
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+          <div className="flex items-center space-x-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className={`w-20 h-20 ${employee.avatarBg} rounded-full flex items-center justify-center`}>
+              <span className="text-white font-semibold text-xl">{employee.avatar}</span>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Normal Hour Rate</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.perHourRate}</p>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{employee.email}</p>
             </div>
           </div>
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Join Date</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.dateOfJoining || '2023-11-15'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.phoneNumber || '98765 43210'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.address || 'Not provided'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Normal Hour Rate</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.perHourRate}</p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.designation}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">OT Hour Rate</label>
-              <p className="text-sm text-gray-900 dark:text-white">{employee.overtimeRate}</p>
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.experience || '5 Years'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.designation}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation Type</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">OT Hour Rate</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.overtimeRate}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   const TimesheetTab = () => (
     <div className="bg-gray-50 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={exportToExcel}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            Export to Excel
+          </button>
+        </div>
         {timesheetData.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center">No timesheet data available</p>
         ) : (
@@ -576,12 +619,12 @@ const OverviewTab = () => {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.date}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.timesheetDate}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project.name}</p>
                     </div>
                     <div className="text-right ml-4">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.hours}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{entry.type}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.totalDutyHrs}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{`Regular: ${entry.normalHrs}h, OT: ${entry.overtime}h`}</p>
                     </div>
                   </div>
                 </div>
@@ -596,13 +639,12 @@ const OverviewTab = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="relative w-full max-w-4xl mx-4 md:mx-auto max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden flex flex-col">
-
         <div className="flex justify-between items-center px-8 py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {mode === 'create' 
-              ? 'Create New Employee' 
-              : employee 
-                ? `${employee.name} - Employee Profile` 
+            {mode === 'create'
+              ? 'Create New Employee'
+              : employee
+                ? `${employee.name} - Employee Profile`
                 : 'Employee Profile'
             }
           </h2>
@@ -613,7 +655,6 @@ const OverviewTab = () => {
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
-
         <div className="w-full px-8 py-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-2 p-1 rounded-lg bg-gray-200 dark:bg-gray-700">
             {mode === 'create' ? (
@@ -651,7 +692,6 @@ const OverviewTab = () => {
             )}
           </div>
         </div>
-
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
