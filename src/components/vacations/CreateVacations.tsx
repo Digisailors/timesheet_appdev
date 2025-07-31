@@ -20,14 +20,22 @@ interface CreateVacationFormProps {
 }
 
 export default function CreateVacationForm({ open = true, onOpenChange }: CreateVacationFormProps) {
+  const [internalOpen, setInternalOpen] = useState(open)
+
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
   const [employee, setEmployee] = useState("")
   const [leaveType, setLeaveType] = useState("")
   const [reason, setReason] = useState("")
 
+  const isDialogOpen = onOpenChange ? open : internalOpen
+
+  const closeDialog = () => {
+    onOpenChange?.(false)
+    setInternalOpen(false)
+  }
+
   const handleSubmit = () => {
-    // Handle form submission logic here
     console.log({
       employee,
       leaveType,
@@ -35,53 +43,52 @@ export default function CreateVacationForm({ open = true, onOpenChange }: Create
       endDate,
       reason,
     })
+    closeDialog()
   }
 
   const handleCancel = () => {
-    // Reset form or close dialog
-    onOpenChange?.(false)
+    closeDialog()
   }
 
+  if (!isDialogOpen) return null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 bg-white text-black">
-        <DialogHeader className="px-6 py-4 border-b">
+    <Dialog open={isDialogOpen} onOpenChange={onOpenChange ?? setInternalOpen}>
+
+
+      <DialogContent className="sm:max-w-[700px] rounded-md p-0 bg-white text-black">
+        <DialogHeader className="px-6 pt-4 pb-2 border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold mt-3">Create Vacation</DialogTitle>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onOpenChange?.(false)}>
+            <DialogTitle className="text-xl font-semibold">Create Vacation</DialogTitle>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeDialog}>
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-4 space-y-6">
-          {/* First Row - Employee and Leave Type */}
-          <div className="grid grid-cols-2 gap-4">
+        <div className="px-6 pt-6 pb-0 space-y-6">
+          {/* Employee and Leave Type */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="employee" className="text-sm font-bold">
-                Employee
-              </Label>
+              <Label className="text-sm font-semibold">Employee</Label>
               <Select value={employee} onValueChange={setEmployee}>
-                <SelectTrigger className="bg-white text-black border border-gray-400">
+                <SelectTrigger className="bg-white border border-gray-300 text-sm h-10">
                   <SelectValue placeholder="Select person" />
                 </SelectTrigger>
-                <SelectContent className="bg-white text-black">
+                <SelectContent>
                   <SelectItem value="john-doe">John Doe</SelectItem>
                   <SelectItem value="jane-smith">Jane Smith</SelectItem>
                   <SelectItem value="mike-johnson">Mike Johnson</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="leave-type" className="text-sm font-bold">
-                Leave Type
-              </Label>
+              <Label className="text-sm font-semibold">Leave Type</Label>
               <Select value={leaveType} onValueChange={setLeaveType}>
-                <SelectTrigger className="bg-white text-black border border-gray-400">
+                <SelectTrigger className="bg-white border border-gray-300 text-sm h-10">
                   <SelectValue placeholder="Select leave type" />
                 </SelectTrigger>
-                <SelectContent className="bg-white text-black" >
+                <SelectContent>
                   <SelectItem value="annual">Annual Leave</SelectItem>
                   <SelectItem value="sick">Sick Leave</SelectItem>
                   <SelectItem value="personal">Personal Leave</SelectItem>
@@ -91,17 +98,17 @@ export default function CreateVacationForm({ open = true, onOpenChange }: Create
             </div>
           </div>
 
-          {/* Second Row - Start Date and End Date */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Start Date and End Date */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm font-bold">Start Date</Label>
+              <Label className="text-sm font-semibold">Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-white text-black!border !border-gray-400",
-                      !startDate && "text-black"
+                      "w-full justify-start text-left font-normal text-sm h-10 border border-gray-300 bg-white",
+                      !startDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -115,14 +122,14 @@ export default function CreateVacationForm({ open = true, onOpenChange }: Create
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-bold">End Date</Label>
+              <Label className="text-sm font-semibold">End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-white text-black !border !border-gray-400",
-                      !endDate && "text-black"
+                      "w-full justify-start text-left font-normal text-sm h-10 border border-gray-300 bg-white",
+                      !endDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -136,36 +143,32 @@ export default function CreateVacationForm({ open = true, onOpenChange }: Create
             </div>
           </div>
 
-          {/* Third Row - Eligible Days and Remaining Days */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Eligible Days and Remaining Days */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm font-bold">Eligible Days</Label>
-              <Input value="40 days" readOnly className="bg-muted border border-gray-400" />
+              <Label className="text-sm font-semibold">Eligible Days</Label>
+              <Input value="40 days" readOnly className="bg-white text-sm h-10 border border-gray-300" />
             </div>
-
             <div className="space-y-2">
-              <Label className="text-sm font-bold">Remaining Days</Label>
-              <Input placeholder="" className="bg-muted border border-gray-400" readOnly />
+              <Label className="text-sm font-semibold">Remaining Days</Label>
+              <Input readOnly className="bg-white text-sm h-10 border border-gray-300" />
             </div>
           </div>
 
           {/* Reason for Leave */}
           <div className="space-y-2">
-            <Label htmlFor="reason" className="text-sm font-bold">
-              Reason for Leave
-            </Label>
+            <Label className="text-sm font-semibold">Reason for Leave</Label>
             <Textarea
-              id="reason"
-              placeholder="Please provide details about your leave request..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="min-h-[100px] resize-none bg-white text-black border-gray-400 placeholder:text-blue-600"
+              placeholder="Please provide details about your leave request..."
+              className="min-h-[100px] resize-none text-sm border border-gray-300 placeholder:text-blue-600"
             />
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50/50">
+        {/* Footer */}
+        <div className="flex justify-end items-center gap-4 px-6 py-4 border-t bg-gray-100">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-// import { Bell } from "lucide-react"
 import { Search, Check, Clock, X, Heart, Filter } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import CreateVacationForm from "@/components/vacations/CreateVacations"
+import ViewVacationDialog from "./ViewVacationDialog" // Adjust path if needed
 
 interface VacationEntry {
   id: number
@@ -92,9 +92,12 @@ export default function VacationManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
- const [showCreateForm, setShowCreateForm] = useState(false);
- 
- const filteredData = vacationData.filter((employee) => {
+  const [showCreateForm, setShowCreateForm] = useState(false)
+
+  const [selectedVacation, setSelectedVacation] = useState<VacationEntry | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const filteredData = vacationData.filter((employee) => {
     const matchesSearch =
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.leaveType.toLowerCase().includes(searchTerm.toLowerCase())
@@ -121,49 +124,32 @@ export default function VacationManagement() {
       .toUpperCase()
   }
 
-  // const formatDateRange = (startDate: string, endDate: string) => {
-  //   return `${startDate} to ${endDate}`
-  // }
-
   return (
     <div className="min-h-screen bg-gray-50 p-0">
       <div className="max-w-9xl mx-auto space-y-6 p-6">
-         {/* Vacation Mode Heading - Made more prominent */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Vacation Mode</h2>
           <Button
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-md shadow-none"
-              onClick={() => setShowCreateForm(true)}
+            onClick={() => setShowCreateForm(true)}
           >
             <span className="text-xl font-bold">+</span>
             <span>Create Vacation</span>
           </Button>
         </div>
 
- {/* Show CreateVacationForm as a modal/dialog with blur background */}
         {showCreateForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
-              <button
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl"
-                onClick={() => setShowCreateForm(false)}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-              <CreateVacationForm />
-            </div>
-          </div>
-        )}
+  <CreateVacationForm open={showCreateForm} onOpenChange={setShowCreateForm} />
+)}
 
-        {/* Summary Cards */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {summaryData.map((item) => (
             <Card key={item.title} className="relative overflow-hidden bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className="p-2 flex-shrink-0">
-                    <item.icon className="h-8 w-8" style={{color: item.iconColor}} />
+                    <item.icon className="h-8 w-8" style={{ color: item.iconColor }} />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600">{item.title}</p>
@@ -175,12 +161,9 @@ export default function VacationManagement() {
           ))}
         </div>
 
-        {/* Search and Filter Bar */}
-
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              {/* Search input */}
               <div className="relative max-w-[280px] w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -191,15 +174,10 @@ export default function VacationManagement() {
                 />
               </div>
 
-              {/* Status filter */}
               <div className="min-w-[280px]">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
-                    {statusFilter === "all" ? (
-                      <span className="text-black">All Status</span>
-                    ) : (
-                      <SelectValue />
-                    )}
+                    {statusFilter === "all" ? <span className="text-black">All Status</span> : <SelectValue />}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
@@ -208,15 +186,11 @@ export default function VacationManagement() {
                   </SelectContent>
                 </Select>
               </div>
-            {/* Type filter */}
+
               <div className="min-w-[280px]">
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
-                    {typeFilter === "all" ? (
-                      <span className="text-black">All Types</span>
-                    ) : (
-                      <SelectValue />
-                    )}
+                    {typeFilter === "all" ? <span className="text-black">All Types</span> : <SelectValue />}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
@@ -240,8 +214,6 @@ export default function VacationManagement() {
           </CardContent>
         </Card>
 
-
-        {/* Employees on Vacation Section */}
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold text-gray-900">Employees on Vacation ({filteredData.length})</h2>
 
@@ -261,10 +233,7 @@ export default function VacationManagement() {
                           {employee.leaveType} • {employee.duration}
                         </p>
                         <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block">
-                           {employee.location}
-                        </p>
-                        <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block ml-2">
-                           {employee.location}
+                          {employee.location}
                         </p>
                       </div>
                     </div>
@@ -286,6 +255,10 @@ export default function VacationManagement() {
                             variant="outline"
                             size="sm"
                             className="border border-gray-800 text-black hover:bg-gray-100"
+                            onClick={() => {
+                              setSelectedVacation(employee)
+                              setIsDialogOpen(true)
+                            }}
                           >
                             View Details
                           </Button>
@@ -306,6 +279,31 @@ export default function VacationManagement() {
             </Card>
           )}
         </div>
+
+        {selectedVacation && (
+          <ViewVacationDialog
+            isOpen={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false)
+              setSelectedVacation(null)
+            }}
+            data={{
+              id: selectedVacation.id.toString(),
+              name: selectedVacation.name,
+              appliedDate: "2024-06-01", // replace with real data
+              vacationFrom: selectedVacation.startDate,
+              vacationTo: selectedVacation.endDate,
+              duration: selectedVacation.duration,
+              eligibleDays: "10",
+              remainingDays: "4",
+              leaveType: selectedVacation.leaveType,
+              status: selectedVacation.status,
+              project: selectedVacation.role,
+              specialization: selectedVacation.location,
+              reason: "Family function", // replace with actual reason if available
+            }}
+          />
+        )}
       </div>
     </div>
   )
