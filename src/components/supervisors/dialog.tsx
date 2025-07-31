@@ -55,6 +55,12 @@ export default function SupervisorDialog({
   const [showPassword, setShowPassword] = useState(false);
   const [localProjects, setLocalProjects] = useState<{ id: string; name: string }[]>(projects);
 
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   useEffect(() => {
     if (projects.length > 0) setLocalProjects(projects);
     else {
@@ -100,6 +106,18 @@ export default function SupervisorDialog({
     }
   };
 
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers and limit to 10 digits
+    const numericValue = value.replace(/\D/g, '').slice(0, 10);
+    setFormData(prev => ({ ...prev, phoneNumber: numericValue }));
+
+    // Clear error on change
+    if (errors.phoneNumber) {
+      setErrors(prev => ({ ...prev, phoneNumber: '' }));
+    }
+  };
+
   const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, assignedProject: localProjects.find(p => p.id === value)?.name || '', assignedProjectId: value }));
@@ -121,6 +139,8 @@ export default function SupervisorDialog({
     }
     if (formData.phoneNumber !== undefined && !formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
+    } else if (formData.phoneNumber !== undefined && formData.phoneNumber.trim() && formData.phoneNumber.length !== 10) {
+      newErrors.phoneNumber = 'Phone number must be exactly 10 digits';
     }
     if (formData.address !== undefined && !formData.address.trim()) {
       newErrors.address = 'Address is required';
@@ -182,7 +202,7 @@ export default function SupervisorDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
@@ -228,14 +248,19 @@ export default function SupervisorDialog({
                 onChange={handleInputChange}
                 placeholder="Enter specialization"
               />
-              <FormInput
-                label="Phone Number"
-                name="phoneNumber"
-                value={formData.phoneNumber || ''}
-                error={errors.phoneNumber}
-                onChange={handleInputChange}
-                placeholder="Enter phone number"
-              />
+              <div>
+                <label className="text-sm font-medium">Phone Number</label>
+                <input
+                  type="text"
+                  name="phoneNumber"
+                  value={formData.phoneNumber || ''}
+                  onChange={handlePhoneNumberChange}
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+              </div>
             </div>
 
             {/* Password (only in add mode) */}
@@ -289,6 +314,7 @@ export default function SupervisorDialog({
                 error={errors.dateOfJoining}
                 onChange={handleInputChange}
                 placeholder=""
+                min={getTodayDate()}
               />
               <FormInput
                 label="Experience"
@@ -351,7 +377,8 @@ const FormInput = ({
   error,
   onChange,
   placeholder,
-  required = false
+  required = false,
+  min
 }: {
   label: string;
   name: string;
@@ -361,6 +388,7 @@ const FormInput = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  min?: string;
 }) => (
   <div>
     <label className="text-sm font-medium">
@@ -372,6 +400,7 @@ const FormInput = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      min={min}
       className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
     />
     {error && <p className="text-red-500 text-sm">{error}</p>}

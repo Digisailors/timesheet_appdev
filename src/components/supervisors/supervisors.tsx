@@ -75,10 +75,11 @@ export default function SupervisorPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5); // You can make this configurable
+  const [itemsPerPage] = useState(10); // Changed from 5 to 10
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -174,6 +175,42 @@ export default function SupervisorPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
   };
 
   const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
@@ -298,11 +335,17 @@ export default function SupervisorPage() {
 
   const confirmDeleteSupervisor = async () => {
     if (supervisorToDelete) {
+      setIsDeleting(true);
       try {
-        const response = await fetch(`${baseUrl}/supervisors/delete/${supervisorToDelete.id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        });
+        // Add minimum delay to ensure loading state is visible
+        const [response] = await Promise.all([
+          fetch(`${baseUrl}/supervisors/delete/${supervisorToDelete.id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+          new Promise(resolve => setTimeout(resolve, 1500)) // 1.5 second minimum delay
+        ]);
+        
         const result = await response.json();
         if (result.success) {
           setSupervisorList(prev => prev.filter(s => s.id !== supervisorToDelete.id));
@@ -313,6 +356,8 @@ export default function SupervisorPage() {
       } catch (error) {
         console.error('Delete failed:', error);
         toast.error("❌ Error deleting supervisor");
+      } finally {
+        setIsDeleting(false);
       }
     }
     setConfirmDelete(false);
@@ -537,49 +582,65 @@ export default function SupervisorPage() {
                 <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
               </div>
             )}
-          </div>
 
-          {/* Pagination inside card */}
-          {totalPages > 1 && (
-            <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="p-2 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            {/* Pagination Controls - Now shows by default */}
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                {filteredSupervisors.length > 0 ? (
+                  <>Showing {startIndex + 1} to {Math.min(endIndex, filteredSupervisors.length)} of {filteredSupervisors.length} results</>
+                ) : (
+                  <>Showing 0 results</>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Page Numbers */}
+                {totalPages > 0 ? (
+                  getPageNumbers().map((pageNum, index) => (
                     <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm font-medium rounded transition-colors ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      key={index}
+                      onClick={() => typeof pageNum === 'number' && handlePageChange(pageNum)}
+                      disabled={pageNum === '...'}
+                      className={`px-3 py-2 rounded-md text-sm font-medium ${
+                        pageNum === currentPage
+                          ? 'bg-blue-600 text-white border border-blue-600'
+                          : pageNum === '...'
+                          ? 'text-gray-400 cursor-default'
+                          : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
                       }`}
                     >
-                      {page}
+                      {pageNum}
                     </button>
-                  ))}
-                  
+                  ))
+                ) : (
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="p-2 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                    disabled
+                    className="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white border border-blue-600"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    1
                   </button>
-                </div>
+                )}
+
+                {/* Next Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -597,9 +658,10 @@ export default function SupervisorPage() {
         setSelectedProjectId={setSelectedProjectId}
       />
 
+      
       {/* View Supervisor Details Dialog */}
       {showViewDialog && selectedSupervisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
             {/* Profile Content */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
@@ -647,11 +709,22 @@ export default function SupervisorPage() {
               Are you sure you want to delete supervisor <strong>{supervisorToDelete.name}</strong>?
             </p>
             <div className="flex justify-end space-x-4">
-              <button onClick={cancelDelete} className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-400">
+              <button 
+                onClick={cancelDelete} 
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-400"
+                disabled={isDeleting}
+              >
                 Cancel
               </button>
-              <button onClick={confirmDeleteSupervisor} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                Delete
+              <button 
+                onClick={confirmDeleteSupervisor} 
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                disabled={isDeleting}
+              >
+                {isDeleting && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+                <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </button>
             </div>
           </div>
