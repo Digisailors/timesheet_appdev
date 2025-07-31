@@ -18,6 +18,9 @@ interface SearchBarRowProps {
   showSearchInput?: boolean;
   showDesignationFilter?: boolean;
   showProjectFilter?: boolean;
+  selectedJobTitle: string; 
+setSelectedJobTitle: (v: string) => void;
+
 }
 
 const SearchBarRow: React.FC<SearchBarRowProps> = ({
@@ -32,6 +35,8 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
   showSearchInput = true,
   showDesignationFilter = true,
   showProjectFilter = true,
+  selectedJobTitle, 
+  setSelectedJobTitle, 
 }) => {
   // If none of them are shown, skip rendering
   if (!showSearchInput && !showDesignationFilter && !showProjectFilter) return null;
@@ -49,10 +54,27 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
               placeholder="Search Employees"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-[700px] pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
         )}
+
+<div className="relative">
+  <select
+    value={selectedJobTitle}
+    onChange={(e) => setSelectedJobTitle(e.target.value)}
+    className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+  >
+    <option value="">Designations</option>
+    <option value="Software Engineer">Software Engineer</option>
+    <option value="Mechanical Designer">Mechanical Designer</option>
+    <option value="UI/UX Designer">UI/UX Designer</option>
+  </select>
+  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+    <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+  </div>
+</div>
+
 
         <div className="flex flex-col sm:flex-row gap-3">
           {showDesignationFilter && (
@@ -60,7 +82,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
               <select
                 value={selectedDesignation}
                 onChange={(e) => setSelectedDesignation(e.target.value)}
-                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[180px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
               >
                 <option>All Designations Types</option>
                 <option>Regular Employee</option>
