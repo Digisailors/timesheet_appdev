@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar } from 'lucide-react';
-
+import { X } from 'lucide-react';
+// import {Calendar} from 'lucide-react';
 export interface ProjectFormData {
   name: string;
   code: string;
@@ -130,6 +130,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
   if (!isOpen) return null;
 
+  const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6 text-gray-900 dark:text-white">
@@ -207,7 +214,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               <input
                 type="text"
                 value={formData.clientName}
-                onChange={(e) => handleInputChange('clientName', e.target.value)}
+                onChange={(e) => {
+  const rawValue = e.target.value;
+  const cleanedValue = rawValue.replace(/[^a-zA-Z.]/g, '');
+  handleInputChange('clientName', cleanedValue);
+}}
+
                 placeholder="Enter client name"
                 className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
                 disabled={isViewMode}
@@ -215,9 +227,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Po/Contact Number</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Po/Contract Number</label>
               <input
-                type="text"
+                type="number"
                 value={formData.poContactNumber}
                 onChange={(e) => handleInputChange('poContactNumber', e.target.value)}
                 placeholder="Enter contact number"
@@ -268,8 +280,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   className={`w-full px-3 py-2 border rounded-md ${errors.startDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
+                  min={new Date().toISOString().split("T")[0]}
                 />
-                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" /> */}
               </div>
               {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
             </div>
@@ -283,8 +296,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                   className={`w-full px-3 py-2 border rounded-md ${errors.endDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
                   disabled={isViewMode}
                   readOnly={isViewMode}
+                   min={getTomorrowDate()}
                 />
-                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                {/* <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" /> */}
               </div>
               {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
             </div>
