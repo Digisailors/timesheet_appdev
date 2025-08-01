@@ -235,54 +235,51 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }
   };
 
-  const exportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Timesheet');
+ const exportToExcel = async () => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Timesheet');
 
-    // Define columns including the new fields
-    worksheet.columns = [
-      { header: 'Full Name', key: 'fullName', width: 25 },
-      { header: 'Project Name', key: 'name', width: 25 },
-      { header: 'Location', key: 'location', width: 20 },
-      { header: 'Date', key: 'timesheetDate', width: 20 },
-      { header: 'Check In', key: 'onsiteSignIn', width: 15 },
-      { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
-      { header: 'Hours', key: 'totalDutyHrs', width: 10 },
-      { header: 'Overtime', key: 'overtime', width: 10 },
-      { header: 'Supervisor', key: 'supervisorName', width: 20 },
-      { header: 'Type', key: 'type', width: 20 },
-      { header: 'Description', key: 'description', width: 50 },
-    ];
+  // Define columns including the new fields
+  worksheet.columns = [
+    { header: 'Employee', key: 'fullName', width: 25 },
+    { header: 'Project', key: 'name', width: 25 },
+    { header: 'Location', key: 'location', width: 20 },
+    { header: 'Date', key: 'timesheetDate', width: 20 },
+    { header: 'Check In', key: 'onsiteSignIn', width: 15 },
+    { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
+    { header: 'TotalHours', key: 'totalDutyHrs', width: 10 },
+    { header: 'Overtime', key: 'overtime', width: 10 },
+    { header: 'Supervisor', key: 'supervisorName', width: 20 },
+    { header: 'Remarks', key: 'description', width: 50 },
+  ];
 
-    // Add rows with the new fields
-    timesheetData.forEach((entry) => {
-      worksheet.addRow({
-        fullName: entry.employees[0].fullName,
-        name: entry.project.name,
-        location: entry.project.location,
-        timesheetDate: entry.timesheetDate,
-        onsiteSignIn: entry.onsiteSignIn,
-        onsiteSignOut: entry.onsiteSignOut,
-        totalDutyHrs: entry.totalDutyHrs,
-        overtime: entry.overtime,
-        supervisorName: entry.supervisorName,
-        type: `${entry.normalHrs}h, OT: ${entry.overtime}h`,
-        description: entry.project.name,
-      });
+  // Add rows with the corrected fields
+  timesheetData.forEach((entry) => {
+    worksheet.addRow({
+      fullName: entry.employees[0].fullName,
+      name: entry.project.name,
+      location: entry.project.location,
+      timesheetDate: entry.timesheetDate,
+      onsiteSignIn: entry.onsiteSignIn,
+      onsiteSignOut: entry.onsiteSignOut,
+      totalDutyHrs: entry.totalDutyHrs,
+      overtime: entry.overtime,
+      supervisorName: entry.supervisorName,
+      description: employee?.designationType || 'Regular Employee', // Show employee type instead of project name
     });
+  });
 
-    // Generate Excel file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'TimesheetHistory.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
+  // Generate Excel file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'TimesheetHistory.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
   useEffect(() => {
     if (isOpen && mode === 'view' && employeeId) {
       fetchEmployeeById(employeeId);
