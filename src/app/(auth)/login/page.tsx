@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
-import { Toaster } from "@/components/ui/Toaster"; 
+import { Toaster } from "@/components/ui/Toaster";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("email");
@@ -26,16 +26,20 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    const loginData = activeTab === "email" ? { email, password } : { phoneNumber, password };
+    const loginData =
+      activeTab === "email" ? { email, password } : { phoneNumber, password };
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(loginData),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(loginData),
+        }
+      );
 
       const data = await response.json();
 
@@ -60,7 +64,8 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      const errorMessage = "The email/phone number or password is incorrect. Please check your credentials and try again.";
+      const errorMessage =
+        "The email/phone number or password is incorrect.Please check your credentials and try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -85,7 +90,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Welcome text */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Hi, Welcome</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Hi, Welcome
+            </h1>
             <p className="text-gray-600">Please login to Time Sheet App</p>
           </div>
           {/* Tab buttons */}
@@ -160,7 +167,10 @@ export default function LoginPage() {
             </div>
             {/* Password field */}
             <div>
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
                 Password
               </Label>
               <div className="relative">
@@ -197,14 +207,22 @@ export default function LoginPage() {
                   Remember me
                 </Label>
               </div>
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Forgot Password?
               </Link>
             </div>
             {/* Sign up link */}
             <div className="text-center">
-              <span className="text-sm text-gray-600">Don&#39;t have an account? </span>
-              <Link href="/signup" className="text-sm text-blue-600 hover:underline font-medium">
+              <span className="text-sm text-gray-600">
+                Don&#39;t have an account?{" "}
+              </span>
+              <Link
+                href="/signup"
+                className="text-sm text-blue-600 hover:underline font-medium"
+              >
                 Sign up
               </Link>
             </div>
