@@ -114,7 +114,7 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, e
               <p className="text-sm font-bold text-black-500 dark:text-gray-400">Today Salary</p>
               <div className="flex justify-between">
                 <p className="font text-sm">For Normal Hrs ({employee.perHourRate} SAR)</p>
-                <p className="font text-sm ml-3">For OT Hours ({employee.overtimeRate} SAR)</p>
+                <p className="font text-sm mr-5">For OT Hours ({employee.overtimeRate} SAR)</p>
               </div>
               <div className="flex justify-between">
                 <p className="font-bold">SAR {employee.regularTimeSalary}</p>
