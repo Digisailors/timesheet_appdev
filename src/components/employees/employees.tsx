@@ -43,6 +43,7 @@ interface Project {
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [availableDesignations, setAvailableDesignations] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
@@ -145,6 +146,15 @@ const EmployeesPage: React.FC = () => {
           };
         });
         setEmployees(enrichedEmployees);
+
+        // Extract unique designations from API response
+       const validDesignations = result.data
+  .map((emp: RawEmployee) => emp.designation)
+  .filter((designation: string | undefined): designation is string => 
+    designation !== undefined && designation !== null && designation !== ""
+  );
+const uniqueDesignations: string[] = Array.from(new Set(validDesignations));
+setAvailableDesignations(uniqueDesignations);
       } else {
         toast.error("Failed to fetch employees");
       }
@@ -174,7 +184,7 @@ const EmployeesPage: React.FC = () => {
       employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase());
 
     const matchesJobTitle =
-      selectedJobTitle === "All Job Titles" || employee.specialization === selectedJobTitle; // ✅ filter logic
+      selectedJobTitle === "All Job Titles" || employee.designation === selectedJobTitle; // ✅ filter by designation field
 
     return matchesDesignation && matchesSearch && matchesJobTitle;
   });
@@ -287,7 +297,13 @@ const EmployeesPage: React.FC = () => {
 
         setEmployees((prev) => {
           const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);
-          return [enrichedEmp, ...filtered];
+          const updatedList = [enrichedEmp, ...filtered];
+          
+          // Update available designations
+          const uniqueDesignations = [...new Set(updatedList.map(emp => emp.designation).filter(Boolean))];
+          setAvailableDesignations(uniqueDesignations);
+          
+          return updatedList;
         });
 
         setIsAddModalOpen(false);
@@ -323,6 +339,7 @@ const EmployeesPage: React.FC = () => {
             selectedJobTitle={selectedJobTitle}
             setSelectedJobTitle={setSelectedJobTitle}
             projects={projects}
+            availableDesignations={availableDesignations}
             isLoadingProjects={isLoading}
             showSearchInput={true}
             showDesignationFilter={true}

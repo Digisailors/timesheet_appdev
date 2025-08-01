@@ -329,8 +329,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   );
 
   const CreateEmployeeForm = () => (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+    <div className="bg-gray-50 dark:bg-gray-900 ">
+      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8 backdrop-blur-sm">
         <form onSubmit={handleCreateSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -649,7 +649,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div className="relative w-full max-w-4xl mx-4 md:mx-auto max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center px-8 py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -706,9 +706,9 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         </div>
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-64 ">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4 "></div>
                 <p className="text-gray-500 dark:text-gray-400">
                   {mode === 'create' ? 'Creating employee...' : 'Loading employee details...'}
                 </p>

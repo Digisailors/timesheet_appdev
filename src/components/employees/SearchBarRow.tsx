@@ -14,13 +14,13 @@ interface SearchBarRowProps {
   selectedProject: string;
   setSelectedProject: (v: string) => void;
   projects?: Project[];
+  availableDesignations?: string[];
   isLoadingProjects?: boolean;
   showSearchInput?: boolean;
   showDesignationFilter?: boolean;
   showProjectFilter?: boolean;
   selectedJobTitle: string; 
-setSelectedJobTitle: (v: string) => void;
-
+  setSelectedJobTitle: (v: string) => void;
 }
 
 const SearchBarRow: React.FC<SearchBarRowProps> = ({
@@ -31,6 +31,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
   selectedProject,
   setSelectedProject,
   projects = [],
+  availableDesignations = [],
   isLoadingProjects = false,
   showSearchInput = true,
   showDesignationFilter = true,
@@ -59,22 +60,23 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
           </div>
         )}
 
-<div className="relative">
-  <select
-    value={selectedJobTitle}
-    onChange={(e) => setSelectedJobTitle(e.target.value)}
-    className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
-  >
-    <option value="">Designations</option>
-    <option value="Software Engineer">Software Engineer</option>
-    <option value="Mechanical Designer">Mechanical Designer</option>
-    <option value="UI/UX Designer">UI/UX Designer</option>
-  </select>
-  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-    <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-  </div>
-</div>
-
+        <div className="relative">
+          <select
+            value={selectedJobTitle}
+            onChange={(e) => setSelectedJobTitle(e.target.value)}
+            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+          >
+            <option value="All Job Titles">All Designations</option>
+            {availableDesignations.map((designation) => (
+              <option key={designation} value={designation}>
+                {designation}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           {showDesignationFilter && (
