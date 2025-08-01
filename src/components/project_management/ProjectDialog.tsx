@@ -4,22 +4,21 @@ import { Trash2, X } from 'lucide-react';
 export interface ProjectFormData {
   name: string;
   code: string;
-  location: string;
-  normalTravelHour: string;
+  locations: string[];
+  typesOfWork: string[];
   description: string;
   startDate: string;
   endDate: string;
   budget: string;
   status: 'active' | 'completed' | 'pending' | 'cancelled';
   clientName: string;
-  poContractNumber: string;
-  typeOfWork: string;
+  PoContractNumber: string;
 }
 
 export interface ProjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ProjectFormData) => void;
+  onSubmit: (formData: ProjectFormData) => Promise<void>;
   initialData?: Partial<ProjectFormData>;
   title?: string;
   submitLabel?: string;
@@ -38,48 +37,49 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
     code: '',
-    location: '',
-    normalTravelHour: '',
+    locations: [''],
+    typesOfWork: [''],
     description: '',
     startDate: '',
     endDate: '',
     budget: '',
-    status: 'active',
+    status: 'pending',
     clientName: '',
-    poContractNumber: '',
-    typeOfWork: '',
+    PoContractNumber: '',
   });
 
-  const [errors, setErrors] = useState<Partial<ProjectFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProjectFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [additionalLocations, setAdditionalLocations] = useState<string[]>([]);
-  const [additionalTypesOfWork, setAdditionalTypesOfWork] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
         name: initialData.name || '',
         code: initialData.code || '',
-        location: initialData.location || '',
-        normalTravelHour: initialData.normalTravelHour || '',
+        locations: initialData.locations && initialData.locations.length > 0 ? initialData.locations : [''],
+        typesOfWork: initialData.typesOfWork && initialData.typesOfWork.length > 0 ? initialData.typesOfWork : [''],
         description: initialData.description || '',
         startDate: initialData.startDate || '',
         endDate: initialData.endDate || '',
         budget: initialData.budget || '',
-        status: initialData.status || 'active',
+        status: initialData.status || 'pending',
         clientName: initialData.clientName || '',
-        poContractNumber: initialData.poContractNumber || '',
-        typeOfWork: initialData.typeOfWork || '',
+        PoContractNumber: initialData.PoContractNumber || '',
       });
       setErrors({});
     }
   }, [isOpen, initialData]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<ProjectFormData> = {};
+    const newErrors: Partial<Record<keyof ProjectFormData, string>> = {};
     if (!formData.name.trim()) newErrors.name = 'Project name is required';
-    if (!formData.code.trim()) newErrors.code = 'Project code is required';
-    if (!formData.location.trim()) newErrors.location = 'Location is required';
+    if (!formData.clientName.trim()) newErrors.clientName = 'Client name is required';
+    if (formData.locations.length === 0 || formData.locations.some(loc => !loc.trim())) {
+      newErrors.locations = 'At least one valid location is required';
+    }
+    if (formData.typesOfWork.length === 0 || formData.typesOfWork.some(type => !type.trim())) {
+      newErrors.typesOfWork = 'At least one valid type of work is required';
+    }
     if (!formData.startDate) newErrors.startDate = 'Start date is required';
     if (!formData.budget.trim()) {
       newErrors.budget = 'Budget is required';
@@ -89,21 +89,18 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     if (formData.endDate && formData.startDate && new Date(formData.endDate) < new Date(formData.startDate)) {
       newErrors.endDate = 'End date must be after start date';
     }
-    if (!formData.clientName.trim()) newErrors.clientName = 'Client name is required';
-    if (!formData.typeOfWork.trim()) newErrors.typeOfWork = 'Type of work is required';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isViewMode) return;
     if (!validateForm()) return;
     setIsSubmitting(true);
-    onSubmit(formData);
+    await onSubmit(formData);
     setIsSubmitting(false);
-    handleClose();
+    onClose();
   };
 
   const handleClose = () => {
@@ -111,23 +108,20 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     setFormData({
       name: '',
       code: '',
-      location: '',
-      normalTravelHour: '',
+      locations: [''],
+      typesOfWork: [''],
       description: '',
       startDate: '',
       endDate: '',
       budget: '',
-      status: 'active',
+      status: 'pending',
       clientName: '',
-      poContractNumber: '',
-      typeOfWork: '',
+      PoContractNumber: '',
     });
     setErrors({});
-    setAdditionalLocations([]);
-    setAdditionalTypesOfWork([]);
   };
 
-  const handleInputChange = (field: keyof ProjectFormData, value: string) => {
+  const handleInputChange = (field: keyof ProjectFormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -135,35 +129,35 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
   };
 
   const handleAddLocation = () => {
-    setAdditionalLocations([...additionalLocations, '']);
+    setFormData(prev => ({ ...prev, locations: [...prev.locations, ''] }));
   };
 
   const handleAddTypeOfWork = () => {
-    setAdditionalTypesOfWork([...additionalTypesOfWork, '']);
+    setFormData(prev => ({ ...prev, typesOfWork: [...prev.typesOfWork, ''] }));
   };
 
   const handleRemoveLocation = (index: number) => {
-    const newLocations = [...additionalLocations];
+    const newLocations = [...formData.locations];
     newLocations.splice(index, 1);
-    setAdditionalLocations(newLocations);
+    setFormData(prev => ({ ...prev, locations: newLocations }));
   };
 
   const handleRemoveTypeOfWork = (index: number) => {
-    const newTypesOfWork = [...additionalTypesOfWork];
+    const newTypesOfWork = [...formData.typesOfWork];
     newTypesOfWork.splice(index, 1);
-    setAdditionalTypesOfWork(newTypesOfWork);
+    setFormData(prev => ({ ...prev, typesOfWork: newTypesOfWork }));
   };
 
   const handleLocationChange = (index: number, value: string) => {
-    const newLocations = [...additionalLocations];
+    const newLocations = [...formData.locations];
     newLocations[index] = value;
-    setAdditionalLocations(newLocations);
+    setFormData(prev => ({ ...prev, locations: newLocations }));
   };
 
   const handleTypeOfWorkChange = (index: number, value: string) => {
-    const newTypesOfWork = [...additionalTypesOfWork];
+    const newTypesOfWork = [...formData.typesOfWork];
     newTypesOfWork[index] = value;
-    setAdditionalTypesOfWork(newTypesOfWork);
+    setFormData(prev => ({ ...prev, typesOfWork: newTypesOfWork }));
   };
 
   if (!isOpen) return null;
@@ -194,11 +188,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               <input
                 type="text"
                 value={formData.clientName}
-                onChange={(e) => {
-                  const rawValue = e.target.value;
-                  const cleanedValue = rawValue.replace(/[^a-zA-Z.]/g, '');
-                  handleInputChange('clientName', cleanedValue);
-                }}
+                onChange={(e) => handleInputChange('clientName', e.target.value)}
                 placeholder="Enter client name"
                 className={`w-full px-3 py-2 border rounded-md ${errors.clientName ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
                 disabled={isViewMode}
@@ -219,99 +209,83 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
-            <div className='flex flex-col'>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location*</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="Enter project location"
-                className={`w-full px-3 py-2 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
-                disabled={isViewMode}
-                readOnly={isViewMode}
-              />
-              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
-              {additionalLocations.map((location, index) => (
-                <div key={index} className="flex items-center mt-2">
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => handleLocationChange(index, e.target.value)}
-                    placeholder="Enter additional location"
-                    className="w-full px-3 py-2 border rounded-md border-gray-300"
-                    readOnly={isViewMode}
-                  />
-                  {!isViewMode && (
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:text-red-800 ml-2"
-                      onClick={() => handleRemoveLocation(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {!isViewMode && (
-                <button
-                  type="button"
-                  className="mt-2 self-end text-sm text-blue-600 hover:text-blue-800"
-                  onClick={handleAddLocation}
-                >
-                  Add Locations
-                </button>
-              )}
-            </div>
-            <div className='flex flex-col'>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type of Work*</label>
-              <input
-                type="text"
-                value={formData.typeOfWork}
-                onChange={(e) => handleInputChange('typeOfWork', e.target.value)}
-                placeholder="Enter type of work"
-                className={`w-full px-3 py-2 border rounded-md ${errors.typeOfWork ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
-                disabled={isViewMode}
-                readOnly={isViewMode}
-              />
-              {errors.typeOfWork && <p className="text-red-500 text-sm mt-1">{errors.typeOfWork}</p>}
-              {additionalTypesOfWork.map((type, index) => (
-                <div key={index} className="flex items-center mt-2">
-                  <input
-                    type="text"
-                    value={type}
-                    onChange={(e) => handleTypeOfWorkChange(index, e.target.value)}
-                    placeholder="Enter additional type of work"
-                    className="w-full px-3 py-2 border rounded-md border-gray-300"
-                    readOnly={isViewMode}
-                  />
-                  {!isViewMode && (
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:text-red-800 ml-2"
-                      onClick={() => handleRemoveTypeOfWork(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {!isViewMode && (
-                <button
-                  type="button"
-                  className="mt-2 self-end text-sm text-blue-600 hover:text-blue-800"
-                  onClick={handleAddTypeOfWork}
-                >
-                  Add Type of Work
-                </button>
-              )}
-            </div>
+          </div>
+          <div className='grid grid-cols-2 gap-4'>
+          <div className='flex flex-col'>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location*</label>
+            {formData.locations.map((location, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => handleLocationChange(index, e.target.value)}
+                  placeholder="Enter project location"
+                  className={`w-full px-3 py-2 border rounded-md ${errors.locations ? 'border-red-500' : 'border-gray-300'}`}
+                  readOnly={isViewMode}
+                />
+                {!isViewMode && formData.locations.length > 1 && (
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:text-red-800 ml-2"
+                    onClick={() => handleRemoveLocation(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {!isViewMode && (
+              <button
+                type="button"
+                className="mt-2 self-end text-sm text-blue-600 hover:text-blue-800"
+                onClick={handleAddLocation}
+              >
+                Add Location
+              </button>
+            )}
+            {errors.locations && <p className="text-red-500 text-sm mt-1">{errors.locations}</p>}
+          </div>
+          <div className='flex flex-col'>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type of Work*</label>
+            {formData.typesOfWork.map((type, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <input
+                  type="text"
+                  value={type}
+                  onChange={(e) => handleTypeOfWorkChange(index, e.target.value)}
+                  placeholder="Enter type of work"
+                  className={`w-full px-3 py-2 border rounded-md ${errors.typesOfWork ? 'border-red-500' : 'border-gray-300'}`}
+                  readOnly={isViewMode}
+                />
+                {!isViewMode && formData.typesOfWork.length > 1 && (
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:text-red-800 ml-2"
+                    onClick={() => handleRemoveTypeOfWork(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {!isViewMode && (
+              <button
+                type="button"
+                className="mt-2 self-end text-sm text-blue-600 hover:text-blue-800"
+                onClick={handleAddTypeOfWork}
+              >
+                Add Type of Work
+              </button>
+            )}
+            {errors.typesOfWork && <p className="text-red-500 text-sm mt-1">{errors.typesOfWork}</p>}
+          </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Po/Contract Number</label>
             <input
-              type="number"
-              value={formData.poContractNumber}
-              onChange={(e) => handleInputChange('poContractNumber', e.target.value)}
+              type="text"
+              value={formData.PoContractNumber}
+              onChange={(e) => handleInputChange('PoContractNumber', e.target.value)}
               placeholder="Enter contract number"
               className={`w-full px-3 py-2 border rounded-md border-gray-300 ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}
               disabled={isViewMode}
