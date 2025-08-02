@@ -28,6 +28,22 @@ interface RawProject {
   lastUpdated?: string;
 }
 
+interface ApiProject {
+  id: string;
+  name: string;
+  locations: string[] | null;
+  description: string;
+  startDate: string;
+  endDate: string;
+  budget: string;
+  status: "active" | "completed" | "pending" | "cancelled";
+  clientName: string | null;
+  PoContractNumber: string | null;
+  typesOfWork: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -35,6 +51,8 @@ const ProjectsPage = () => {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [confirmDeleteProject, setConfirmDeleteProject] = useState<Project | null>(null);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
+  const [fetchedProjectData, setFetchedProjectData] = useState<ProjectFormData | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
@@ -96,6 +114,40 @@ const ProjectsPage = () => {
     }
   }, [cleanBaseUrl]);
 
+  const fetchProjectById = async (projectId: string): Promise<ProjectFormData | null> => {
+    try {
+      setIsLoadingProject(true);
+      const response = await fetch(`${cleanBaseUrl}/projects/${projectId}`);
+      if (!response.ok) throw new Error("Failed to fetch project details");
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        const projectData: ApiProject = result.data;
+        return {
+          name: projectData.name,
+          code: projectData.id, // Using ID as code since code field is not in API response
+          locations: projectData.locations || [''],
+          typesOfWork: projectData.typesOfWork || [''],
+          description: projectData.description || '',
+          startDate: projectData.startDate,
+          endDate: projectData.endDate || '',
+          budget: projectData.budget || '',
+          status: projectData.status,
+          clientName: projectData.clientName || '',
+          PoContractNumber: projectData.PoContractNumber || '',
+        };
+      } else {
+        throw new Error(result.message || "Failed to fetch project details");
+      }
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      toast.error("❌ Error loading project details");
+      return null;
+    } finally {
+      setIsLoadingProject(false);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
@@ -103,19 +155,28 @@ const ProjectsPage = () => {
   const handleCreateProject = () => {
     setEditingProject(null);
     setViewingProject(null);
+    setFetchedProjectData(null);
     setIsDialogOpen(true);
   };
 
-  const handleViewDetails = (project: Project) => {
+  const handleViewDetails = async (project: Project) => {
     setViewingProject(project);
     setEditingProject(null);
-    setIsDialogOpen(true);
+    const projectData = await fetchProjectById(project.id);
+    if (projectData) {
+      setFetchedProjectData(projectData);
+      setIsDialogOpen(true);
+    }
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = async (project: Project) => {
     setEditingProject(project);
     setViewingProject(null);
-    setIsDialogOpen(true);
+    const projectData = await fetchProjectById(project.id);
+    if (projectData) {
+      setFetchedProjectData(projectData);
+      setIsDialogOpen(true);
+    }
   };
 
   const handleDeleteProject = (project: Project) => {
@@ -126,6 +187,7 @@ const ProjectsPage = () => {
     setIsDialogOpen(false);
     setEditingProject(null);
     setViewingProject(null);
+    setFetchedProjectData(null);
   };
 
   const handleDialogSubmit = async (formData: ProjectFormData) => {
@@ -135,11 +197,16 @@ const ProjectsPage = () => {
     }
 
     try {
+      // Remove code field from formData since it's not supported by the API
+     const apiFormData = Object.fromEntries(
+  Object.entries(formData).filter(([key]) => key !== 'code')
+) as Omit<ProjectFormData, 'code'>;
+      
       if (editingProject) {
         const response = await fetch(`${cleanBaseUrl}/projects/update/${editingProject.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(apiFormData),
         });
 
         if (!response.ok) {
@@ -164,7 +231,7 @@ const ProjectsPage = () => {
         const response = await fetch(`${cleanBaseUrl}/projects/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(apiFormData),
         });
 
         if (!response.ok) {
@@ -177,8 +244,8 @@ const ProjectsPage = () => {
           const newProject: Project = {
             id: result.data.id,
             name: result.data.name,
-            code: result.data.code,
-            location: result.data.location,
+            code: result.data.id, // Use id as code for frontend display
+            location: Array.isArray(result.data.locations) ? result.data.locations.join(', ') : (result.data.location || ""),
             description: result.data.description || "",
             startDate: result.data.startDate,
             endDate: result.data.endDate || "",
@@ -226,53 +293,61 @@ const ProjectsPage = () => {
   };
 
   const getDialogProps = () => {
-  if (viewingProject) {
+    if (isLoadingProject) {
+      return {
+        initialData: {
+          name: "Loading...",
+          code: "",
+          locations: [],
+          description: "",
+          startDate: "",
+          status: "pending" as ProjectFormData['status'],
+          endDate: "",
+          budget: "",
+          clientName: "",
+          PoContractNumber: "",
+          typesOfWork: [],
+        },
+        title: "Loading Project Details...",
+        submitLabel: undefined,
+        isViewMode: true,
+      };
+    }
+
+    if (viewingProject && fetchedProjectData) {
+      return {
+        initialData: fetchedProjectData,
+        title: `View Project Details - ${fetchedProjectData.name}`,
+        submitLabel: undefined,
+        isViewMode: true,
+      };
+    } else if (editingProject && fetchedProjectData) {
+      return {
+        initialData: fetchedProjectData,
+        title: "Edit Project",
+        submitLabel: "Update Project",
+        isViewMode: false,
+      };
+    }
     return {
       initialData: {
-        ...viewingProject,
-        description: viewingProject.description || "",
-        endDate: viewingProject.endDate || "",
-        budget: viewingProject.budget || "",
-        status: viewingProject.status as ProjectFormData['status'], // Explicitly cast to the correct type
+        name: "",
+        code: "",
+        locations: [],
+        description: "",
+        startDate: "",
+        status: "pending" as ProjectFormData['status'],
+        endDate: "",
+        budget: "",
+        clientName: "",
+        PoContractNumber: "",
+        typesOfWork: [],
       },
-      title: `View Project Details - ${viewingProject.name}`,
-      submitLabel: undefined,
-      isViewMode: true,
-    };
-  } else if (editingProject) {
-    return {
-      initialData: {
-        ...editingProject,
-        description: editingProject.description || "",
-        endDate: editingProject.endDate || "",
-        budget: editingProject.budget || "",
-        status: editingProject.status as ProjectFormData['status'], // Explicitly cast to the correct type
-      },
-      title: "Edit Project",
-      submitLabel: "Update Project",
+      title: "Create New Project",
+      submitLabel: "Create Project",
       isViewMode: false,
     };
-  }
-  return {
-    initialData: {
-      name: "",
-      code: "",
-      locations: [],
-      description: "",
-      startDate: "",
-      status: "pending" as ProjectFormData['status'],
-      endDate: "",
-      budget: "",
-      clientName: "",
-      PoContractNumber: "",
-      typesOfWork: [],
-    },
-    title: "Create New Project",
-    submitLabel: "Create Project",
-    isViewMode: false,
   };
-};
-
 
   const dialogProps = getDialogProps();
 
