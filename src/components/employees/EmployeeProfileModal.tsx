@@ -49,6 +49,8 @@ interface TimesheetEntry {
   type: string;
   description: string;
   normalHrs: string;
+  remarks: string;
+  location: string;
 }
 
 interface EmployeeProfileModalProps {
@@ -239,33 +241,33 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Timesheet');
 
-  // Define columns including the new fields
+  // Define columns including the location field
   worksheet.columns = [
     { header: 'Employee', key: 'fullName', width: 25 },
     { header: 'Project', key: 'name', width: 25 },
-    { header: 'Location', key: 'location', width: 20 },
+    { header: 'Location', key: 'location', width: 20 }, // Ensure location is defined
     { header: 'Date', key: 'timesheetDate', width: 20 },
     { header: 'Check In', key: 'onsiteSignIn', width: 15 },
     { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
-    { header: 'TotalHours', key: 'totalDutyHrs', width: 10 },
+    { header: 'Total Hours', key: 'totalDutyHrs', width: 10 },
     { header: 'Overtime', key: 'overtime', width: 10 },
     { header: 'Supervisor', key: 'supervisorName', width: 20 },
     { header: 'Remarks', key: 'description', width: 50 },
   ];
 
-  // Add rows with the corrected fields
+  // Add rows with the location field included
   timesheetData.forEach((entry) => {
     worksheet.addRow({
       fullName: entry.employees[0].fullName,
       name: entry.project.name,
-      location: entry.project.location,
+      location: entry.location, // Map the location field
       timesheetDate: entry.timesheetDate,
       onsiteSignIn: entry.onsiteSignIn,
       onsiteSignOut: entry.onsiteSignOut,
       totalDutyHrs: entry.totalDutyHrs,
       overtime: entry.overtime,
       supervisorName: entry.supervisorName,
-      description: employee?.designationType || 'Regular Employee', // Show employee type instead of project name
+      description: entry.remarks || employee?.designationType || 'Regular Employee',
     });
   });
 
@@ -280,6 +282,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   link.click();
   document.body.removeChild(link);
 };
+
   useEffect(() => {
     if (isOpen && mode === 'view' && employeeId) {
       fetchEmployeeById(employeeId);

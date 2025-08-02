@@ -1,4 +1,3 @@
-"use client";
 import React, {
   useState,
   useMemo,
@@ -16,7 +15,6 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { ViewDialogBox } from "./viewdialogbox";
-// import { EditDialogBox } from './EditDialogBox';
 import { getColumns } from "./columns";
 import { TimeSheet } from "../../types/TimeSheet";
 import ExcelJS from "exceljs";
@@ -37,17 +35,26 @@ interface Employee {
   overtimeRate: string;
 }
 
+interface Supervisor {
+  id: string;
+  fullName: string;
+  specialization: string;
+}
+
 interface Project {
   id: string;
   name: string;
-  code: string;
-  location: string;
+  description: string;
+  PoContractNumber: string;
+  clientName: string;
 }
 
 interface TimeSheetData {
   id: string;
+  type: string;
   project: Project;
-  employees: Employee[];
+  employees?: Employee[];
+  supervisor?: Supervisor;
   timesheetDate: string;
   onsiteTravelStart: string;
   onsiteTravelEnd: string;
@@ -58,20 +65,20 @@ interface TimeSheetData {
   offsiteTravelStart: string;
   offsiteTravelEnd: string;
   remarks: string;
-  // status: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
   isHoliday: boolean;
   normalHrs: string;
-  breakHrs: string;
+  totalBreakHrs: string;
   totalDutyHrs: string;
   totalTravelHrs: string;
   overtime: string;
   supervisorName: string;
-  perHourRate: string;
-  overtimeRate: string;
-  regularTimeSalary: string;
-  overTimeSalary: string;
+  typeofWork: string;
+  location: string;
+  regularTimeSalary?: string;
+  overTimeSalary?: string;
 }
 
 export interface DataTableHandle {
@@ -82,10 +89,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
   function DataTable({ selectedDate }, ref) {
     const [data, setData] = useState<TimeSheet[]>([]);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-    // const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(
-      null
-    );
+    const [selectedEmployee, setSelectedEmployee] = useState<TimeSheet | null>(null);
     const [filters, setFilters] = useState({
       searchTerm: "",
       selectedEmployee: "all",
@@ -103,77 +107,80 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     };
 
     useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`
-          );
-          const timesheets = response.data.data.map(
-            (timesheet: TimeSheetData) => {
-              const travelStartTime1 = new Date(
-                `1970-01-01T${timesheet.onsiteTravelStart}`
-              ).getTime();
-              const travelEndTime1 = new Date(
-                `1970-01-01T${timesheet.onsiteTravelEnd}`
-              ).getTime();
-              const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-              const travelStartTime2 = new Date(
-                `1970-01-01T${timesheet.offsiteTravelStart}`
-              ).getTime();
-              const travelEndTime2 = new Date(
-                `1970-01-01T${timesheet.offsiteTravelEnd}`
-              ).getTime();
-              const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-              const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
-              const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-              const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(
-                totalTravelMinutes
-              )
-                .toString()
-                .padStart(2, "0")}`;
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`
+      );
+      const timesheets = response.data.data.map((timesheet: TimeSheetData) => {
+        const travelStartTime1 = new Date(
+          `1970-01-01T${timesheet.onsiteTravelStart}`
+        ).getTime();
+        const travelEndTime1 = new Date(
+          `1970-01-01T${timesheet.onsiteTravelEnd}`
+        ).getTime();
+        const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
+        const travelStartTime2 = new Date(
+          `1970-01-01T${timesheet.offsiteTravelStart}`
+        ).getTime();
+        const travelEndTime2 = new Date(
+          `1970-01-01T${timesheet.offsiteTravelEnd}`
+        ).getTime();
+        const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+        const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
+        const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
+        const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(
+          totalTravelMinutes
+        )
+          .toString()
+          .padStart(2, "0")}`;
+        const breakStartTime = new Date(
+          `1970-01-01T${timesheet.onsiteBreakStart}`
+        ).getTime();
+        const breakEndTime = new Date(
+          `1970-01-01T${timesheet.onsiteBreakEnd}`
+        ).getTime();
+        const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+        const breakMinutes = (breakTimeInHours % 1) * 60;
+        const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes)
+          .toString()
+          .padStart(2, "0")}`;
 
-              const breakStartTime = new Date(
-                `1970-01-01T${timesheet.onsiteBreakStart}`
-              ).getTime();
-              const breakEndTime = new Date(
-                `1970-01-01T${timesheet.onsiteBreakEnd}`
-              ).getTime();
-              const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-              const breakMinutes = (breakTimeInHours % 1) * 60;
-              const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes)
-                .toString()
-                .padStart(2, "0")}`;
+        // Determine the employee name and append " (Supervisor)" if the type is "supervisor"
+          const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
+          const isSupervisor = timesheet.type === "supervisor";
 
-              return {
-                employee: timesheet.employees[0].fullName,
-                checkIn: timesheet.onsiteSignIn.substring(0, 5),
-                checkOut: timesheet.onsiteSignOut.substring(0, 5),
-                hours: parseFloat(timesheet.totalDutyHrs),
-                otHours: parseFloat(timesheet.overtime),
-                travelTime: travelTime,
-                location: timesheet.project.location,
-                project: timesheet.project.name,
-                // status: timesheet.status,
-                breakTime: breakTime,
-                timesheetDate: timesheet.timesheetDate,
-                supervisorName: timesheet.supervisorName,
-                remarks: timesheet.remarks,
-                perHourRate: timesheet.employees[0].perHourRate,
-                overtimeRate: timesheet.employees[0].overtimeRate,
-                regularTimeSalary: timesheet.regularTimeSalary,
-                overTimeSalary: timesheet.overTimeSalary,
-              };
-            }
-          );
 
-          setData(timesheets);
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
-      };
+        return {
+          employee: employeeName,
+          isSupervisor: isSupervisor,
+          checkIn: timesheet.onsiteSignIn.substring(0, 5),
+          checkOut: timesheet.onsiteSignOut.substring(0, 5),
+          hours: parseFloat(timesheet.totalDutyHrs),
+          otHours: parseFloat(timesheet.overtime),
+          travelTime: travelTime,
+          location: timesheet.location,
+          project: timesheet.project.name,
+          status: timesheet.status,
+          breakTime: breakTime,
+          timesheetDate: timesheet.timesheetDate,
+          supervisorName: timesheet.supervisorName,
+          remarks: timesheet.remarks,
+          perHourRate: timesheet.employees?.[0]?.perHourRate || "0",
+          overtimeRate: timesheet.employees?.[0]?.overtimeRate || "0",
+          regularTimeSalary: timesheet.regularTimeSalary || "0",
+          overTimeSalary: timesheet.overTimeSalary || "0",
+        };
+      });
+      setData(timesheets);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
-      fetchData();
-    }, []);
+  fetchData();
+}, []);
+
 
     const columns = useMemo(() => getColumns(), []);
 
@@ -184,50 +191,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
 
     const handleEditClick = useCallback((employee: TimeSheet) => {
       setSelectedEmployee(employee);
-      // setIsEditDialogOpen(true);
     }, []);
-
-    // const handleSave = useCallback(
-    //   (updatedEmployee: {
-    //     remarks: string;
-    //     name: string;
-    //     project: string;
-    //     location: string;
-    //     date: string;
-    //     checkIn: string;
-    //     checkOut: string;
-    //     totalHours: string;
-    //     overtime: string;
-    //     travelTime: string;
-    //     breakTime: string;
-    //     supervisorName: string;
-    //   }) => {
-    //     if (!selectedEmployee) return;
-
-    //     const updatedTimeSheet: TimeSheet = {
-    //       ...selectedEmployee,
-    //       employee: updatedEmployee.name,
-    //       project: updatedEmployee.project,
-    //       location: updatedEmployee.location,
-    //       timesheetDate: updatedEmployee.date,
-    //       checkIn: updatedEmployee.checkIn,
-    //       checkOut: updatedEmployee.checkOut,
-    //       hours: parseFloat(updatedEmployee.totalHours),
-    //       otHours: parseFloat(updatedEmployee.overtime),
-    //       travelTime: updatedEmployee.travelTime,
-    //       breakTime: updatedEmployee.breakTime,
-    //       supervisorName: updatedEmployee.supervisorName,
-    //       remarks: updatedEmployee.remarks,
-    //     };
-
-    //     setData((prevData) =>
-    //       prevData.map((emp) =>
-    //         emp.employee === selectedEmployee.employee ? updatedTimeSheet : emp
-    //       )
-    //     );
-    //   },
-    //   [selectedEmployee]
-    // );
 
     const filteredData = useMemo(() => {
       return data.filter((item: TimeSheet) => {
@@ -237,7 +201,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           (filters.selectedEmployee === "all" || item.employee === filters.selectedEmployee) &&
           (filters.selectedProject === "all" || item.project === filters.selectedProject) &&
           (filters.selectedLocation === "all" || item.location === filters.selectedLocation) &&
-          // (filters.selectedStatus === "all" || item.status === filters.selectedStatus) &&
+          (filters.selectedStatus === "all" || item.status === filters.selectedStatus) &&
           (item.employee.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
             item.project.toLowerCase().includes(filters.searchTerm.toLowerCase())) &&
           (!selectedDateString || itemDate === selectedDateString)
@@ -259,12 +223,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               >
                 View
               </button>
-              {/* <button
-                  onClick={() => handleEditClick(employee)}
-                  className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                >
-                  Edit
-                </button> */}
             </div>
           );
         },
@@ -281,11 +239,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       getPaginationRowModel: getPaginationRowModel(),
     });
 
-    // Excel export function using exceljs
     const exportExcel = useCallback(async () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Timesheet");
-
       worksheet.columns = [
         { header: "Employee", key: "employee", width: 20 },
         { header: "Project", key: "project", width: 20 },
@@ -299,10 +255,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         { header: "Break Time", key: "breakTime", width: 12 },
         { header: "Supervisor", key: "supervisorName", width: 18 },
         { header: "Remarks", key: "remarks", width: 22 },
-        // { header: "Status", key: "status", width: 10 },
+        { header: "Status", key: "status", width: 10 },
       ];
 
-      // Prepare rows for export
       const exportData = filteredData.map((row) => ({
         employee: row.employee,
         project: row.project,
@@ -316,17 +271,15 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         breakTime: row.breakTime,
         supervisorName: row.supervisorName,
         remarks: row.remarks,
-        // status: row.status,
+        status: row.status,
       }));
 
       worksheet.addRows(exportData);
-
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
       const selectedDateString = selectedDate ? formatDate(selectedDate.toISOString()) : formatDate(new Date().toISOString());
-
       saveAs(blob, `Timesheet_${selectedDateString}.xlsx`);
     }, [filteredData]);
 
@@ -379,7 +332,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               </option>
             ))}
           </select>
-          {/* <select
+          <select
             className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
             value={filters.selectedStatus}
             onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
@@ -390,7 +343,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                 {status}
               </option>
             ))}
-          </select> */}
+          </select>
         </div>
         <div className="rounded-md border dark:border-gray-700 overflow-x-auto">
           <table className="w-full">
@@ -409,36 +362,39 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               ))}
             </thead>
             <tbody>
-              {table.getRowModel().rows.length > 0 ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
+              {
+                table.getRowModel().rows.length > 0 ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="p-2 border-b dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                          {cell.column.id === 'employee' ? (
+                            <>
+                              {row.original.employee}
+                              {row.original.isSupervisor && (
+                                <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded ml-2">
+                                  Supervisor
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            flexRender(cell.column.columnDef.cell, cell.getContext())
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={table.getAllColumns().length} className="text-center p-4 text-gray-500 dark:text-gray-400">
+                      No Data Found
+                    </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="text-center p-4 text-gray-500 dark:text-gray-400"
-                  >
-                    No Data Found
-                  </td>
-                </tr>
-              )}
+                )
+              }
             </tbody>
           </table>
         </div>
-
         {selectedEmployee && (
           <ViewDialogBox
             isOpen={isViewDialogOpen}
@@ -463,27 +419,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             }}
           />
         )}
-        {/* {selectedEmployee && (
-          <EditDialogBox
-            isOpen={isEditDialogOpen}
-            onClose={() => setIsEditDialogOpen(false)}
-            employee={{
-              name: selectedEmployee.employee,
-              project: selectedEmployee.project,
-              location: selectedEmployee.location,
-              date: formatDate(selectedEmployee.timesheetDate),
-              checkIn: selectedEmployee.checkIn,
-              checkOut: selectedEmployee.checkOut,
-              totalHours: `${selectedEmployee.hours}`,
-              overtime: `${selectedEmployee.otHours}`,
-              travelTime: selectedEmployee.travelTime,
-              breakTime: selectedEmployee.breakTime,
-              supervisorName: selectedEmployee.supervisorName,
-              remarks: selectedEmployee.remarks,
-            }}
-            onSave={handleSave}
-          />
-        )} */}
       </div>
     );
   }

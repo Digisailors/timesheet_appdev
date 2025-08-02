@@ -23,4 +23,6 @@ export interface TimeSheet {
   overtimeRate: string;
   regularTimeSalary: string;
   overTimeSalary: string;
+  type: string;
+  isSupervisor: boolean;
 }
