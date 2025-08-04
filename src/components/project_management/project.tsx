@@ -12,21 +12,21 @@ interface SupervisorData {
   fullName: string;
 }
 
-interface RawProject {
-  id: string;
-  name: string;
-  locations: string[] | null;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget: string;
-  status: "active" | "completed" | "pending" | "cancelled";
-  clientName: string | null;
-  PoContractNumber: string | null;
-  typesOfWork: string[] | null;
-  createdAt: string;
-  updatedAt: string;
-}
+// interface RawProject {
+//   id: string;
+//   name: string;
+//   locations: string[] | null;
+//   description: string;
+//   startDate: string;
+//   endDate: string;
+//   budget: string;
+//   status: "active" | "completed" | "pending" | "cancelled";
+//   clientName: string | null;
+//   PoContractNumber: string | null;
+//   typesOfWork: string[] | null;
+//   createdAt: string;
+//   updatedAt: string;
+// }
 
 interface ApiProject {
   id: string;
