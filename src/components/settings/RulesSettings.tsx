@@ -1,44 +1,437 @@
-import React from 'react';
-import { Edit, Trash2, Calculator } from 'lucide-react';
+"use client";
 
-const rules = [
-  {
-    title: 'Regular',
-    standardHours: '8h',
-    overtimeAfter: '8h',
-    overtimeRate: '1.5x',
-    breakTime: '1h',
-    travelRate: '1x',
-  },
-  {
-    title: 'Driver',
-    standardHours: '8h',
-    overtimeAfter: '8h',
-    overtimeRate: '1.5x',
-    breakTime: '1h',
-    travelRate: '1.2x',
-  },
-  {
-    title: 'Rental',
-    standardHours: '8h',
-    overtimeAfter: '10h',
-    overtimeRate: '2x',
-    breakTime: '0.5h',
-    travelRate: '1.5x',
-  },
-  {
-    title: 'Coaster Driver',
-    standardHours: '8h',
-    overtimeAfter: '8h',
-    overtimeRate: '1.5x',
-    breakTime: '1h',
-    travelRate: '1.3x',
-  },
-];
+import { useRef } from "react";
+import type React from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
+import { createPortal } from "react-dom";
+import { Edit, Trash2, Calculator, X, ChevronDown } from "lucide-react";
 
-const RulesSettings = () => {
+// Custom Modal Component (replaces shadcn Dialog) - now part of this file
+const CustomModal = ({
+  children,
+  isOpen,
+  onClose,
+  title,
+  showCloseButton = true,
+}: {
+  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  showCloseButton?: boolean;
+}) => {
+  if (!isOpen) return null;
+
+  return createPortal(
+    <>
+      {/* Backdrop - simple black overlay, no blur */}
+      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose}></div>
+      {/* Modal Content */}
+      <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div
+          className="sm:max-w-[700px] w-full rounded-md p-0 bg-white text-black dark:bg-gray-800 dark:text-white shadow-lg"
+          onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing modal
+        >
+          {title && (
+            <div className="px-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {title}
+                </h2>
+                {showCloseButton && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-gray-700 dark:hover:text-gray-300 h-6 w-6"
+                    onClick={onClose}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {children}
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+};
+
+// Custom Select Component (replaces shadcn Select) - now part of this file
+interface CustomSelectProps {
+  id?: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  options: { value: string; label: string }[];
+  className?: string;
+  disabled?: boolean;
+}
+
+const CustomSelect = ({
+  id,
+  value,
+  onValueChange,
+  placeholder,
+  options,
+  className,
+  disabled,
+}: CustomSelectProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  const handleToggle = () => {
+    if (!disabled) {
+      setIsOpen(!isOpen);
+    }
+  };
+
+  const handleSelect = (itemValue: string) => {
+    onValueChange(itemValue);
+    setIsOpen(false);
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      selectRef.current &&
+      !selectRef.current.contains(event.target as Node)
+    ) {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label || placeholder;
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className={`relative ${className}`} ref={selectRef}>
+      <button
+        id={id}
+        type="button"
+        onClick={handleToggle}
+        disabled={disabled}
+        className={`flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus:ring-blue-500 ${
+          disabled ? "bg-gray-100 dark:bg-gray-600 cursor-not-allowed" : ""
+        }`}
+      >
+        <span>{selectedLabel}</span>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </button>
+      {isOpen && (
+        <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className={`relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 hover:text-gray-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-50 ${
+                option.value === value ? "font-semibold" : ""
+              }`}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Frontend Rule Interface (matching fetched data structure)
+interface Rule {
+  id: string;
+  designation: {
+    id: string;
+    name: string;
+    status: string;
+  };
+  overtimeRate: number;
+  breakTime: number;
+  allowedtravelhrs: number;
+  normalHours: number;
+  normalTimeRate: number;
+}
+
+// Form State Interface for new/edited rule
+interface RuleFormState {
+  designationId: string;
+  overtimeRate: string;
+  breakTime: string;
+  allowedtravelhrs: string;
+  normalHours: string;
+  normalTimeRate: string;
+}
+
+interface DesignationOption {
+  value: string;
+  label: string;
+}
+
+const RulesSettings: React.FC = () => {
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [designationOptions, setDesignationOptions] = useState<
+    DesignationOption[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentRuleId, setCurrentRuleId] = useState<string | null>(null); // Store ID for edit/delete
+  const [newRule, setNewRule] = useState<RuleFormState>({
+    designationId: "",
+    overtimeRate: "",
+    breakTime: "",
+    allowedtravelhrs: "",
+    normalHours: "",
+    normalTimeRate: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
+
+  // Fetch all rules
+  const fetchRules = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`${API_BASE_URL}/rules/all`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch rules: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Assuming data is directly an array of Rule objects or has a 'data' property that is an array
+      const rulesArray = Array.isArray(data) ? data : data.data || [];
+      setRules(rulesArray);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch rules");
+      console.error("Error fetching rules:", err);
+      setRules([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all designation types for the dropdown
+  const fetchDesignationTypes = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/designationTypes/all`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch designation types: ${response.statusText}`
+        );
+      }
+      const data = await response.json();
+      const designationsArray = Array.isArray(data) ? data : data.data || [];
+      const options = designationsArray.map((d: any) => ({
+        value: d.id,
+        label: d.name,
+      }));
+      setDesignationOptions(options);
+    } catch (err) {
+      console.error("Error fetching designation types:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load designation types for dropdown."
+      );
+    }
+  };
+
+  // Load rules and designation types on component mount
+  useEffect(() => {
+    fetchRules();
+    fetchDesignationTypes();
+  }, []);
+
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setNewRule((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (name: keyof RuleFormState, value: string) => {
+    setNewRule((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    // Basic validation
+    if (
+      !newRule.designationId ||
+      !newRule.overtimeRate ||
+      !newRule.breakTime ||
+      !newRule.allowedtravelhrs ||
+      !newRule.normalHours ||
+      !newRule.normalTimeRate
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    // Check for duplicate designation rule when creating
+    if (!isEditing) {
+      const existingRule = rules.find(
+        (rule) => rule.designation.id === newRule.designationId
+      );
+      if (existingRule) {
+        setError("A rule for this designation type already exists!");
+        return;
+      }
+    }
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const payload = {
+        designationId: newRule.designationId,
+        overtimeRate: Number.parseFloat(newRule.overtimeRate),
+        breakTime: Number.parseFloat(newRule.breakTime),
+        allowedtravelhrs: Number.parseFloat(newRule.allowedtravelhrs),
+        normalHours: Number.parseFloat(newRule.normalHours),
+        normalTimeRate: Number.parseFloat(newRule.normalTimeRate),
+      };
+
+      let response: Response;
+      if (isEditing && currentRuleId) {
+        // Update existing rule
+        response = await fetch(
+          `${API_BASE_URL}/rules/update/${currentRuleId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        // Create new rule
+        response = await fetch(`${API_BASE_URL}/rules/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Failed to save rule: ${response.statusText}`
+        );
+      }
+
+      // Refresh the list
+      await fetchRules();
+
+      // Reset form and close popup
+      setShowPopup(false);
+      setIsEditing(false);
+      setCurrentRuleId(null);
+      setNewRule({
+        designationId: "",
+        overtimeRate: "",
+        breakTime: "",
+        allowedtravelhrs: "",
+        normalHours: "",
+        normalTimeRate: "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save rule");
+      console.error("Error saving rule:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (rule: Rule) => {
+    setNewRule({
+      designationId: rule.designation.id,
+      overtimeRate: rule.overtimeRate.toString(),
+      breakTime: rule.breakTime.toString(),
+      allowedtravelhrs: rule.allowedtravelhrs.toString(),
+      normalHours: rule.normalHours.toString(),
+      normalTimeRate: rule.normalTimeRate.toString(),
+    });
+    setCurrentRuleId(rule.id);
+    setIsEditing(true);
+    setShowPopup(true);
+    setError(null); // Clear previous errors
+  };
+
+  const handleDelete = (ruleId: string) => {
+    setCurrentRuleId(ruleId);
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!currentRuleId) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const response = await fetch(
+        `${API_BASE_URL}/rules/delete/${currentRuleId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Failed to delete rule: ${response.statusText}`
+        );
+      }
+
+      // Refresh the list
+      await fetchRules();
+
+      setShowDeleteConfirmation(false);
+      setCurrentRuleId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete rule");
+      console.error("Error deleting rule:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 w-full max-w-2xl">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">
+            Loading rules...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white  w-full dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
@@ -48,55 +441,303 @@ const RulesSettings = () => {
               Designation-wise Timing Rules
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Configure working hours, overtime rates, and travel policies for each designation
+              Configure working hours, overtime rates, and travel policies for
+              each designation
             </p>
           </div>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-2">
+        <button
+          onClick={() => {
+            setShowPopup(true);
+            setIsEditing(false);
+            setNewRule({
+              designationId: "",
+              overtimeRate: "",
+              breakTime: "",
+              allowedtravelhrs: "",
+              normalHours: "",
+              normalTimeRate: "",
+            });
+            setError(null);
+          }}
+          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-2"
+        >
           + Add Rule
         </button>
       </div>
 
+      {error &&
+        !showPopup && ( // Show error only if not in popup
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
       {/* Rules List */}
       <div className="space-y-4">
-        {rules.map((rule, index) => (
-          <div
-            key={index}
-            className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-start"
-          >
-            {/* Left: Title + Standard Time */}
-            <div className="col-span-2">
-              <h4 className="font-semibold text-gray-800 dark:text-white">{rule.title}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Standard: {rule.standardHours} | OT after: {rule.overtimeAfter}
-              </p>
+        {!Array.isArray(rules) || rules.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            {!Array.isArray(rules)
+              ? "Error loading rules. Please try again."
+              : "No rules found. Add your first rule to get started."}
+          </div>
+        ) : (
+          rules.map((rule) => (
+            <div
+              key={rule.id}
+              className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-start"
+            >
+              {/* Left: Title + Standard Time */}
+              <div className="col-span-2">
+                <h4 className="font-semibold text-gray-800 dark:text-white">
+                  {rule.designation.name}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Standard: {rule.normalHours}h | OT after: {rule.normalHours}h
+                </p>
+              </div>
+              {/* Right: Edit/Delete Icons */}
+              <div className="flex justify-end items-start space-x-2">
+                <button
+                  onClick={() => handleEdit(rule)}
+                  disabled={submitting}
+                  className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  <Edit className="h-4 w-4 text-gray-700 dark:text-white" />
+                </button>
+                <button
+                  onClick={() => handleDelete(rule.id)}
+                  disabled={submitting}
+                  className="p-2 border border-red-200 dark:border-red-500 rounded hover:bg-red-100 dark:hover:bg-red-600/20 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </button>
+              </div>
+              {/* Bottom Center: Rates */}
+              <div className="col-span-3 flex justify-center mt-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="mr-4">
+                  Overtime Rate:{" "}
+                  <span className="font-semibold">{rule.overtimeRate}x</span>
+                </span>
+                <span className="mr-4">
+                  Break Time:{" "}
+                  <span className="font-semibold">{rule.breakTime}h</span>
+                </span>
+                <span>
+                  Allowed Travel Hours:{" "}
+                  <span className="font-semibold">
+                    {rule.allowedtravelhrs}h
+                  </span>
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add/Edit Rule Modal */}
+      <CustomModal
+        isOpen={showPopup}
+        onClose={() => {
+          setShowPopup(false);
+          setError(null);
+        }}
+        title={isEditing ? "Edit Rule" : "Add New Rule"}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+        >
+          <div className="px-6 pt-6 pb-0 space-y-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                <p className="text-red-600 dark:text-red-400 text-sm">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label
+                htmlFor="designation-select"
+                className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >
+                Designation Type
+              </label>
+              <CustomSelect
+                id="designation-select"
+                value={newRule.designationId}
+                onValueChange={(value) =>
+                  handleSelectChange("designationId", value)
+                }
+                placeholder="Select Designation"
+                options={designationOptions}
+                disabled={isEditing || submitting} // Disable when editing or submitting
+              />
+              {isEditing && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Designation type cannot be changed during edit.
+                </p>
+              )}
             </div>
 
-            {/* Right: Edit/Delete Icons */}
-            <div className="flex justify-end items-start space-x-2">
-              <button className="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Edit className="h-4 w-4 text-gray-700 dark:text-white" />
-              </button>
-              <button className="p-2 border border-red-200 dark:border-red-500 rounded hover:bg-red-100 dark:hover:bg-red-600/20">
-                <Trash2 className="h-4 w-4 text-red-600" />
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label
+                  htmlFor="normal-hours"
+                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Normal Hours (h)
+                </label>
+                <input
+                  id="normal-hours"
+                  type="text" // Changed to text
+                  name="normalHours"
+                  value={newRule.normalHours}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="normal-time-rate"
+                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Normal Time Rate (x)
+                </label>
+                <input
+                  id="normal-time-rate"
+                  type="text" // Changed to text
+                  name="normalTimeRate"
+                  value={newRule.normalTimeRate}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                />
+              </div>
             </div>
 
-            {/* Bottom Center: Rates */}
-            <div className="col-span-3 flex justify-center mt-2 text-sm text-gray-700 dark:text-gray-300">
-              <span className="mr-4">
-                Overtime Rate: <span className="font-semibold">{rule.overtimeRate}</span>
-              </span>
-              <span className="mr-4">
-                Break Time: <span className="font-semibold">{rule.breakTime}</span>
-              </span>
-              <span>
-                Travel Rate: <span className="font-semibold">{rule.travelRate}</span>
-              </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label
+                  htmlFor="overtime-rate"
+                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Overtime Rate (x)
+                </label>
+                <input
+                  id="overtime-rate"
+                  type="text" // Changed to text
+                  name="overtimeRate"
+                  value={newRule.overtimeRate}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="break-time"
+                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Break Time (h)
+                </label>
+                <input
+                  id="break-time"
+                  type="text" // Changed to text
+                  name="breakTime"
+                  value={newRule.breakTime}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="allowed-travel-hrs"
+                className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >
+                Allowed Travel Hours (h)
+              </label>
+              <input
+                id="allowed-travel-hrs"
+                type="text" // Changed to text
+                name="allowedtravelhrs"
+                value={newRule.allowedtravelhrs}
+                onChange={handleInputChange}
+                disabled={submitting}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
+              />
             </div>
           </div>
-        ))}
-      </div>
+          {/* Footer */}
+          <div className="flex justify-end items-center gap-4 px-6 py-4 border-t border-gray-200 bg-gray-100 dark:bg-gray-900 dark:border-gray-700 mt-6">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white"
+              onClick={() => {
+                setShowPopup(false);
+                setError(null);
+              }}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 hover:bg-blue-700 text-white h-10 px-4 py-2 gap-2"
+              disabled={submitting}
+            >
+              {submitting && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              )}
+              {submitting ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </form>
+      </CustomModal>
+
+      {/* Delete Confirmation Modal - No Blur */}
+      <CustomModal
+        isOpen={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+        title="Confirm Deletion"
+        showCloseButton={false}
+      >
+        <div className="p-6">
+          <p className="mb-4 text-gray-600 dark:text-gray-300">
+            Are you sure you want to delete this rule? This action cannot be
+            undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setShowDeleteConfirmation(false);
+                setCurrentRuleId(null);
+              }}
+              disabled={submitting}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={submitting}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {submitting && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              )}
+              {submitting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 };
