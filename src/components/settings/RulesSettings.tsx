@@ -1,12 +1,10 @@
-"use client";
-
 import { useRef } from "react";
 import type React from "react";
 import { useState, useEffect, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { Edit, Trash2, Calculator, X, ChevronDown } from "lucide-react";
 
-// Custom Modal Component (replaces shadcn Dialog) - now part of this file
+// Custom Modal Component
 const CustomModal = ({
   children,
   isOpen,
@@ -21,16 +19,13 @@ const CustomModal = ({
   showCloseButton?: boolean;
 }) => {
   if (!isOpen) return null;
-
   return createPortal(
     <>
-      {/* Backdrop - simple black overlay, no blur */}
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose}></div>
-      {/* Modal Content */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <div
           className="sm:max-w-[700px] w-full rounded-md p-0 bg-white text-black dark:bg-gray-800 dark:text-white shadow-lg"
-          onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing modal
+          onClick={(e) => e.stopPropagation()}
         >
           {title && (
             <div className="px-6 pt-4 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -58,7 +53,7 @@ const CustomModal = ({
   );
 };
 
-// Custom Select Component (replaces shadcn Select) - now part of this file
+// Custom Select Component
 interface CustomSelectProps {
   id?: string;
   value: string;
@@ -144,14 +139,15 @@ const CustomSelect = ({
   );
 };
 
-// Frontend Rule Interface (matching fetched data structure)
+// Interfaces
+interface Designation {
+  id: string;
+  name: string;
+}
+
 interface Rule {
   id: string;
-  designation: {
-    id: string;
-    name: string;
-    status: string;
-  };
+  designation: Designation;
   overtimeRate: number;
   breakTime: number;
   allowedtravelhrs: number;
@@ -159,7 +155,6 @@ interface Rule {
   normalTimeRate: number;
 }
 
-// Form State Interface for new/edited rule
 interface RuleFormState {
   designationId: string;
   overtimeRate: string;
@@ -176,15 +171,13 @@ interface DesignationOption {
 
 const RulesSettings: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
-  const [designationOptions, setDesignationOptions] = useState<
-    DesignationOption[]
-  >([]);
+  const [designationOptions, setDesignationOptions] = useState<DesignationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentRuleId, setCurrentRuleId] = useState<string | null>(null); // Store ID for edit/delete
+  const [currentRuleId, setCurrentRuleId] = useState<string | null>(null);
   const [newRule, setNewRule] = useState<RuleFormState>({
     designationId: "",
     overtimeRate: "",
@@ -194,61 +187,47 @@ const RulesSettings: React.FC = () => {
     normalTimeRate: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
-
-  // Fetch all rules
   const fetchRules = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await fetch(`${API_BASE_URL}/rules/all`);
-
       if (!response.ok) {
         throw new Error(`Failed to fetch rules: ${response.statusText}`);
       }
-
       const data = await response.json();
-      // Assuming data is directly an array of Rule objects or has a 'data' property that is an array
-      const rulesArray = Array.isArray(data) ? data : data.data || [];
+      const rulesArray: Rule[] = Array.isArray(data) ? data : data.data || [];
       setRules(rulesArray);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch rules");
       console.error("Error fetching rules:", err);
-      setRules([]); // Set empty array on error
+      setRules([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch all designation types for the dropdown
   const fetchDesignationTypes = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/designationTypes/all`);
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch designation types: ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch designation types: ${response.statusText}`);
       }
       const data = await response.json();
-      const designationsArray = Array.isArray(data) ? data : data.data || [];
-      const options = designationsArray.map((d: any) => ({
+      const designationsArray: Designation[] = Array.isArray(data) ? data : data.data || [];
+      const options = designationsArray.map((d: Designation) => ({
         value: d.id,
         label: d.name,
       }));
       setDesignationOptions(options);
     } catch (err) {
       console.error("Error fetching designation types:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load designation types for dropdown."
-      );
+      setError(err instanceof Error ? err.message : "Failed to load designation types for dropdown.");
     }
   };
 
-  // Load rules and designation types on component mount
   useEffect(() => {
     fetchRules();
     fetchDesignationTypes();
@@ -272,7 +251,6 @@ const RulesSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    // Basic validation
     if (
       !newRule.designationId ||
       !newRule.overtimeRate ||
@@ -285,7 +263,6 @@ const RulesSettings: React.FC = () => {
       return;
     }
 
-    // Check for duplicate designation rule when creating
     if (!isEditing) {
       const existingRule = rules.find(
         (rule) => rule.designation.id === newRule.designationId
@@ -299,7 +276,6 @@ const RulesSettings: React.FC = () => {
     try {
       setSubmitting(true);
       setError(null);
-
       const payload = {
         designationId: newRule.designationId,
         overtimeRate: Number.parseFloat(newRule.overtimeRate),
@@ -311,7 +287,6 @@ const RulesSettings: React.FC = () => {
 
       let response: Response;
       if (isEditing && currentRuleId) {
-        // Update existing rule
         response = await fetch(
           `${API_BASE_URL}/rules/update/${currentRuleId}`,
           {
@@ -323,7 +298,6 @@ const RulesSettings: React.FC = () => {
           }
         );
       } else {
-        // Create new rule
         response = await fetch(`${API_BASE_URL}/rules/create`, {
           method: "POST",
           headers: {
@@ -340,10 +314,7 @@ const RulesSettings: React.FC = () => {
         );
       }
 
-      // Refresh the list
       await fetchRules();
-
-      // Reset form and close popup
       setShowPopup(false);
       setIsEditing(false);
       setCurrentRuleId(null);
@@ -375,7 +346,7 @@ const RulesSettings: React.FC = () => {
     setCurrentRuleId(rule.id);
     setIsEditing(true);
     setShowPopup(true);
-    setError(null); // Clear previous errors
+    setError(null);
   };
 
   const handleDelete = (ruleId: string) => {
@@ -385,28 +356,22 @@ const RulesSettings: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!currentRuleId) return;
-
     try {
       setSubmitting(true);
       setError(null);
-
       const response = await fetch(
         `${API_BASE_URL}/rules/delete/${currentRuleId}`,
         {
           method: "DELETE",
         }
       );
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
           errorData.message || `Failed to delete rule: ${response.statusText}`
         );
       }
-
-      // Refresh the list
       await fetchRules();
-
       setShowDeleteConfirmation(false);
       setCurrentRuleId(null);
     } catch (err) {
@@ -431,8 +396,7 @@ const RulesSettings: React.FC = () => {
   }
 
   return (
-    <div className="bg-white  w-full dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ">
-      {/* Header */}
+    <div className="bg-white w-full dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <Calculator className="h-6 w-6 text-gray-700 dark:text-white" />
@@ -441,8 +405,7 @@ const RulesSettings: React.FC = () => {
               Designation-wise Timing Rules
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Configure working hours, overtime rates, and travel policies for
-              each designation
+              Configure working hours, overtime rates, and travel policies for each designation
             </p>
           </div>
         </div>
@@ -465,15 +428,11 @@ const RulesSettings: React.FC = () => {
           + Add Rule
         </button>
       </div>
-
-      {error &&
-        !showPopup && ( // Show error only if not in popup
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-      {/* Rules List */}
+      {error && !showPopup && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+        </div>
+      )}
       <div className="space-y-4">
         {!Array.isArray(rules) || rules.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -487,7 +446,6 @@ const RulesSettings: React.FC = () => {
               key={rule.id}
               className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4 items-start"
             >
-              {/* Left: Title + Standard Time */}
               <div className="col-span-2">
                 <h4 className="font-semibold text-gray-800 dark:text-white">
                   {rule.designation.name}
@@ -496,7 +454,6 @@ const RulesSettings: React.FC = () => {
                   Standard: {rule.normalHours}h | OT after: {rule.normalHours}h
                 </p>
               </div>
-              {/* Right: Edit/Delete Icons */}
               <div className="flex justify-end items-start space-x-2">
                 <button
                   onClick={() => handleEdit(rule)}
@@ -513,7 +470,6 @@ const RulesSettings: React.FC = () => {
                   <Trash2 className="h-4 w-4 text-red-600" />
                 </button>
               </div>
-              {/* Bottom Center: Rates */}
               <div className="col-span-3 flex justify-center mt-2 text-sm text-gray-700 dark:text-gray-300">
                 <span className="mr-4">
                   Overtime Rate:{" "}
@@ -534,8 +490,6 @@ const RulesSettings: React.FC = () => {
           ))
         )}
       </div>
-
-      {/* Add/Edit Rule Modal */}
       <CustomModal
         isOpen={showPopup}
         onClose={() => {
@@ -558,7 +512,6 @@ const RulesSettings: React.FC = () => {
                 </p>
               </div>
             )}
-
             <div className="space-y-2">
               <label
                 htmlFor="designation-select"
@@ -574,7 +527,7 @@ const RulesSettings: React.FC = () => {
                 }
                 placeholder="Select Designation"
                 options={designationOptions}
-                disabled={isEditing || submitting} // Disable when editing or submitting
+                disabled={isEditing || submitting}
               />
               {isEditing && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -582,7 +535,6 @@ const RulesSettings: React.FC = () => {
                 </p>
               )}
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label
@@ -593,7 +545,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="normal-hours"
-                  type="text" // Changed to text
+                  type="text"
                   name="normalHours"
                   value={newRule.normalHours}
                   onChange={handleInputChange}
@@ -610,7 +562,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="normal-time-rate"
-                  type="text" // Changed to text
+                  type="text"
                   name="normalTimeRate"
                   value={newRule.normalTimeRate}
                   onChange={handleInputChange}
@@ -619,7 +571,6 @@ const RulesSettings: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label
@@ -630,7 +581,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="overtime-rate"
-                  type="text" // Changed to text
+                  type="text"
                   name="overtimeRate"
                   value={newRule.overtimeRate}
                   onChange={handleInputChange}
@@ -647,7 +598,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="break-time"
-                  type="text" // Changed to text
+                  type="text"
                   name="breakTime"
                   value={newRule.breakTime}
                   onChange={handleInputChange}
@@ -656,7 +607,6 @@ const RulesSettings: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="allowed-travel-hrs"
@@ -666,7 +616,7 @@ const RulesSettings: React.FC = () => {
               </label>
               <input
                 id="allowed-travel-hrs"
-                type="text" // Changed to text
+                type="text"
                 name="allowedtravelhrs"
                 value={newRule.allowedtravelhrs}
                 onChange={handleInputChange}
@@ -675,7 +625,6 @@ const RulesSettings: React.FC = () => {
               />
             </div>
           </div>
-          {/* Footer */}
           <div className="flex justify-end items-center gap-4 px-6 py-4 border-t border-gray-200 bg-gray-100 dark:bg-gray-900 dark:border-gray-700 mt-6">
             <button
               type="button"
@@ -701,8 +650,6 @@ const RulesSettings: React.FC = () => {
           </div>
         </form>
       </CustomModal>
-
-      {/* Delete Confirmation Modal - No Blur */}
       <CustomModal
         isOpen={showDeleteConfirmation}
         onClose={() => setShowDeleteConfirmation(false)}
@@ -711,8 +658,7 @@ const RulesSettings: React.FC = () => {
       >
         <div className="p-6">
           <p className="mb-4 text-gray-600 dark:text-gray-300">
-            Are you sure you want to delete this rule? This action cannot be
-            undone.
+            Are you sure you want to delete this rule? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
             <button
