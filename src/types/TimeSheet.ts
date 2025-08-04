@@ -4,6 +4,7 @@ export interface TimeCalculations {
 }
 
 export interface TimeSheet {
+  id: string;
   remarks: string;
   supervisorName: string;
   timeCalculations: TimeCalculations;
@@ -25,4 +26,5 @@ export interface TimeSheet {
   overTimeSalary: string;
   type: string;
   isSupervisor: boolean;
+  designationType: string;
 }
