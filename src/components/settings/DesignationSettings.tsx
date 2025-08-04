@@ -101,12 +101,25 @@ const DesignationSettings: React.FC = () => {
       return;
     }
 
+    // Check for duplicate designation names when creating (not editing)
+    if (!isEditing) {
+      const existingDesignation = designations.find(
+        (designation) =>
+          designation.name.toLowerCase() ===
+          newDesignation.name.toLowerCase().trim()
+      );
+      if (existingDesignation) {
+        setError("Designation type already exists!");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setError(null);
 
       if (isEditing && currentDesignationIndex !== null) {
-        // Update existing designation
+        // Update existing designation (only status can be updated)
         const designationToUpdate = designations[currentDesignationIndex];
         const response = await fetch(
           `${API_BASE_URL}/designationTypes/update/${designationToUpdate.id}`,
@@ -116,7 +129,7 @@ const DesignationSettings: React.FC = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              name: newDesignation.name,
+              name: designationToUpdate.name, // Keep the original name
               status: newDesignation.status,
             }),
           }
@@ -140,7 +153,7 @@ const DesignationSettings: React.FC = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              name: newDesignation.name,
+              name: newDesignation.name.trim(),
               status: newDesignation.status,
             }),
           }
@@ -225,9 +238,11 @@ const DesignationSettings: React.FC = () => {
   const Modal = ({
     children,
     isOpen,
+    withBlur = true,
   }: {
     children: React.ReactNode;
     isOpen: boolean;
+    withBlur?: boolean;
   }) => {
     if (!isOpen) return null;
 
@@ -235,7 +250,11 @@ const DesignationSettings: React.FC = () => {
       <>
         <div
           className="fixed inset-0 z-40"
-          style={{ backdropFilter: "blur(4px)" }}
+          style={
+            withBlur
+              ? { backdropFilter: "blur(4px)" }
+              : { backgroundColor: "rgba(0, 0, 0, 0.5)" }
+          }
         ></div>
         <div className="fixed inset-0 flex items-center justify-center z-50">
           {children}
@@ -335,7 +354,7 @@ const DesignationSettings: React.FC = () => {
       </div>
 
       {/* Edit/Add Modal */}
-      <Modal isOpen={showPopup}>
+      <Modal isOpen={showPopup} withBlur={true}>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {isEditing ? "Edit Designation" : "Add New Designation"}
@@ -367,10 +386,20 @@ const DesignationSettings: React.FC = () => {
                 placeholder="Enter Designation"
                 value={newDesignation.name}
                 onChange={handleInputChange}
-                disabled={submitting}
-                autoFocus
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-600"
+                disabled={submitting || isEditing} // Disable when editing
+                readOnly={isEditing} // Make read-only when editing
+                autoFocus={!isEditing} // Only auto-focus when creating
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 disabled:opacity-50 ${
+                  isEditing
+                    ? "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                    : "bg-white dark:bg-gray-700"
+                }`}
               />
+              {isEditing && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Designation name cannot be changed during edit
+                </p>
+              )}
             </div>
 
             <div className="mb-4">
@@ -386,6 +415,7 @@ const DesignationSettings: React.FC = () => {
                 value={newDesignation.status}
                 onChange={handleInputChange}
                 disabled={submitting}
+                autoFocus={isEditing} // Auto-focus status when editing
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
               >
                 <option value="active">Active</option>
@@ -410,7 +440,9 @@ const DesignationSettings: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={submitting || !newDesignation.name.trim()}
+                disabled={
+                  submitting || (!isEditing && !newDesignation.name.trim())
+                }
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && (
@@ -423,8 +455,8 @@ const DesignationSettings: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={showDeleteConfirmation}>
+      {/* Delete Confirmation Modal - No Blur */}
+      <Modal isOpen={showDeleteConfirmation} withBlur={false}>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Confirm Deletion
