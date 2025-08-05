@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef } from "react";
 import type React from "react";
 import { useState, useEffect, type ChangeEvent } from "react";
@@ -148,20 +150,16 @@ interface Designation {
 interface Rule {
   id: string;
   designation: Designation;
-  overtimeRate: number;
   breakTime: number;
-  allowedtravelhrs: number;
+  allowedTravelHours: number;
   normalHours: number;
-  normalTimeRate: number;
 }
 
 interface RuleFormState {
   designationId: string;
-  overtimeRate: string;
   breakTime: string;
-  allowedtravelhrs: string;
+  allowedTravelHours: string;
   normalHours: string;
-  normalTimeRate: string;
 }
 
 interface DesignationOption {
@@ -171,7 +169,9 @@ interface DesignationOption {
 
 const RulesSettings: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
-  const [designationOptions, setDesignationOptions] = useState<DesignationOption[]>([]);
+  const [designationOptions, setDesignationOptions] = useState<
+    DesignationOption[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -180,14 +180,14 @@ const RulesSettings: React.FC = () => {
   const [currentRuleId, setCurrentRuleId] = useState<string | null>(null);
   const [newRule, setNewRule] = useState<RuleFormState>({
     designationId: "",
-    overtimeRate: "",
     breakTime: "",
-    allowedtravelhrs: "",
+    allowedTravelHours: "",
     normalHours: "",
-    normalTimeRate: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
 
   const fetchRules = async () => {
     try {
@@ -213,10 +213,14 @@ const RulesSettings: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/designationTypes/all`);
       if (!response.ok) {
-        throw new Error(`Failed to fetch designation types: ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch designation types: ${response.statusText}`
+        );
       }
       const data = await response.json();
-      const designationsArray: Designation[] = Array.isArray(data) ? data : data.data || [];
+      const designationsArray: Designation[] = Array.isArray(data)
+        ? data
+        : data.data || [];
       const options = designationsArray.map((d: Designation) => ({
         value: d.id,
         label: d.name,
@@ -224,7 +228,11 @@ const RulesSettings: React.FC = () => {
       setDesignationOptions(options);
     } catch (err) {
       console.error("Error fetching designation types:", err);
-      setError(err instanceof Error ? err.message : "Failed to load designation types for dropdown.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load designation types for dropdown."
+      );
     }
   };
 
@@ -237,10 +245,33 @@ const RulesSettings: React.FC = () => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setNewRule((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Regex to allow only numbers and a single decimal point
+    const numericRegex = /^-?\d*\.?\d*$/;
+
+    if (
+      name === "breakTime" ||
+      name === "allowedTravelHours" ||
+      name === "normalHours"
+    ) {
+      if (value === "" || numericRegex.test(value)) {
+        setNewRule((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+        // Clear error for this field if it becomes valid
+        if (error && numericRegex.test(value)) {
+          setError(null);
+        }
+      } else {
+        // Set a specific error if input is invalid
+        setError(`Invalid character for ${name}. Please enter a valid number.`);
+      }
+    } else {
+      setNewRule((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSelectChange = (name: keyof RuleFormState, value: string) => {
@@ -251,16 +282,40 @@ const RulesSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // Validate required fields based on whether it's an edit or new creation
+    let validationError = false;
+    if (!isEditing && !newRule.designationId) {
+      setError("Designation Type is required.");
+      validationError = true;
+    }
     if (
-      !newRule.designationId ||
-      !newRule.overtimeRate ||
-      !newRule.breakTime ||
-      !newRule.allowedtravelhrs ||
-      !newRule.normalHours ||
-      !newRule.normalTimeRate
+      newRule.breakTime === "" ||
+      newRule.allowedTravelHours === "" ||
+      newRule.normalHours === ""
     ) {
-      setError("All fields are required.");
+      setError(
+        "All numeric fields (Normal Hours, Break Time, Allowed Travel Hours) are required."
+      );
+      validationError = true;
+    }
+
+    if (validationError) {
       return;
+    }
+
+    // Validate numeric fields
+    const numericFields = [
+      "breakTime",
+      "allowedTravelHours",
+      "normalHours",
+    ] as const;
+    for (const field of numericFields) {
+      if (isNaN(Number.parseFloat(newRule[field]))) {
+        setError(
+          `Invalid number for ${field}. Please enter a valid numeric value.`
+        );
+        return;
+      }
     }
 
     if (!isEditing) {
@@ -275,18 +330,26 @@ const RulesSettings: React.FC = () => {
 
     try {
       setSubmitting(true);
-      setError(null);
-      const payload = {
-        designationId: newRule.designationId,
-        overtimeRate: Number.parseFloat(newRule.overtimeRate),
-        breakTime: Number.parseFloat(newRule.breakTime),
-        allowedtravelhrs: Number.parseFloat(newRule.allowedtravelhrs),
-        normalHours: Number.parseFloat(newRule.normalHours),
-        normalTimeRate: Number.parseFloat(newRule.normalTimeRate),
+      setError(null); // Clear any previous errors before submission
+
+      let payload: {
+        breakTime: number;
+        allowedTravelHours: number;
+        normalHours: number;
+        designationId?: string; // designationId is optional for update
       };
 
       let response: Response;
+
       if (isEditing && currentRuleId) {
+        // For update, exclude designationId from the payload body
+        payload = {
+          breakTime: Number.parseFloat(newRule.breakTime),
+          allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
+          normalHours: Number.parseFloat(newRule.normalHours),
+        };
+        console.log("Payload being sent for update:", payload); // Log the payload for debugging
+
         response = await fetch(
           `${API_BASE_URL}/rules/update/${currentRuleId}`,
           {
@@ -298,6 +361,15 @@ const RulesSettings: React.FC = () => {
           }
         );
       } else {
+        // For creation, include designationId in the payload body
+        payload = {
+          designationId: newRule.designationId,
+          breakTime: Number.parseFloat(newRule.breakTime),
+          allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
+          normalHours: Number.parseFloat(newRule.normalHours),
+        };
+        console.log("Payload being sent for creation:", payload); // Log the payload for debugging
+
         response = await fetch(`${API_BASE_URL}/rules/create`, {
           method: "POST",
           headers: {
@@ -320,11 +392,9 @@ const RulesSettings: React.FC = () => {
       setCurrentRuleId(null);
       setNewRule({
         designationId: "",
-        overtimeRate: "",
         breakTime: "",
-        allowedtravelhrs: "",
+        allowedTravelHours: "",
         normalHours: "",
-        normalTimeRate: "",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save rule");
@@ -335,18 +405,29 @@ const RulesSettings: React.FC = () => {
   };
 
   const handleEdit = (rule: Rule) => {
+    // Safely convert numbers to strings, treating null/undefined as empty strings
     setNewRule({
       designationId: rule.designation.id,
-      overtimeRate: rule.overtimeRate.toString(),
-      breakTime: rule.breakTime.toString(),
-      allowedtravelhrs: rule.allowedtravelhrs.toString(),
-      normalHours: rule.normalHours.toString(),
-      normalTimeRate: rule.normalTimeRate.toString(),
+      breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
+      allowedTravelHours:
+        rule.allowedTravelHours != null
+          ? rule.allowedTravelHours.toString()
+          : "",
+      normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
     });
     setCurrentRuleId(rule.id);
     setIsEditing(true);
     setShowPopup(true);
-    setError(null);
+    setError(null); // Clear any existing errors when opening the edit popup
+    console.log("New rule state after handleEdit:", {
+      designationId: rule.designation.id,
+      breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
+      allowedTravelHours:
+        rule.allowedTravelHours != null
+          ? rule.allowedTravelHours.toString()
+          : "",
+      normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
+    });
   };
 
   const handleDelete = (ruleId: string) => {
@@ -405,7 +486,8 @@ const RulesSettings: React.FC = () => {
               Designation-wise Timing Rules
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Configure working hours, overtime rates, and travel policies for each designation
+              Configure working hours, overtime rates, and travel policies for
+              each designation
             </p>
           </div>
         </div>
@@ -415,11 +497,9 @@ const RulesSettings: React.FC = () => {
             setIsEditing(false);
             setNewRule({
               designationId: "",
-              overtimeRate: "",
               breakTime: "",
-              allowedtravelhrs: "",
+              allowedTravelHours: "",
               normalHours: "",
-              normalTimeRate: "",
             });
             setError(null);
           }}
@@ -451,7 +531,8 @@ const RulesSettings: React.FC = () => {
                   {rule.designation.name}
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Standard: {rule.normalHours}h | OT after: {rule.normalHours}h
+                  Standard: {rule.normalHours}h | Break: {rule.breakTime}h |
+                  Travel: {rule.allowedTravelHours}h
                 </p>
               </div>
               <div className="flex justify-end items-start space-x-2">
@@ -470,26 +551,11 @@ const RulesSettings: React.FC = () => {
                   <Trash2 className="h-4 w-4 text-red-600" />
                 </button>
               </div>
-              <div className="col-span-3 flex justify-center mt-2 text-sm text-gray-700 dark:text-gray-300">
-                <span className="mr-4">
-                  Overtime Rate:{" "}
-                  <span className="font-semibold">{rule.overtimeRate}x</span>
-                </span>
-                <span className="mr-4">
-                  Break Time:{" "}
-                  <span className="font-semibold">{rule.breakTime}h</span>
-                </span>
-                <span>
-                  Allowed Travel Hours:{" "}
-                  <span className="font-semibold">
-                    {rule.allowedtravelhrs}h
-                  </span>
-                </span>
-              </div>
             </div>
           ))
         )}
       </div>
+
       <CustomModal
         isOpen={showPopup}
         onClose={() => {
@@ -545,7 +611,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="normal-hours"
-                  type="number"
+                  type="text"
                   name="normalHours"
                   value={newRule.normalHours}
                   onChange={handleInputChange}
@@ -562,7 +628,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="break-time"
-                  type="number"
+                  type="text"
                   name="breakTime"
                   value={newRule.breakTime}
                   onChange={handleInputChange}
@@ -573,16 +639,16 @@ const RulesSettings: React.FC = () => {
             </div>
             <div className="space-y-2">
               <label
-                htmlFor="allowed-travel-hrs"
+                htmlFor="allowed-travel-hours"
                 className="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >
                 Allowed Travel Hours (h)
               </label>
               <input
-                id="allowed-travel-hrs"
-                type="number"
-                name="allowedtravelhrs"
-                value={newRule.allowedtravelhrs}
+                id="allowed-travel-hours"
+                type="text"
+                name="allowedTravelHours"
+                value={newRule.allowedTravelHours}
                 onChange={handleInputChange}
                 disabled={submitting}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
@@ -604,7 +670,7 @@ const RulesSettings: React.FC = () => {
             <button
               type="submit"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 hover:bg-blue-700 text-white h-10 px-4 py-2 gap-2"
-              disabled={submitting}
+              disabled={submitting || !!error}
             >
               {submitting && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -614,6 +680,7 @@ const RulesSettings: React.FC = () => {
           </div>
         </form>
       </CustomModal>
+
       <CustomModal
         isOpen={showDeleteConfirmation}
         onClose={() => setShowDeleteConfirmation(false)}
@@ -622,7 +689,8 @@ const RulesSettings: React.FC = () => {
       >
         <div className="p-6">
           <p className="mb-4 text-gray-600 dark:text-gray-300">
-            Are you sure you want to delete this rule? This action cannot be undone.
+            Are you sure you want to delete this rule? This action cannot be
+            undone.
           </p>
           <div className="flex justify-end gap-2">
             <button
