@@ -545,45 +545,9 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="normal-hours"
-                  type="text"
+                  type="number"
                   name="normalHours"
                   value={newRule.normalHours}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
-                />
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="normal-time-rate"
-                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  Normal Time Rate (x)
-                </label>
-                <input
-                  id="normal-time-rate"
-                  type="text"
-                  name="normalTimeRate"
-                  value={newRule.normalTimeRate}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="overtime-rate"
-                  className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  Overtime Rate (x)
-                </label>
-                <input
-                  id="overtime-rate"
-                  type="text"
-                  name="overtimeRate"
-                  value={newRule.overtimeRate}
                   onChange={handleInputChange}
                   disabled={submitting}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
@@ -598,7 +562,7 @@ const RulesSettings: React.FC = () => {
                 </label>
                 <input
                   id="break-time"
-                  type="text"
+                  type="number"
                   name="breakTime"
                   value={newRule.breakTime}
                   onChange={handleInputChange}
@@ -616,7 +580,7 @@ const RulesSettings: React.FC = () => {
               </label>
               <input
                 id="allowed-travel-hrs"
-                type="text"
+                type="number"
                 name="allowedtravelhrs"
                 value={newRule.allowedtravelhrs}
                 onChange={handleInputChange}
