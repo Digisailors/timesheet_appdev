@@ -83,6 +83,20 @@ export default function SupervisorPage() {
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+  // Effect to handle body scroll lock when view dialog is open
+  useEffect(() => {
+    if (showViewDialog) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to reset scroll when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showViewDialog]);
+
   const fetchSupervisors = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}/supervisors/all`);
@@ -661,8 +675,8 @@ export default function SupervisorPage() {
       
       {/* View Supervisor Details Dialog */}
       {showViewDialog && selectedSupervisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             {/* Profile Content */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-xl font-semibold">Supervisor Profile</h3>
