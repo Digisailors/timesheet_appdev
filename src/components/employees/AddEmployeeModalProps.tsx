@@ -547,27 +547,10 @@ React.useEffect(() => {
               </div>
 
               {/* Specialization/Skills */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Specialization/Skills *
-                </label>
-                <input
-                  type="text"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
-                  className={getFieldClassName('specialization', "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
-                  required
-                />
-                {errors.specialization && touched.specialization && (
-                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.specialization}</p>
-                )}
-              </div>
+              
 
               {/* Working Hours */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Working Hours *
                 </label>
@@ -586,7 +569,7 @@ React.useEffect(() => {
                 {errors.workingHours && touched.workingHours && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.workingHours}</p>
                 )}
-              </div>
+              </div> */}
 
               {/* Per Hour Rate (Normal Hours) */}
               <div className="space-y-2">
@@ -625,6 +608,25 @@ React.useEffect(() => {
                 />
                 {errors.otHours && touched.otHours && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.otHours}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Specialization/Skills *
+                </label>
+                <input
+                  type="text"
+                  name="specialization"
+                  value={formData.specialization}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
+                  className={getFieldClassName('specialization', "w-175 px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500")}
+                  required
+                />
+                {errors.specialization && touched.specialization && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.specialization}</p>
                 )}
               </div>
 
