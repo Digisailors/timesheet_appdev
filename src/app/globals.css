@@ -79,6 +79,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Custom primary color variable */
+  --primary-color: #1849D6;
+  
+  /* Custom font size variable */
+  --app-font-size: 16px;
 }
 
 .dark {
@@ -119,8 +125,60 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  html {
+    /* Base font size will be controlled by JavaScript */
+    font-size: var(--app-font-size, 16px);
+  }
+  
   body {
     @apply bg-background text-foreground;
+    /* Inherit font size from html */
+    font-size: inherit;
   }
 }
 
+/* Custom button styles that use the dynamic primary color */
+@layer components {
+  .primary-btn {
+    background-color: var(--primary-color);
+  }
+  
+  .primary-btn:hover {
+    background-color: var(--primary-color);
+    filter: brightness(0.9);
+  }
+  
+  .primary-btn:focus {
+    background-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+  }
+  
+  /* Apply to all buttons with these classes */
+  .btn-primary, 
+  .bg-blue-600,
+  .bg-blue-700 {
+    background-color: var(--primary-color) !important;
+  }
+  
+  .btn-primary:hover,
+  .bg-blue-600:hover,
+  .hover\:bg-blue-700:hover {
+    background-color: var(--primary-color) !important;
+    filter: brightness(0.9);
+  }
+  
+  /* For View Profile buttons and similar */
+  button[class*="bg-blue"],
+  .button-primary,
+  .view-profile-btn {
+    background-color: var(--primary-color) !important;
+  }
+  
+  button[class*="bg-blue"]:hover,
+  .button-primary:hover,
+  .view-profile-btn:hover {
+    background-color: var(--primary-color) !important;
+    filter: brightness(0.9);
+  }
+}

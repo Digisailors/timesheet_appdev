@@ -244,7 +244,7 @@ const filteredSupervisors = supervisors.filter(supervisor =>
             address: selectedSupervisor.address,
             dateOfJoining: selectedSupervisor.dateOfJoining,
             experience: selectedSupervisor.experience,
-            assignedProject: selectedSupervisor.assignedProject,
+            
             password: selectedSupervisor.password
           } : undefined}
           onSubmit={(data, mode) => {

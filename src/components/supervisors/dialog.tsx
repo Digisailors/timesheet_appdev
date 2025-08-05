@@ -11,9 +11,9 @@ interface SupervisorData {
   address?: string;
   dateOfJoining?: string;
   experience?: string;
-  assignedProject?: string; // project name for display
-  assignedProjectId?: string; // project id for backend
   password?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
 }
 
 interface SupervisorDialogProps {
@@ -35,9 +35,9 @@ const defaultFormData: SupervisorData = {
   address: '',
   dateOfJoining: '',
   experience: '',
-  assignedProject: '',
-  assignedProjectId: '',
-  password: ''
+  password: '',
+  perHourRate: '',
+  overtimeRate: ''
 };
 
 export default function SupervisorDialog({
@@ -60,6 +60,20 @@ export default function SupervisorDialog({
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
+
+  // Prevent background scroll when dialog is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (projects.length > 0) setLocalProjects(projects);
@@ -86,7 +100,7 @@ export default function SupervisorDialog({
 
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
-      setSelectedProjectId?.(initialData.assignedProjectId || null);
+      setSelectedProjectId?.(null);
     } else {
       setFormData(defaultFormData);
       setSelectedProjectId?.(null);
@@ -106,6 +120,22 @@ export default function SupervisorDialog({
     }
   };
 
+  const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Check if the value contains only letters and spaces
+    const nameRegex = /^[a-zA-Z\s]*$/;
+    
+    if (nameRegex.test(value)) {
+      setFormData(prev => ({ ...prev, fullName: value }));
+    }
+
+    // Clear error on change
+    if (errors.fullName) {
+      setErrors(prev => ({ ...prev, fullName: '' }));
+    }
+  };
+
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Only allow numbers and limit to 10 digits
@@ -115,6 +145,23 @@ export default function SupervisorDialog({
     // Clear error on change
     if (errors.phoneNumber) {
       setErrors(prev => ({ ...prev, phoneNumber: '' }));
+    }
+  };
+
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Only allow numbers and decimal point
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = numericValue.split('.');
+    const formattedValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+    
+    setFormData(prev => ({ ...prev, [name]: formattedValue }));
+
+    // Clear error on change
+    if (errors[name as keyof SupervisorData]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -128,7 +175,25 @@ export default function SupervisorDialog({
     const newErrors: Partial<SupervisorData> = {};
 
     // Validation for required fields
-    if (!formData.fullName?.trim()) newErrors.fullName = 'Name is required';
+    if (!formData.fullName?.trim()) {
+      newErrors.fullName = 'Name is required';
+    } else {
+      // Check if name contains only letters and spaces
+      const nameRegex = /^[a-zA-Z\s]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /\d/;
+      
+      if (!nameRegex.test(formData.fullName.trim())) {
+        if (emailRegex.test(formData.fullName.trim())) {
+          newErrors.fullName = 'Name cannot be an email address';
+        } else if (phoneRegex.test(formData.fullName.trim())) {
+          newErrors.fullName = 'Name cannot contain numbers';
+        } else {
+          newErrors.fullName = 'Name can only contain letters and spaces';
+        }
+      }
+    }
+    
     if (!formData.emailAddress?.trim()) {
       newErrors.emailAddress = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
@@ -151,8 +216,15 @@ export default function SupervisorDialog({
     if (formData.experience !== undefined && !formData.experience.trim()) {
       newErrors.experience = 'Experience is required';
     }
-    if (!formData.assignedProject?.trim()) {
-      newErrors.assignedProject = 'Project is required';
+    if (formData.perHourRate !== undefined && !formData.perHourRate.trim()) {
+      newErrors.perHourRate = 'Per hour rate is required';
+    } else if (formData.perHourRate !== undefined && formData.perHourRate.trim() && isNaN(Number(formData.perHourRate))) {
+      newErrors.perHourRate = 'Please enter a valid rate';
+    }
+    if (formData.overtimeRate !== undefined && !formData.overtimeRate.trim()) {
+      newErrors.overtimeRate = 'Overtime rate is required';
+    } else if (formData.overtimeRate !== undefined && formData.overtimeRate.trim() && isNaN(Number(formData.overtimeRate))) {
+      newErrors.overtimeRate = 'Please enter a valid overtime rate';
     }
     if (mode === 'add') {
       if (!formData.password?.trim()) {
@@ -178,9 +250,9 @@ export default function SupervisorDialog({
       address: formData.address,
       dateOfJoining: formData.dateOfJoining,
       experience: formData.experience,
-      assignedProject: formData.assignedProject,
-      assignedProjectId: formData.assignedProjectId,
       password: formData.password,
+      perHourRate: formData.perHourRate,
+      overtimeRate: formData.overtimeRate,
     };
 
     onSubmit?.(dataToSend, mode);
@@ -190,7 +262,7 @@ export default function SupervisorDialog({
   const handleCancel = () => {
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
-      setSelectedProjectId?.(initialData.assignedProjectId || null);
+      setSelectedProjectId?.(null);
     } else {
       setFormData(defaultFormData);
       setSelectedProjectId?.(null);
@@ -217,15 +289,20 @@ export default function SupervisorDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name & Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Full Name"
-                name="fullName"
-                value={formData.fullName}
-                error={errors.fullName}
-                onChange={handleInputChange}
-                placeholder="Enter full name"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleFullNameChange}
+                  placeholder="Enter full name"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
+              </div>
               <FormInput
                 label="Email Address"
                 name="emailAddress"
@@ -260,6 +337,34 @@ export default function SupervisorDialog({
                   className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                 />
                 {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+              </div>
+            </div>
+
+            {/* Per Hour Rate & Overtime Rate */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Per Hour Rate</label>
+                <input
+                  type="text"
+                  name="perHourRate"
+                  value={formData.perHourRate || ''}
+                  onChange={handleRateChange}
+                  placeholder="Enter per hour rate"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.perHourRate && <p className="text-red-500 text-sm">{errors.perHourRate}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Overtime Rate</label>
+                <input
+                  type="text"
+                  name="overtimeRate"
+                  value={formData.overtimeRate || ''}
+                  onChange={handleRateChange}
+                  placeholder="Enter overtime rate"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.overtimeRate && <p className="text-red-500 text-sm">{errors.overtimeRate}</p>}
               </div>
             </div>
 
@@ -324,26 +429,6 @@ export default function SupervisorDialog({
                 onChange={handleInputChange}
                 placeholder="Enter experience (e.g., 5 years)"
               />
-            </div>
-
-            {/* Assigned Project */}
-            <div>
-              <label className="text-sm font-medium">Assigned Project</label>
-              <select
-                value={selectedProjectId || ''}
-                onChange={handleProjectChange}
-                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
-              >
-                <option value="">Select project</option>
-                {localProjects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-              {errors.assignedProject && (
-                <p className="text-red-500 text-sm">{errors.assignedProject}</p>
-              )}
             </div>
 
             {/* Buttons */}
