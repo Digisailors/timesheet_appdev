@@ -168,17 +168,5 @@
     filter: brightness(0.9);
   }
   
-  /* For View Profile buttons and similar */
-  button[class*="bg-blue"],
-  .button-primary,
-  .view-profile-btn {
-    background-color: var(--primary-color) !important;
-  }
   
-  button[class*="bg-blue"]:hover,
-  .button-primary:hover,
-  .view-profile-btn:hover {
-    background-color: var(--primary-color) !important;
-    filter: brightness(0.9);
-  }
 }

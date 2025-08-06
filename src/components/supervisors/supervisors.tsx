@@ -19,6 +19,8 @@ interface Supervisor {
   assignedProjectId?: string;
   address?: string;
   experience?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
 }
 
 interface SupervisorData {
@@ -32,6 +34,8 @@ interface SupervisorData {
   assignedProject?: string;
   assignedProjectId?: string;
   password?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
 }
 
 interface Project {
@@ -51,6 +55,8 @@ interface SupervisorApiResponse {
   dateOfJoining?: string;
   experience?: string;
   password?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
   assignedProject?: {
     id: string;
     name: string;
@@ -98,45 +104,46 @@ export default function SupervisorPage() {
   }, [showViewDialog]);
 
   const fetchSupervisors = useCallback(async () => {
-    try {
-      const response = await fetch(`${baseUrl}/supervisors/all`);
-      if (!response.ok) throw new Error('Failed to fetch supervisors');
+  try {
+    const response = await fetch(`${baseUrl}/supervisors/all`);
+    if (!response.ok) throw new Error('Failed to fetch supervisors');
 
-      const result = await response.json();
-      if (result.success) {
-        const loadedSupervisors: Supervisor[] = result.data.map((s: SupervisorApiResponse) => ({
-          id: s.id,
-          name: s.fullName,
-          email: s.emailAddress,
-          initials: s.fullName.split(' ').map((part: string) => part.charAt(0)).join('').toUpperCase(),
-          backgroundColor: 'bg-blue-500',
-          department: s.specialization || '',
-          location: typeof s.assignedProject === 'object' && s.assignedProject 
-            ? s.assignedProject.name 
-            : typeof s.assignedProject === 'string' 
-            ? s.assignedProject 
-            : '',
-          phoneNumber: s.phoneNumber || '',
-          dateOfJoining: s.dateOfJoining?.split('T')[0] || '',
-          password: s.password || '',
-          assignedProjectId: typeof s.assignedProject === 'object' && s.assignedProject 
-            ? s.assignedProject.id 
-            : typeof s.assignedProject === 'string' 
-            ? s.assignedProject 
-            : '',
-          address: s.address || '',
-          experience: s.experience || ''
-        }));
-        setSupervisorList(loadedSupervisors);
-      } else {
-        throw new Error(result.message || 'No supervisor data');
-      }
-    } catch (error) {
-      console.error('Fetch failed:', error);
-      toast.error("❌ Error loading supervisor list");
+    const result = await response.json();
+    if (result.success) {
+      const loadedSupervisors: Supervisor[] = result.data.map((s: SupervisorApiResponse) => ({
+        id: s.id,
+        name: s.fullName,
+        email: s.emailAddress,
+        initials: s.fullName.split(' ').map((part: string) => part.charAt(0)).join('').toUpperCase(),
+        backgroundColor: 'bg-blue-500',
+        department: s.specialization || '',
+        location: typeof s.assignedProject === 'object' && s.assignedProject 
+          ? s.assignedProject.name 
+          : typeof s.assignedProject === 'string' 
+          ? s.assignedProject 
+          : '',
+        phoneNumber: s.phoneNumber || '',
+        dateOfJoining: s.dateOfJoining?.split('T')[0] || '',
+        password: s.password || '',
+        assignedProjectId: typeof s.assignedProject === 'object' && s.assignedProject 
+          ? s.assignedProject.id 
+          : typeof s.assignedProject === 'string' 
+          ? s.assignedProject 
+          : '',
+        address: s.address || '',
+        experience: s.experience || '',
+        perHourRate: s.perHourRate || '',
+        overtimeRate: s.overtimeRate || ''
+      }));
+      setSupervisorList(loadedSupervisors);
+    } else {
+      throw new Error(result.message || 'No supervisor data');
     }
-  }, [baseUrl]);
-
+  } catch (error) {
+    console.error('Fetch failed:', error);
+    toast.error("❌ Error loading supervisor list");
+  }
+}, [baseUrl]);
   const fetchProjects = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}/projects/all`);
@@ -227,108 +234,113 @@ export default function SupervisorPage() {
     return pageNumbers;
   };
 
-  const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
-    fullName: supervisor.name,
-    emailAddress: supervisor.email,
-    specialization: supervisor.department,
-    phoneNumber: supervisor.phoneNumber,
-    address: supervisor.address ?? '',
-    dateOfJoining: supervisor.dateOfJoining,
-    experience: supervisor.experience ?? '',
-    assignedProject: supervisor.location,
-    assignedProjectId: supervisor.assignedProjectId,
-    password: supervisor.password
-  });
+ const supervisorToFormData = (supervisor: Supervisor): SupervisorData => ({
+  fullName: supervisor.name,
+  emailAddress: supervisor.email,
+  specialization: supervisor.department,
+  phoneNumber: supervisor.phoneNumber,
+  address: supervisor.address ?? '',
+  dateOfJoining: supervisor.dateOfJoining,
+  experience: supervisor.experience ?? '',
+  assignedProject: supervisor.location,
+  assignedProjectId: supervisor.assignedProjectId,
+  password: supervisor.password,
+  perHourRate: supervisor.perHourRate ?? '',
+  overtimeRate: supervisor.overtimeRate ?? ''
+});
 
   const handleAction = async (action: string, supervisor: Supervisor) => {
-    if (action === 'view') {
-      try {
-        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
-        if (!response.ok) throw new Error('Failed to fetch supervisor details');
+  if (action === 'view') {
+    try {
+      const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+      if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
-        const result = await response.json();
-        if (result.success) {
-          const data = result.data;
-          const fullSupervisor: Supervisor = {
-            id: data.id,
-            name: data.fullName,
-            email: data.emailAddress,
-            initials: data.fullName
-              .split(' ')
-              .map((part: string) => part.charAt(0))
-              .join('')
-              .toUpperCase(),
-            backgroundColor: 'bg-blue-500',
-            department: data.specialization || '',
-            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
-              ? data.assignedProject.name 
-              : '',
-            phoneNumber: data.phoneNumber || '',
-            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-            password: '',
-            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
-              ? data.assignedProject.id 
-              : '',
-            address: data.address || '',
-            experience: data.experience || ''
-          };
-          setSelectedSupervisor(fullSupervisor);
-          setShowViewDialog(true);
-        } else {
-          toast.error(result.message || '❌ Could not load supervisor details');
-        }
-      } catch (error) {
-        console.error('View fetch failed:', error);
-        toast.error('❌ Error loading supervisor data');
+      const result = await response.json();
+      if (result.success) {
+        const data = result.data;
+        const fullSupervisor: Supervisor = {
+          id: data.id,
+          name: data.fullName,
+          email: data.emailAddress,
+          initials: data.fullName
+            .split(' ')
+            .map((part: string) => part.charAt(0))
+            .join('')
+            .toUpperCase(),
+          backgroundColor: 'bg-blue-500',
+          department: data.specialization || '',
+          location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+            ? data.assignedProject.name 
+            : '',
+          phoneNumber: data.phoneNumber || '',
+          dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+          password: '',
+          assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+            ? data.assignedProject.id 
+            : '',
+          address: data.address || '',
+          experience: data.experience || '',
+          perHourRate: data.perHourRate || '',
+          overtimeRate: data.overtimeRate || ''
+        };
+        setSelectedSupervisor(fullSupervisor);
+        setShowViewDialog(true);
+      } else {
+        toast.error(result.message || '❌ Could not load supervisor details');
       }
-    } else if (action === 'edit') {
-      try {
-        const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
-        if (!response.ok) throw new Error('Failed to fetch supervisor details');
-
-        const result = await response.json();
-        if (result.success) {
-          const data = result.data;
-          const fullSupervisor: Supervisor = {
-            id: data.id,
-            name: data.fullName,
-            email: data.emailAddress,
-            initials: data.fullName
-              .split(' ')
-              .map((part: string) => part.charAt(0))
-              .join('')
-              .toUpperCase(),
-            backgroundColor: 'bg-blue-500',
-            department: data.specialization || '',
-            location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
-              ? data.assignedProject.name 
-              : '',
-            phoneNumber: data.phoneNumber || '',
-            dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
-            password: data.password || '',
-            assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
-              ? data.assignedProject.id 
-              : '',
-            address: data.address || '',
-            experience: data.experience || ''
-          };
-          setSelectedSupervisor(fullSupervisor);
-          setSelectedProjectId(fullSupervisor.assignedProjectId || null);
-          setDialogMode('edit');
-          setShowDialog(true);
-        } else {
-          toast.error(result.message || '❌ Could not load supervisor details');
-        }
-      } catch (error) {
-        console.error('Edit fetch failed:', error);
-        toast.error('❌ Error loading supervisor data');
-      }
-    } else if (action === 'delete') {
-      setSupervisorToDelete(supervisor);
-      setConfirmDelete(true);
+    } catch (error) {
+      console.error('View fetch failed:', error);
+      toast.error('❌ Error loading supervisor data');
     }
-  };
+  } else if (action === 'edit') {
+    try {
+      const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`);
+      if (!response.ok) throw new Error('Failed to fetch supervisor details');
 
+      const result = await response.json();
+      if (result.success) {
+        const data = result.data;
+        const fullSupervisor: Supervisor = {
+          id: data.id,
+          name: data.fullName,
+          email: data.emailAddress,
+          initials: data.fullName
+            .split(' ')
+            .map((part: string) => part.charAt(0))
+            .join('')
+            .toUpperCase(),
+          backgroundColor: 'bg-blue-500',
+          department: data.specialization || '',
+          location: typeof data.assignedProject === 'object' && data.assignedProject?.name 
+            ? data.assignedProject.name 
+            : '',
+          phoneNumber: data.phoneNumber || '',
+          dateOfJoining: data.dateOfJoining?.split('T')[0] || '',
+          password: data.password || '',
+          assignedProjectId: typeof data.assignedProject === 'object' && data.assignedProject?.id 
+            ? data.assignedProject.id 
+            : '',
+          address: data.address || '',
+          experience: data.experience || '',
+          perHourRate: data.perHourRate || '',
+          overtimeRate: data.overtimeRate || ''
+        };
+        setSelectedSupervisor(fullSupervisor);
+        setSelectedProjectId(fullSupervisor.assignedProjectId || null);
+        setDialogMode('edit');
+        setShowDialog(true);
+      } else {
+        toast.error(result.message || '❌ Could not load supervisor details');
+      }
+    } catch (error) {
+      console.error('Edit fetch failed:', error);
+      toast.error('❌ Error loading supervisor data');
+    }
+  } else if (action === 'delete') {
+    setSupervisorToDelete(supervisor);
+    setConfirmDelete(true);
+  }
+};
   const handleAddSupervisor = () => {
     setSelectedSupervisor(null);
     setDialogMode('add');
@@ -384,90 +396,95 @@ export default function SupervisorPage() {
   };
 
   const handleFormSubmit = async (formData: SupervisorData, mode: 'add' | 'edit') => {
-    const payload = {
-      fullName: formData.fullName,
-      emailAddress: formData.emailAddress,
-      phoneNumber: formData.phoneNumber,
-      specialization: formData.specialization,
-      address: formData.address,
-      dateOfJoining: formData.dateOfJoining,
-      experience: formData.experience,
-      password: formData.password,
-      assignedProjectId: formData.assignedProjectId,
-    };
-
-    const url =
-      mode === 'add'
-        ? `${baseUrl}/supervisors/create`
-        : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
-    const method = mode === 'add' ? 'POST' : 'PUT';
-
-    try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        if (mode === 'add') {
-          const newSupervisor: Supervisor = {
-            id: result.data.id,
-            name: formData.fullName,
-            email: formData.emailAddress,
-            initials: formData.fullName.split(' ').map(p => p.charAt(0)).join('').toUpperCase(),
-            backgroundColor: 'bg-blue-500',
-            department: formData.specialization || '',
-            location: formData.assignedProject || '',
-            phoneNumber: formData.phoneNumber || '',
-            dateOfJoining: formData.dateOfJoining || '',
-            password: formData.password || '',
-            assignedProjectId: formData.assignedProjectId,
-            address: formData.address || '',
-            experience: formData.experience || ''
-          };
-          setSupervisorList(prev => [...prev, newSupervisor]);
-          toast.success('✅ Supervisor added successfully!');
-        } else if (mode === 'edit' && selectedSupervisor) {
-          const updatedSupervisor: Supervisor = {
-            ...selectedSupervisor,
-            name: formData.fullName,
-            email: formData.emailAddress,
-            department: formData.specialization || '',
-            location: formData.assignedProject || '',
-            phoneNumber: formData.phoneNumber || '',
-            dateOfJoining: formData.dateOfJoining || '',
-            password: formData.password || '',
-            assignedProjectId: formData.assignedProjectId,
-            address: formData.address || '',
-            experience: formData.experience || ''
-          };
-          setSupervisorList(prev =>
-            prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
-          );
-          toast.success('✅ Supervisor updated successfully!');
-        }
-        closeDialog();
-        fetchSupervisors();
-      } else {
-        toast.error(result.message || 'Failed to submit form');
-      }
-    } catch (error) {
-      console.error('Error during form submission:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Error: ${errorMessage}`);
-    }
+  const payload = {
+    fullName: formData.fullName,
+    emailAddress: formData.emailAddress,
+    phoneNumber: formData.phoneNumber,
+    specialization: formData.specialization,
+    address: formData.address,
+    dateOfJoining: formData.dateOfJoining,
+    experience: formData.experience,
+    password: formData.password,
+    assignedProjectId: formData.assignedProjectId,
+    perHourRate: formData.perHourRate ? parseFloat(formData.perHourRate) : undefined,
+    overtimeRate: formData.overtimeRate ? parseFloat(formData.overtimeRate) : undefined,
   };
 
+  const url =
+    mode === 'add'
+      ? `${baseUrl}/supervisors/create`
+      : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
+  const method = mode === 'add' ? 'POST' : 'PUT';
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success) {
+      if (mode === 'add') {
+        const newSupervisor: Supervisor = {
+          id: result.data.id,
+          name: formData.fullName,
+          email: formData.emailAddress,
+          initials: formData.fullName.split(' ').map(p => p.charAt(0)).join('').toUpperCase(),
+          backgroundColor: 'bg-blue-500',
+          department: formData.specialization || '',
+          location: formData.assignedProject || '',
+          phoneNumber: formData.phoneNumber || '',
+          dateOfJoining: formData.dateOfJoining || '',
+          password: formData.password || '',
+          assignedProjectId: formData.assignedProjectId,
+          address: formData.address || '',
+          experience: formData.experience || '',
+          perHourRate: formData.perHourRate || '',
+          overtimeRate: formData.overtimeRate || ''
+        };
+        setSupervisorList(prev => [...prev, newSupervisor]);
+        toast.success('✅ Supervisor added successfully!');
+      } else if (mode === 'edit' && selectedSupervisor) {
+        const updatedSupervisor: Supervisor = {
+          ...selectedSupervisor,
+          name: formData.fullName,
+          email: formData.emailAddress,
+          department: formData.specialization || '',
+          location: formData.assignedProject || '',
+          phoneNumber: formData.phoneNumber || '',
+          dateOfJoining: formData.dateOfJoining || '',
+          password: formData.password || '',
+          assignedProjectId: formData.assignedProjectId,
+          address: formData.address || '',
+          experience: formData.experience || '',
+          perHourRate: formData.perHourRate || '',
+          overtimeRate: formData.overtimeRate || ''
+        };
+        setSupervisorList(prev =>
+          prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
+        );
+        toast.success('✅ Supervisor updated successfully!');
+      }
+      closeDialog();
+      fetchSupervisors();
+    } else {
+      toast.error(result.message || 'Failed to submit form');
+    }
+  } catch (error) {
+    console.error('Error during form submission:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    toast.error(`Error: ${errorMessage}`);
+  }
+};
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Toaster
@@ -675,44 +692,46 @@ export default function SupervisorPage() {
       
       {/* View Supervisor Details Dialog */}
       {showViewDialog && selectedSupervisor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-hidden">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Profile Content */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-xl font-semibold">Supervisor Profile</h3>
-              <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                <X size={20} className="text-gray-400 dark:text-gray-300" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Profile details */}
-              <div className="flex items-center space-x-4 mb-8">
-                <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
-                  {selectedSupervisor.initials}
-                </div>
-                <div>
-                  <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-8">
-                <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
-                <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
-                {selectedSupervisor.address && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-gray-500 mb-2">Address</p>
-                    <p>{selectedSupervisor.address}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      {/* Profile Content */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+        <h3 className="text-xl font-semibold">Supervisor Profile</h3>
+        <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+          <X size={20} className="text-gray-400 dark:text-gray-300" />
+        </button>
+      </div>
+      <div className="p-6 space-y-6">
+        {/* Profile details */}
+        <div className="flex items-center space-x-4 mb-8">
+          <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
+            {selectedSupervisor.initials}
+          </div>
+          <div>
+            <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
+            <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
           </div>
         </div>
-      )}
+        <div className="grid grid-cols-2 gap-8">
+          <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Per Hour Rate</p><p>${selectedSupervisor.perHourRate || 'N/A'}</p></div>
+          <div><p className="text-sm text-gray-500 mb-2">Overtime Rate</p><p>${selectedSupervisor.overtimeRate || 'N/A'}</p></div>
+          {selectedSupervisor.address && (
+            <div className="col-span-2">
+              <p className="text-sm text-gray-500 mb-2">Address</p>
+              <p>{selectedSupervisor.address}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && supervisorToDelete && (
