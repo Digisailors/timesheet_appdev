@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRef } from "react";
 import type React from "react";
 import { useState, useEffect, type ChangeEvent } from "react";
@@ -200,6 +201,7 @@ const RulesSettings: React.FC = () => {
       const data = await response.json();
       const rulesArray: Rule[] = Array.isArray(data) ? data : data.data || [];
       setRules(rulesArray);
+      console.log("Fetched rules:", rulesArray); // Log fetched rules
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch rules");
       console.error("Error fetching rules:", err);
@@ -226,6 +228,7 @@ const RulesSettings: React.FC = () => {
         label: d.name,
       }));
       setDesignationOptions(options);
+      console.log("Fetched designation options:", options); // Log fetched designation options
     } catch (err) {
       console.error("Error fetching designation types:", err);
       setError(
@@ -245,32 +248,26 @@ const RulesSettings: React.FC = () => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    // Regex to allow only numbers and a single decimal point
     const numericRegex = /^-?\d*\.?\d*$/;
 
+    setNewRule((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Always clear the general error message on any input change
+    // The validation in handleSave will re-evaluate on submit
+    setError(null);
+
+    // Re-apply specific numeric validation error if the input is invalid
     if (
-      name === "breakTime" ||
-      name === "allowedTravelHours" ||
-      name === "normalHours"
+      (name === "breakTime" ||
+        name === "allowedTravelHours" ||
+        name === "normalHours") &&
+      value !== "" &&
+      !numericRegex.test(value)
     ) {
-      if (value === "" || numericRegex.test(value)) {
-        setNewRule((prev) => ({
-          ...prev,
-          [name]: value,
-        }));
-        // Clear error for this field if it becomes valid
-        if (error && numericRegex.test(value)) {
-          setError(null);
-        }
-      } else {
-        // Set a specific error if input is invalid
-        setError(`Invalid character for ${name}. Please enter a valid number.`);
-      }
-    } else {
-      setNewRule((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setError(`Invalid character for ${name}. Please enter a valid number.`);
     }
   };
 
@@ -279,6 +276,8 @@ const RulesSettings: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear the general error message on any select change
+    setError(null);
   };
 
   const handleSave = async () => {
@@ -319,11 +318,22 @@ const RulesSettings: React.FC = () => {
     }
 
     if (!isEditing) {
-      const existingRule = rules.find(
-        (rule) => rule.designation.id === newRule.designationId
+      // This check is now redundant because the dropdown is filtered,
+      // but keeping it as a fallback for robustness.
+      const selectedDesignation = designationOptions.find(
+        (option) => option.value === newRule.designationId
       );
-      if (existingRule) {
-        setError("A rule for this designation type already exists!");
+      const selectedDesignationName = selectedDesignation?.label?.toLowerCase();
+
+      const existingRuleByName = rules.find(
+        (rule) =>
+          rule.designation.name.toLowerCase() === selectedDesignationName
+      );
+
+      if (existingRuleByName) {
+        setError(
+          `A rule for designation "${selectedDesignation?.label}" already exists!`
+        );
         return;
       }
     }
@@ -386,7 +396,7 @@ const RulesSettings: React.FC = () => {
         );
       }
 
-      await fetchRules();
+      await fetchRules(); // Re-fetch rules to update the list and available designation options
       setShowPopup(false);
       setIsEditing(false);
       setCurrentRuleId(null);
@@ -452,7 +462,7 @@ const RulesSettings: React.FC = () => {
           errorData.message || `Failed to delete rule: ${response.statusText}`
         );
       }
-      await fetchRules();
+      await fetchRules(); // Re-fetch rules to update the list and available designation options
       setShowDeleteConfirmation(false);
       setCurrentRuleId(null);
     } catch (err) {
@@ -462,6 +472,30 @@ const RulesSettings: React.FC = () => {
       setSubmitting(false);
     }
   };
+
+  // Derive available options based on current rules using useMemo for optimization
+  const availableDesignationOptions = useMemo(() => {
+    console.log("Recalculating availableDesignationOptions...");
+    console.log("Current rules for filtering:", rules);
+    console.log("All designation options for filtering:", designationOptions);
+
+    if (isEditing) {
+      console.log("Mode: Editing. Showing all designation options.");
+      return designationOptions; // When editing, show all options
+    }
+
+    // Create a Set of designation IDs that are currently used in rules for efficient lookup
+    const usedDesignationIds = new Set(
+      rules.map((rule) => rule.designation.id)
+    );
+
+    // Filter designationOptions to only include those not already used
+    const filteredOptions = designationOptions.filter(
+      (option: DesignationOption) => !usedDesignationIds.has(option.value)
+    );
+    console.log("Mode: Adding new rule. Filtered options:", filteredOptions);
+    return filteredOptions;
+  }, [isEditing, designationOptions, rules]); // Re-calculate only when these dependencies change
 
   if (loading) {
     return (
@@ -592,7 +626,7 @@ const RulesSettings: React.FC = () => {
                   handleSelectChange("designationId", value)
                 }
                 placeholder="Select Designation"
-                options={designationOptions}
+                options={availableDesignationOptions} // Use the derived options
                 disabled={isEditing || submitting}
               />
               {isEditing && (
