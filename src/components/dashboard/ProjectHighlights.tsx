@@ -25,7 +25,7 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://localhost:5088/api/projects/all', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
         headers: {
           'Accept': 'application/json'
         }
