@@ -87,8 +87,8 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
   };
 
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
-    const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const cleanBaseUrl = baseUrl?.replace(/\/$/, "");
 
     const fetchEmployees = async () => {
       try {

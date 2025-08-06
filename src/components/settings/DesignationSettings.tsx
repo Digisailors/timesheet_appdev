@@ -26,7 +26,7 @@ const DesignationSettings: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const fetchDesignations = async () => {
     try {

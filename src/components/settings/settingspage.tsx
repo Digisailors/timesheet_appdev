@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
     phoneNumber: string;
     email: string;
     website: string;
-    taxId: string;
+    taxID: string;
   }) => {
     console.log("Saving company data:", companyData);
     // 🔧 Future: integrate backend API call here
