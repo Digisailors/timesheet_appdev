@@ -94,7 +94,7 @@ const ThemeSettings: React.FC = () => {
     root.style.setProperty('--app-font-size', baseSize);
   };
 
-  const applySidebarTheme = (isDark: boolean) => {
+  const applySidebarTheme = () => {
     const sidebar = document.querySelector('[data-sidebar="sidebar"]') || 
                    document.querySelector('.sidebar') || 
                    document.querySelector('[class*="sidebar"]');
@@ -205,7 +205,7 @@ const ThemeSettings: React.FC = () => {
               onChange={() => {
                 const newTheme = theme === 'dark' ? 'light' : 'dark';
                 setTheme(newTheme);
-                applySidebarTheme(newTheme === 'dark');
+                applySidebarTheme();
               }}
               className="w-5 h-5 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
             />

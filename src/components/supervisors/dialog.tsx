@@ -14,8 +14,9 @@ interface SupervisorData {
   password?: string;
   perHourRate?: string;
   overtimeRate?: string;
+  assignedProject?: string;
+  assignedProjectId?: string;
 }
-
 interface SupervisorDialogProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -47,13 +48,12 @@ export default function SupervisorDialog({
   initialData,
   onSubmit,
   projects = [],
-  selectedProjectId,
+  
   setSelectedProjectId,
 }: SupervisorDialogProps) {
   const [formData, setFormData] = useState<SupervisorData>(defaultFormData);
   const [errors, setErrors] = useState<Partial<SupervisorData>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [localProjects, setLocalProjects] = useState<{ id: string; name: string }[]>(projects);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -76,28 +76,6 @@ export default function SupervisorDialog({
   }, [isOpen]);
 
   useEffect(() => {
-    if (projects.length > 0) setLocalProjects(projects);
-    else {
-      // fetch projects if needed
-      const fetchProjects = async () => {
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
-          const response = await fetch(`${baseUrl}/projects/all`);
-          if (!response.ok) throw new Error('Failed to fetch projects');
-          const data = await response.json();
-          const projectList = Array.isArray(data)
-            ? data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))
-            : Array.isArray(data.data)
-            ? data.data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))
-            : [];
-          setLocalProjects(projectList);
-        } catch (error) {
-          console.error('Error fetching projects:', error);
-        }
-      };
-      fetchProjects();
-    }
-
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
       setSelectedProjectId?.(null);
@@ -163,12 +141,6 @@ export default function SupervisorDialog({
     if (errors[name as keyof SupervisorData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
-
-  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, assignedProject: localProjects.find(p => p.id === value)?.name || '', assignedProjectId: value }));
-    setSelectedProjectId?.(value);
   };
 
   const validateForm = (): boolean => {
