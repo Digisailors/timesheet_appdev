@@ -5,8 +5,8 @@ const SystemSettings: React.FC = () => {
   const [autoSubmit, setAutoSubmit] = useState(true);
   const [dailyReport, setDailyReport] = useState(true);
   const [overtimeAlert, setOvertimeAlert] = useState(true);
-  const [lockPeriod, setLockPeriod] = useState(3);
-  const [defaultHours, setDefaultHours] = useState(8);
+  // const [lockPeriod, setLockPeriod] = useState(3);
+  // const [defaultHours, setDefaultHours] = useState(8);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 w-full">
