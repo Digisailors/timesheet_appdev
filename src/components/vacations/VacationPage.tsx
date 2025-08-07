@@ -3,8 +3,6 @@
 import { useState } from "react";
 import {
   Search,
-  Check,
-  Clock,
   X,
   Heart,
   Filter,
@@ -27,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CreateVacationForm from "@/components/vacations/CreateVacations";
-import ViewVacationDialog from "./ViewVacationDialog"; // Adjust path if needed
+import ViewVacationDialog from "./ViewVacationDialog";
 
 interface VacationEntry {
   id: number;

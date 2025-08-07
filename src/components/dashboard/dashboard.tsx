@@ -92,7 +92,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
 
     const fetchEmployees = async () => {
       try {
-        const response = await fetch(`${cleanBaseUrl}/api/employees/all`);
+        const response = await fetch(`${cleanBaseUrl}/employees/all`);
         const data = await response.json();
 
         setStats(prevStats => ({
