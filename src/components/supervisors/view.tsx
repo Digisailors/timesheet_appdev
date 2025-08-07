@@ -77,10 +77,7 @@ const SupervisorViewDialog: React.FC<SupervisorViewDialogProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-8">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Current Project</p>
-                <p className="text-gray-900 dark:text-gray-100 font-medium">{supervisor.location}</p>
-              </div>
+              
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Specialization</p>
                 <p className="text-gray-900 dark:text-gray-100 font-medium">{supervisor.department}</p>
