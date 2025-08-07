@@ -216,19 +216,7 @@ const ThemeSettings: React.FC = () => {
         </div>
 
         {/* Compact View (future expansion placeholder) */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">Compact View</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Reduce spacing for more content on screen</p>
-          </div>
-          <input
-            type="radio"
-            id="compactView"
-            name="themeOptions"
-            className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
-            disabled // You can make this functional later
-          />
-        </div>
+       
       </div>
 
       {/* Save Button */}

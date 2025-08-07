@@ -328,14 +328,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 >
                   Add
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Saving...' : 'Save project'}
-                </button>
+               
               </div>
             )}
 

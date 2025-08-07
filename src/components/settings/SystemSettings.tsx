@@ -91,35 +91,7 @@ const SystemSettings: React.FC = () => {
         </div>
 
         {/* General Settings */}
-        <div>
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">General Settings</h4>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Timesheet Lock Period (days)</label>
-              <input
-                type="number"
-                value={lockPeriod}
-                onChange={(e) => setLockPeriod(Number(e.target.value))}
-                min={0}
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Days after which timesheets cannot be edited</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Default Working Hours</label>
-              <input
-                type="number"
-                value={defaultHours}
-                onChange={(e) => setDefaultHours(Number(e.target.value))}
-                min={0}
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
-
+        
         {/* Save Button */}
         <div className="pt-6 text-right">
           <button className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition">
