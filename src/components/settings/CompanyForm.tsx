@@ -38,6 +38,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     website: '',
     taxID: ''
   },
+  onSave
 }) => {
   const [formData, setFormData] = useState<CompanyData>(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -128,47 +129,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   };
 
   const handleSave = async () => {
-
-  if (!validateForm()) {
-    return;
-  }
-  setIsLoading(true);
-  try {
-    const url = companyExists ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/update/${formData.id}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/create`;
-    const method = companyExists ? 'PUT' : 'POST';
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-    if (!response.ok) {
-      const errorResponse = await response.json();
-      console.error('Error response:', errorResponse);
-      throw new Error(errorResponse.message || 'Network response was not ok');
-    }
-    const result = await response.json();
-    console.log('Success:', result);
-    if (!companyExists) {
-      setCompanyExists(true);
-    }
-    setIsEditing(false);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error:', error);
-      showToast(`Failed to save: ${error.message}`, 'error');
-    } else {
-      console.error('Unknown error:', error);
-      showToast('Failed to save due to an unknown error.', 'error');
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
-
     if (!validateForm()) {
-      alert('Tax ID is required and cannot be empty.');
       return;
     }
     setIsLoading(true);
@@ -201,6 +162,9 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           color: 'white',
         },
       });
+      
+      // Call the onSave prop
+      await onSave(formData);
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error:', error);
@@ -213,7 +177,6 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
       setIsLoading(false);
     }
   };
-
 
   const handleEdit = () => {
     setIsEditing(true);
