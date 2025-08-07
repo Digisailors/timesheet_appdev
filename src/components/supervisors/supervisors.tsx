@@ -717,7 +717,7 @@ export default function SupervisorPage() {
           <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
-          <div><p className="text-sm text-gray-500 mb-2">Current Project</p><p>{selectedSupervisor.location}</p></div>
+          
           <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Per Hour Rate</p><p>${selectedSupervisor.perHourRate || 'N/A'}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Overtime Rate</p><p>${selectedSupervisor.overtimeRate || 'N/A'}</p></div>
