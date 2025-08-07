@@ -38,6 +38,13 @@ const ThemeSettings: React.FC = () => {
     localStorage.setItem('primaryColor', newColor);
   };
 
+  const handleResetColor = () => {
+    const defaultColor = "#1849D6";
+    setColor(defaultColor);
+    applyPrimaryColor(defaultColor);
+    localStorage.setItem('primaryColor', defaultColor);
+  };
+
   const applyPrimaryColor = (color: string) => {
     const root = document.documentElement;
     root.style.setProperty('--primary-color', color);
@@ -146,6 +153,12 @@ const ThemeSettings: React.FC = () => {
               className="flex-1 h-10 px-3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
             />
           </div>
+          <button
+            onClick={handleResetColor}
+            className="mt-2 px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            Reset to Default
+          </button>
         </div>
 
         {/* Font Size */}
@@ -220,7 +233,7 @@ const ThemeSettings: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div className="mt-8 flex justify-end">
+      {/* <div className="mt-8 flex justify-end">
         <button 
           className="px-6 py-2 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           style={{ 
@@ -235,7 +248,7 @@ const ThemeSettings: React.FC = () => {
         >
           Save Theme Settings
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -712,7 +712,7 @@ export default function SupervisorPage() {
             <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-2 gap-8">
           <div><p className="text-sm text-gray-500 mb-2">Join Date</p><p>{selectedSupervisor.dateOfJoining}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
@@ -721,12 +721,7 @@ export default function SupervisorPage() {
           <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Per Hour Rate</p><p>${selectedSupervisor.perHourRate || 'N/A'}</p></div>
           <div><p className="text-sm text-gray-500 mb-2">Overtime Rate</p><p>${selectedSupervisor.overtimeRate || 'N/A'}</p></div>
-          {selectedSupervisor.address && (
-            <div className="col-span-2">
-              <p className="text-sm text-gray-500 mb-2">Address</p>
-              <p>{selectedSupervisor.address}</p>
-            </div>
-          )}
+          <div><p className="text-sm text-gray-500 mb-2">Address</p><p>{selectedSupervisor.address || 'N/A'}</p></div>
         </div>
       </div>
     </div>
