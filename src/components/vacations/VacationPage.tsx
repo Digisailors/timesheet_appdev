@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Check, Clock, X, Heart, Filter } from "lucide-react";
+import {
+  Search,
+  Check,
+  Clock,
+  X,
+  Heart,
+  Filter,
+  Plane,
+  TreePalm,
+  CreditCard,
+  House,
+  Baby,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,32 +101,25 @@ const vacationData: VacationEntry[] = [
 
 const summaryData = [
   {
-    title: "Approved",
+    title: "Total Employees on vacation",
     count: 2,
-    icon: Check,
+    icon: TreePalm,
     borderColor: "#22c55e",
     iconColor: "#22c55e",
   },
   {
-    title: "Pending",
+    title: "Paid Vacation",
     count: 1,
-    icon: Clock,
+    icon: CreditCard,
     borderColor: "#f59e0b",
     iconColor: "#f59e0b",
   },
   {
-    title: "Rejected",
+    title: "Unpaid Vacation",
     count: 1,
     icon: X,
     borderColor: "#ef4444",
     iconColor: "#ef4444",
-  },
-  {
-    title: "On Leave",
-    count: 1,
-    icon: Heart,
-    borderColor: "#3b82f6",
-    iconColor: "#3b82f6",
   },
 ];
 
@@ -157,13 +162,31 @@ export default function VacationManagement() {
       .toUpperCase();
   };
 
+  const getLeaveTypeIcon = (leaveType: string) => {
+    switch (leaveType.toLowerCase()) {
+      case "personal leave":
+        return House;
+      case "sick leave":
+        return Heart;
+      case "maternity leave":
+        return Baby;
+      case "annual leave":
+        return Plane;
+      default:
+        return Plane;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-0 dark:bg-gray-900">
       <div className="max-w-9xl mx-auto space-y-6 p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 dark:text-white">
-            Vacation Mode
-          </h2>
+          <div className="flex items-center gap-5">
+            <Plane className="text-blue-700" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 dark:text-white">
+              Vacation Mode
+            </h2>
+          </div>
           <Button
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-md shadow-none"
             onClick={() => setShowCreateForm(true)}
@@ -180,7 +203,7 @@ export default function VacationManagement() {
           />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {summaryData.map((item) => (
             <Card
               key={item.title}
@@ -198,9 +221,14 @@ export default function VacationManagement() {
                     <p className="text-sm font-medium text-gray-600 dark:text-white">
                       {item.title}
                     </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {item.count}
-                    </p>
+                    <div className="flex items-center">
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {item.count}
+                      </p>
+                      <p className="ml-2 text-black font-semibold dark:text-white">
+                        This Month
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -210,8 +238,8 @@ export default function VacationManagement() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="relative max-w-[280px] w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search requests..."
@@ -221,7 +249,7 @@ export default function VacationManagement() {
                 />
               </div>
 
-              <div className="min-w-[280px]">
+              <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
                     {statusFilter === "all" ? (
@@ -240,7 +268,7 @@ export default function VacationManagement() {
                 </Select>
               </div>
 
-              <div className="min-w-[280px]">
+              <div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
                     {typeFilter === "all" ? (
@@ -264,7 +292,7 @@ export default function VacationManagement() {
               <Button
                 variant="outline"
                 onClick={clearFilters}
-                className="h-10 px-6 bg-white border border-gray-600 text-gray-900 hover:bg-gray-50 hover:border-gray-700 font-medium w-[220px] dark:bg-gray-800 dark:text-white dark:border-white"
+                className="h-10 px-6 bg-white border border-gray-600 text-gray-900 hover:bg-gray-50 hover:border-gray-700 font-medium dark:bg-gray-800 dark:text-white dark:border-white"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Clear Filters
@@ -279,78 +307,82 @@ export default function VacationManagement() {
           </h2>
 
           <div className="space-y-4">
-            {filteredData.map((employee) => (
-              <Card
-                key={employee.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={`/placeholder.svg?height=48&width=48&text=${getInitials(
-                            employee.name
-                          )}`}
-                        />
-                        <AvatarFallback className="bg-blue-800 text-white">
-                          {getInitials(employee.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {employee.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-white">
-                          {employee.leaveType} • {employee.duration}
-                        </p>
-                        <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block dark:text-white">
-                          {employee.location}
-                        </p>
-                      </div>
-                    </div>
+            {filteredData.map((employee) => {
+              const LeaveIcon = getLeaveTypeIcon(employee.leaveType);
 
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="flex flex-row items-start gap-4">
-                          <div className="text-sm text-gray-600  flex flex-col dark:text-white">
-                            <span className="font-bold ">
-                              {employee.startDate}
-                            </span>
-                            <span>to: {employee.endDate}</span>
+              return (
+                <Card
+                  key={employee.id}
+                  className="hover:shadow-md transition-shadow"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
+                            src={`/placeholder.svg?height=48&width=48&text=${getInitials(
+                              employee.name
+                            )}`}
+                          />
+                          <AvatarFallback className="bg-blue-800 text-white">
+                            <LeaveIcon className="h-6 w-6" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {employee.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-white">
+                            {employee.leaveType} • {employee.duration}
+                          </p>
+                          <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block dark:text-white">
+                            {employee.location}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <div className="flex flex-row items-start gap-4">
+                            <div className="text-sm text-gray-600  flex flex-col dark:text-white">
+                              <span className="font-bold ">
+                                {employee.startDate}
+                              </span>
+                              <span>to: {employee.endDate}</span>
+                            </div>
+                            <Badge
+                              variant={
+                                employee.status === "Paid"
+                                  ? "default"
+                                  : "destructive"
+                              }
+                              className={
+                                employee.status === "Paid"
+                                  ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                  : ""
+                              }
+                            >
+                              {employee.status} Vacation
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 "
+                              onClick={() => {
+                                setSelectedVacation(employee);
+                                setIsDialogOpen(true);
+                              }}
+                            >
+                              View Details
+                            </Button>
                           </div>
-                          <Badge
-                            variant={
-                              employee.status === "Paid"
-                                ? "default"
-                                : "destructive"
-                            }
-                            className={
-                              employee.status === "Paid"
-                                ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                : ""
-                            }
-                          >
-                            {employee.status} Vacation
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 "
-                            onClick={() => {
-                              setSelectedVacation(employee);
-                              setIsDialogOpen(true);
-                            }}
-                          >
-                            View Details
-                          </Button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {filteredData.length === 0 && (
