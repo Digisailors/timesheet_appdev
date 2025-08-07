@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
+
 import { FileText, Edit, X, AlertCircle, CheckCircle } from 'lucide-react';
+
+
+import toast from 'react-hot-toast';
+
 
 type CompanyData = {
   id?: string;
@@ -82,7 +87,6 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         console.error('Error fetching company details:', error);
       }
     };
-
     fetchCompanyDetails();
   }, []);
 
@@ -124,6 +128,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   };
 
   const handleSave = async () => {
+
   if (!validateForm()) {
     return;
   }
@@ -161,6 +166,54 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     setIsLoading(false);
   }
 };
+
+    if (!validateForm()) {
+      alert('Tax ID is required and cannot be empty.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const url = companyExists
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/update/${formData.id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/create`;
+      const method = companyExists ? 'PUT' : 'POST';
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        console.error('Error response:', errorResponse);
+        throw new Error(errorResponse.message || 'Network response was not ok');
+      }
+      const result = await response.json();
+      console.log('Success:', result);
+      if (!companyExists) {
+        setCompanyExists(true);
+      }
+      setIsEditing(false);
+      toast.success('Details saved successfully', {
+        style: {
+          background: 'blue',
+          color: 'white',
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error:', error);
+        toast.error(`Failed to save: ${error.message}`);
+      } else {
+        console.error('Unknown error:', error);
+        toast.error('Failed to save due to an unknown error.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const handleEdit = () => {
     setIsEditing(true);
