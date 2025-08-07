@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit } from 'lucide-react';
+
+import { FileText, Edit, X, AlertCircle, CheckCircle } from 'lucide-react';
+
+
 import toast from 'react-hot-toast';
+
 
 type CompanyData = {
   id?: string;
@@ -18,6 +22,12 @@ interface CompanyFormProps {
   onSave: (data: CompanyData) => Promise<void> | void;
 }
 
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error';
+}
+
 const CompanyForm: React.FC<CompanyFormProps> = ({
   initialData = {
     companyName: '',
@@ -33,6 +43,23 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [companyExists, setCompanyExists] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast: Toast = { id, message, type };
+    
+    setToasts(prev => [...prev, newToast]);
+    
+    // Auto remove toast after 5 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 5000);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   useEffect(() => {
     const fetchCompanyDetails = async () => {
@@ -79,10 +106,67 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   };
 
   const validateForm = () => {
-    return formData.taxID.trim() !== '';
+    // Check if Tax ID is not empty
+    if (formData.taxID.trim() === '') {
+      showToast('Tax ID is required and cannot be empty.', 'error');
+      return false;
+    }
+
+    // Validate phone number (must be exactly 10 digits)
+    if (formData.phoneNumber.length !== 10) {
+      showToast('Phone number must be exactly 10 digits.', 'error');
+      return false;
+    }
+
+    // Validate email (must contain @ symbol)
+    if (formData.email.trim() !== '' && !formData.email.includes('@')) {
+      showToast('Please enter a valid email address with @ symbol.', 'error');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSave = async () => {
+
+  if (!validateForm()) {
+    return;
+  }
+  setIsLoading(true);
+  try {
+    const url = companyExists ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/update/${formData.id}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/create`;
+    const method = companyExists ? 'PUT' : 'POST';
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error('Error response:', errorResponse);
+      throw new Error(errorResponse.message || 'Network response was not ok');
+    }
+    const result = await response.json();
+    console.log('Success:', result);
+    if (!companyExists) {
+      setCompanyExists(true);
+    }
+    setIsEditing(false);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error:', error);
+      showToast(`Failed to save: ${error.message}`, 'error');
+    } else {
+      console.error('Unknown error:', error);
+      showToast('Failed to save due to an unknown error.', 'error');
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
     if (!validateForm()) {
       alert('Tax ID is required and cannot be empty.');
       return;
@@ -130,133 +214,168 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     }
   };
 
+
   const handleEdit = () => {
     setIsEditing(true);
     console.log('Edit button clicked');
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center mb-6">
-        <FileText className="w-6 h-6 mr-3 text-gray-700 dark:text-gray-300" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Company Information
-        </h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Company Name
-          </label>
-          <input
-            type="text"
-            value={formData.companyName}
-            onChange={(e) => handleInputChange('companyName', e.target.value)}
-            placeholder="Enter company name"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+    <>
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center mb-6">
+          <FileText className="w-6 h-6 mr-3 text-gray-700 dark:text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Company Information
+          </h3>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Registration Number
-          </label>
-          <input
-            type="text"
-            value={formData.registrationNumber}
-            onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-            placeholder="Enter registration number"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Company Name
+            </label>
+            <input
+              type="text"
+              value={formData.companyName}
+              onChange={(e) => handleInputChange('companyName', e.target.value)}
+              placeholder="Enter company name"
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Registration Number
+            </label>
+            <input
+              type="text"
+              value={formData.registrationNumber}
+              onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
+              placeholder="Enter registration number"
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Address
+            </label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="Enter address"
+              rows={3}
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              value={formData.phoneNumber}
+              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              placeholder="Enter phone number (10 digits)"
+              pattern="[0-9]*"
+              inputMode="numeric"
+              maxLength={10}
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="example@domain.com"
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Website
+            </label>
+            <input
+              type="text"
+              value={formData.website}
+              onChange={(e) => handleInputChange('website', e.target.value)}
+              placeholder="Enter website"
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Tax ID
+            </label>
+            <input
+              type="text"
+              value={formData.taxID}
+              onChange={(e) => handleInputChange('taxID', e.target.value)}
+              placeholder="Enter tax ID"
+              disabled={!isEditing && companyExists}
+              className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Address
-          </label>
-          <textarea
-            value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
-            placeholder="Enter address"
-            rows={3}
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Phone Number
-          </label>
-          <input
-            type="text"
-            value={formData.phoneNumber}
-            onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-            placeholder="Enter phone number"
-            pattern="[0-9]*"
-            inputMode="numeric"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-            placeholder="example@domain.com"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Website
-          </label>
-          <input
-            type="text"
-            value={formData.website}
-            onChange={(e) => handleInputChange('website', e.target.value)}
-            placeholder="Enter website"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tax ID
-          </label>
-          <input
-            type="text"
-            value={formData.taxID}
-            onChange={(e) => handleInputChange('taxID', e.target.value)}
-            placeholder="Enter tax ID"
-            disabled={!isEditing && companyExists}
-            className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-      <div className="mt-6 flex justify-end items-center">
-        {companyExists && (
+        <div className="mt-6 flex justify-end items-center">
+          {companyExists && (
+            <button
+              onClick={handleEdit}
+              className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 mr-2"
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Edit
+            </button>
+          )}
           <button
-            onClick={handleEdit}
-            className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 mr-2"
+            onClick={handleSave}
+            disabled={isLoading || (!isEditing && companyExists)}
+            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
+            {isLoading ? (companyExists ? 'Updating...' : 'Creating...') : companyExists ? 'Save Company Details' : 'Create Company Details'}
           </button>
-        )}
-        <button
-          onClick={handleSave}
-          disabled={isLoading || (!isEditing && companyExists)}
-          className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (companyExists ? 'Updating...' : 'Creating...') : companyExists ? 'Save Company Details' : 'Create Company Details'}
-        </button>
+        </div>
       </div>
-    </div>
+
+      {/* Toast Container */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`flex items-center p-4 rounded-lg shadow-lg border max-w-sm transform transition-all duration-300 ease-in-out animate-in slide-in-from-right-full bg-white border-gray-200`}
+          >
+            <div className="flex-shrink-0">
+              {toast.type === 'error' ? (
+                <AlertCircle className="h-5 w-5 text-red-500" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              )}
+            </div>
+            <div className="ml-3 flex-1">
+              <p className={`text-sm font-medium ${toast.type === 'error' ? 'text-red-800' : 'text-green-800'}`}>
+                {toast.message}
+              </p>
+            </div>
+            <div className="ml-4 flex-shrink-0">
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="inline-flex rounded-md bg-transparent text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 
