@@ -333,7 +333,7 @@ setAvailableDesignations(uniqueDesignations);
   };
 
   return (
-    <div className="w-full h-full min-h-screen max-w-7xl mx-auto px-2 py-2">
+    <div className="w-full h-full min-h-screen  mx-auto px-2 py-2">
       <div className="px-4 sm:px-6 py-4">
         <EmployeeHeader onAdd={handleAddEmployee} />
 
