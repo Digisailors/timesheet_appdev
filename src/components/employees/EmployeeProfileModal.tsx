@@ -105,6 +105,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   });
 
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   const generateAvatarBg = () => "bg-blue-600";
 
   const createEmployee = async (employeeData: CreateEmployeeData): Promise<Employee | null> => {
@@ -161,6 +162,12 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       if (result.success && result.data) {
         const emp = result.data;
         const fullName = `${emp.firstName} ${emp.lastName}`;
+
+        // Ensure designationType is a string
+        const designationType = typeof emp.designationType === 'object'
+          ? JSON.stringify(emp.designationType)
+          : emp.designationType || '';
+
         const enrichedEmployee: Employee = {
           ...emp,
           name: fullName,
@@ -170,7 +177,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           workHours: "160h",
           timeFrame: "This month",
           designation: emp.designation || "",
-          designationType: emp.designationType || "",
+          designationType: designationType,
           phoneNumber: emp.phoneNumber || "+0000000000",
           email: emp.email || "",
           address: emp.address || "Some Address",
@@ -181,6 +188,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
           overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
         };
+
         setEmployee(enrichedEmployee);
       } else {
         toast.error("Failed to fetch employee details");
@@ -237,51 +245,47 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     }
   };
 
- const exportToExcel = async () => {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Timesheet');
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Timesheet');
+    worksheet.columns = [
+      { header: 'Employee', key: 'fullName', width: 25 },
+      { header: 'Project', key: 'name', width: 25 },
+      { header: 'Location', key: 'location', width: 20 },
+      { header: 'Date', key: 'timesheetDate', width: 20 },
+      { header: 'Check In', key: 'onsiteSignIn', width: 15 },
+      { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
+      { header: 'Total Hours', key: 'totalDutyHrs', width: 10 },
+      { header: 'Overtime', key: 'overtime', width: 10 },
+      { header: 'Supervisor', key: 'supervisorName', width: 20 },
+      { header: 'Remarks', key: 'description', width: 50 },
+    ];
 
-  // Define columns including the location field
-  worksheet.columns = [
-    { header: 'Employee', key: 'fullName', width: 25 },
-    { header: 'Project', key: 'name', width: 25 },
-    { header: 'Location', key: 'location', width: 20 }, // Ensure location is defined
-    { header: 'Date', key: 'timesheetDate', width: 20 },
-    { header: 'Check In', key: 'onsiteSignIn', width: 15 },
-    { header: 'Check Out', key: 'onsiteSignOut', width: 15 },
-    { header: 'Total Hours', key: 'totalDutyHrs', width: 10 },
-    { header: 'Overtime', key: 'overtime', width: 10 },
-    { header: 'Supervisor', key: 'supervisorName', width: 20 },
-    { header: 'Remarks', key: 'description', width: 50 },
-  ];
-
-  // Add rows with the location field included
-  timesheetData.forEach((entry) => {
-    worksheet.addRow({
-      fullName: entry.employees[0].fullName,
-      name: entry.project.name,
-      location: entry.location, // Map the location field
-      timesheetDate: entry.timesheetDate,
-      onsiteSignIn: entry.onsiteSignIn,
-      onsiteSignOut: entry.onsiteSignOut,
-      totalDutyHrs: entry.totalDutyHrs,
-      overtime: entry.overtime,
-      supervisorName: entry.supervisorName,
-      description: entry.remarks || employee?.designationType || 'Regular Employee',
+    timesheetData.forEach((entry) => {
+      worksheet.addRow({
+        fullName: entry.employees[0].fullName,
+        name: entry.project.name,
+        location: entry.location,
+        timesheetDate: entry.timesheetDate,
+        onsiteSignIn: entry.onsiteSignIn,
+        onsiteSignOut: entry.onsiteSignOut,
+        totalDutyHrs: entry.totalDutyHrs,
+        overtime: entry.overtime,
+        supervisorName: entry.supervisorName,
+        description: entry.remarks || employee?.designationType || 'Regular Employee',
+      });
     });
-  });
 
-  // Generate Excel file
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'TimesheetHistory.xlsx';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'TimesheetHistory.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     if (isOpen && mode === 'view' && employeeId) {
@@ -332,7 +336,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   );
 
   const CreateEmployeeForm = () => (
-    <div className="bg-gray-50 dark:bg-gray-900 ">
+    <div className="bg-gray-50 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8 backdrop-blur-sm">
         <form onSubmit={handleCreateSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -416,7 +420,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <option value="Regular Employee">Regular Employee</option>
                 <option value="Rental Employee">Rental Employee</option>
                 <option value="Regular Driver">Regular Driver</option>
-                <option value="Coaster driver">Coaster driver</option>
+                <option value="Coaster Driver">Coaster Driver</option>
               </select>
             </div>
             <div>
@@ -482,7 +486,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 value={createFormData.perHourRate}
                 onChange={handleInputChange}
                 required
-                step="numbers"
+                step="any"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -496,7 +500,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 value={createFormData.overtimeRate}
                 onChange={handleInputChange}
                 required
-                step="numbers"
+                step="any"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -537,6 +541,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
   const OverviewTab = () => {
     if (!employee) return null;
+
     return (
       <div className="bg-gray-50 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
@@ -596,60 +601,60 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     );
   };
 
- const TimesheetTab = () => {
-  const handleExportClick = () => {
-    if (timesheetData.length === 0) {
-      toast.error("No timesheet data available", {
-        style: {
-          background: 'white',
-          color: 'black',
-        },
-      });
-      return;
-    }
-    exportToExcel();
-  };
+  const TimesheetTab = () => {
+    const handleExportClick = () => {
+      if (timesheetData.length === 0) {
+        toast.error("No timesheet data available", {
+          style: {
+            background: 'white',
+            color: 'black',
+          },
+        });
+        return;
+      }
+      exportToExcel();
+    };
 
-  return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
-        <div className="flex justify-end mb-4 mr-4">
-          <button
-            onClick={handleExportClick}
-            className="px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Export to Excel
-          </button>
-        </div>
-        {timesheetData.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-center">No timesheet data available</p>
-        ) : (
-          <div className="space-y-3">
-            {timesheetData.map((entry, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.timesheetDate}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project.name}</p>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.totalDutyHrs}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{`Regular: ${entry.normalHrs}h, OT: ${entry.overtime}h`}</p>
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
+          <div className="flex justify-end mb-4 mr-4">
+            <button
+              onClick={handleExportClick}
+              className="px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Export to Excel
+            </button>
+          </div>
+          {timesheetData.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center">No timesheet data available</p>
+          ) : (
+            <div className="space-y-3">
+              {timesheetData.map((entry, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">{entry.timesheetDate}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{entry.project.name}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.totalDutyHrs}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{`Regular: ${entry.normalHrs}h, OT: ${entry.overtime}h`}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
@@ -709,9 +714,9 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         </div>
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64 ">
+            <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4 "></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-500 dark:text-gray-400">
                   {mode === 'create' ? 'Creating employee...' : 'Loading employee details...'}
                 </p>
