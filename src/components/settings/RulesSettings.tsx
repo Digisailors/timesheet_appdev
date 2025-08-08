@@ -146,6 +146,7 @@ const CustomSelect = ({
 interface Designation {
   id: string;
   name: string;
+  status?: string;
 }
 
 interface Rule {
@@ -166,6 +167,7 @@ interface RuleFormState {
 interface DesignationOption {
   value: string;
   label: string;
+  status?: string;
 }
 
 const RulesSettings: React.FC = () => {
@@ -223,12 +225,18 @@ const RulesSettings: React.FC = () => {
       const designationsArray: Designation[] = Array.isArray(data)
         ? data
         : data.data || [];
-      const options = designationsArray.map((d: Designation) => ({
-        value: d.id,
-        label: d.name,
-      }));
+
+      // Filter only active designations and create options
+      const options = designationsArray
+        .filter((d: Designation) => d.status === "active")
+        .map((d: Designation) => ({
+          value: d.id,
+          label: d.name,
+          status: d.status,
+        }));
+
       setDesignationOptions(options);
-      console.log("Fetched designation options:", options); // Log fetched designation options
+      console.log("Fetched active designation options:", options); // Log fetched active designation options
     } catch (err) {
       console.error("Error fetching designation types:", err);
       setError(
@@ -480,8 +488,9 @@ const RulesSettings: React.FC = () => {
     console.log("All designation options for filtering:", designationOptions);
 
     if (isEditing) {
-      console.log("Mode: Editing. Showing all designation options.");
-      return designationOptions; // When editing, show all options
+      console.log("Mode: Editing. Showing all active designation options.");
+      // When editing, show all active options (designationOptions are already filtered for active status)
+      return designationOptions;
     }
 
     // Create a Set of designation IDs that are currently used in rules for efficient lookup
@@ -490,10 +499,14 @@ const RulesSettings: React.FC = () => {
     );
 
     // Filter designationOptions to only include those not already used
+    // (designationOptions are already filtered for active status in fetchDesignationTypes)
     const filteredOptions = designationOptions.filter(
       (option: DesignationOption) => !usedDesignationIds.has(option.value)
     );
-    console.log("Mode: Adding new rule. Filtered options:", filteredOptions);
+    console.log(
+      "Mode: Adding new rule. Filtered active options:",
+      filteredOptions
+    );
     return filteredOptions;
   }, [isEditing, designationOptions, rules]); // Re-calculate only when these dependencies change
 
@@ -626,7 +639,7 @@ const RulesSettings: React.FC = () => {
                   handleSelectChange("designationId", value)
                 }
                 placeholder="Select Designation"
-                options={availableDesignationOptions} // Use the derived options
+                options={availableDesignationOptions} // Use the derived options (filtered for active status)
                 disabled={isEditing || submitting}
               />
               {isEditing && (
