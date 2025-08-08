@@ -310,7 +310,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
         </div>
       </div>
 
-      <div className="m-2 px-4 py-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 shadow-md">
+      <div className="m-2 px-4 py-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
         <div className="mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="relative flex-1 min-w-[280px]">
