@@ -63,6 +63,20 @@ interface AddEmployeeModalProps {
   employees?: Employee[];
 }
 
+interface Rule {
+  id: string;
+  designation: {
+    designationId: string;
+    name: string;
+    status: string;
+  };
+  breakTime: string;
+  allowedTravelHours: string;
+  normalHours: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface DesignationType {
   id: string;
   name: string;
@@ -153,12 +167,32 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const fetchDesignationTypes = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/designationTypes/all`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/rules/all`
       );
       const data = await response.json();
-      setDesignationTypes(data.data);
+      
+      if (data.success && Array.isArray(data.data)) {
+        const designationTypesMap = new Map<string, DesignationType>();
+        
+        data.data.forEach((rule: Rule) => {
+          const designation = rule.designation;
+          if (designation && designation.status === "active") {
+            designationTypesMap.set(designation.designationId, {
+              id: designation.designationId,
+              name: designation.name,
+              status: designation.status
+            });
+          }
+        });
+        
+        const uniqueDesignationTypes = Array.from(designationTypesMap.values());
+        setDesignationTypes(uniqueDesignationTypes);
+      } else {
+        setDesignationTypes([]);
+      }
     } catch (error) {
-      console.error("Error fetching designation types:", error);
+      console.error("Error fetching designation types from rules:", error);
+      setDesignationTypes([]);
     }
   };
 
