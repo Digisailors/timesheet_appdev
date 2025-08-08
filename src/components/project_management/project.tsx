@@ -28,10 +28,16 @@ interface SupervisorData {
 //   updatedAt: string;
 // }
 
+interface ProjectDetail {
+  projectcode: string;
+  locations: string;
+  typesOfWork: string;
+}
+
 interface ApiProject {
   id: string;
   name: string;
-  locations: string[] | null;
+  projectDetails: ProjectDetail[];
   description: string;
   startDate: string;
   endDate: string;
@@ -39,7 +45,6 @@ interface ApiProject {
   status: "active" | "completed" | "pending" | "cancelled";
   clientName: string | null;
   PoContractNumber: string | null;
-  typesOfWork: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,24 +94,27 @@ const ProjectsPage = () => {
     if (!response.ok) throw new Error("Failed to fetch projects");
     const result = await response.json();
     if (result.success) {
-      const loadedProjects: Project[] = result.data.map((p: ApiProject) => ({
-        id: p.id,
-        name: p.name,
-        code: p.id, // Using ID as code since your API doesn't return a separate code field
-        // Convert locations array to comma-separated string for display
-        location: Array.isArray(p.locations) && p.locations.length > 0 
-          ? p.locations.join(', ') 
-          : 'No location specified',
-        startDate: p.startDate,
-        endDate: p.endDate,
-        budget: p.budget,
-        description: p.description,
-        status: p.status,
-        workHours: 160, // Default values since API doesn't provide these
-        otHours: 20,
-        lastUpdated: p.updatedAt || new Date().toISOString(),
-        employees: 0, // Default value since API doesn't provide this
-      }));
+      const loadedProjects: Project[] = result.data.map((p: ApiProject) => {
+        // Get the first project detail for display purposes
+        const firstDetail = p.projectDetails && p.projectDetails.length > 0 ? p.projectDetails[0] : null;
+        
+        return {
+          id: p.id,
+          name: p.name,
+          code: firstDetail?.projectcode || p.id, // Use first project code or fallback to ID
+          // Convert project details to display format
+          location: firstDetail?.locations || 'No location specified',
+          startDate: p.startDate,
+          endDate: p.endDate,
+          budget: p.budget,
+          description: p.description,
+          status: p.status,
+          workHours: 160, // Default values since API doesn't provide these
+          otHours: 20,
+          lastUpdated: p.updatedAt || new Date().toISOString(),
+          employees: 0, // Default value since API doesn't provide this
+        };
+      });
       setProjects(loadedProjects);
     } else {
       throw new Error(result.message || "No project data");
@@ -126,19 +134,26 @@ const ProjectsPage = () => {
       const result = await response.json();
       if (result.success && result.data) {
         const projectData: ApiProject = result.data;
-        return {
-          name: projectData.name,
-          code: projectData.id, // Using ID as code since code field is not in API response
-          locations: projectData.locations || [''],
-          typesOfWork: projectData.typesOfWork || [''],
-          description: projectData.description || '',
-          startDate: projectData.startDate,
-          endDate: projectData.endDate || '',
-          budget: projectData.budget || '',
-          status: projectData.status,
-          clientName: projectData.clientName || '',
-          PoContractNumber: projectData.PoContractNumber || '',
-        };
+                 // Convert projectDetails to the format expected by the form
+         const locations = projectData.projectDetails?.map(detail => detail.locations) || [''];
+         const typesOfWork = projectData.projectDetails?.map(detail => detail.typesOfWork) || [''];
+         const projectCodes = projectData.projectDetails?.map(detail => detail.projectcode) || [''];
+         const firstProjectCode = projectData.projectDetails?.[0]?.projectcode || projectData.id;
+         
+         return {
+           name: projectData.name,
+           code: firstProjectCode,
+           locations: locations,
+           typesOfWork: typesOfWork,
+           projectCodes: projectCodes,
+           description: projectData.description || '',
+           startDate: projectData.startDate,
+           endDate: projectData.endDate || '',
+           budget: projectData.budget || '',
+           status: projectData.status,
+           clientName: projectData.clientName || '',
+           PoContractNumber: projectData.PoContractNumber || '',
+         };
       } else {
         throw new Error(result.message || "Failed to fetch project details");
       }
@@ -200,10 +215,24 @@ const ProjectsPage = () => {
     }
 
     try {
-      // Remove code field from formData since it's not supported by the API
-     const apiFormData = Object.fromEntries(
-  Object.entries(formData).filter(([key]) => key !== 'code')
-) as Omit<ProjectFormData, 'code'>;
+             // Transform formData to match the new API structure
+       const projectDetails = formData.locations.map((location, index) => ({
+         projectcode: formData.projectCodes?.[index] || formData.code || `PROJ-${Date.now()}-${index + 1}`,
+         locations: location,
+         typesOfWork: formData.typesOfWork[index] || ''
+       }));
+
+      const apiFormData = {
+        name: formData.name,
+        projectDetails: projectDetails,
+        description: formData.description,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        budget: formData.budget,
+        status: formData.status,
+        clientName: formData.clientName,
+        PoContractNumber: formData.PoContractNumber,
+      };
       
       if (editingProject) {
         const response = await fetch(`${cleanBaseUrl}/projects/update/${editingProject.id}`, {
@@ -219,11 +248,26 @@ const ProjectsPage = () => {
 
         const result = await response.json();
         if (result.success) {
+          // Update the project in the list with the new data
+          const updatedProject: Project = {
+            id: editingProject.id,
+            name: result.data.name,
+            code: result.data.projectDetails?.[0]?.projectcode || editingProject.id,
+            location: result.data.projectDetails?.[0]?.locations || "No location specified",
+            description: result.data.description || "",
+            startDate: result.data.startDate,
+            endDate: result.data.endDate || "",
+            budget: result.data.budget?.toString() || "",
+            status: result.data.status,
+            workHours: 160,
+            otHours: 20,
+            lastUpdated: result.data.updatedAt || new Date().toISOString(),
+            employees: 0,
+          };
+          
           setProjects((prev) =>
             prev.map((proj) =>
-              proj.id === editingProject.id
-                ? { ...proj, ...formData, lastUpdated: result.data?.updatedAt || new Date().toISOString() }
-                : proj
+              proj.id === editingProject.id ? updatedProject : proj
             )
           );
           toast.success("✅ Project updated successfully");
@@ -247,8 +291,8 @@ const ProjectsPage = () => {
           const newProject: Project = {
             id: result.data.id,
             name: result.data.name,
-            code: result.data.id, // Use id as code for frontend display
-            location: Array.isArray(result.data.locations) ? result.data.locations.join(', ') : (result.data.location || ""),
+            code: result.data.projectDetails?.[0]?.projectcode || result.data.id,
+            location: result.data.projectDetails?.[0]?.locations || "No location specified",
             description: result.data.description || "",
             startDate: result.data.startDate,
             endDate: result.data.endDate || "",
@@ -298,19 +342,20 @@ const ProjectsPage = () => {
   const getDialogProps = () => {
     if (isLoadingProject) {
       return {
-        initialData: {
-          name: "Loading...",
-          code: "",
-          locations: [],
-          description: "",
-          startDate: "",
-          status: "pending" as ProjectFormData['status'],
-          endDate: "",
-          budget: "",
-          clientName: "",
-          PoContractNumber: "",
-          typesOfWork: [],
-        },
+                 initialData: {
+           name: "Loading...",
+           code: "",
+           locations: [],
+           projectCodes: [],
+           description: "",
+           startDate: "",
+           status: "pending" as ProjectFormData['status'],
+           endDate: "",
+           budget: "",
+           clientName: "",
+           PoContractNumber: "",
+           typesOfWork: [],
+         },
         title: "Loading Project Details...",
         submitLabel: undefined,
         isViewMode: true,
@@ -333,19 +378,20 @@ const ProjectsPage = () => {
       };
     }
     return {
-      initialData: {
-        name: "",
-        code: "",
-        locations: [],
-        description: "",
-        startDate: "",
-        status: "pending" as ProjectFormData['status'],
-        endDate: "",
-        budget: "",
-        clientName: "",
-        PoContractNumber: "",
-        typesOfWork: [],
-      },
+             initialData: {
+         name: "",
+         code: "",
+         locations: [],
+         projectCodes: [],
+         description: "",
+         startDate: "",
+         status: "pending" as ProjectFormData['status'],
+         endDate: "",
+         budget: "",
+         clientName: "",
+         PoContractNumber: "",
+         typesOfWork: [],
+       },
       title: "Create New Project",
       submitLabel: "Create Project",
       isViewMode: false,

@@ -6,6 +6,7 @@ export interface ProjectFormData {
   code: string;
   locations: string[];
   typesOfWork: string[];
+  projectCodes: string[]; // Add individual project codes
   description: string;
   startDate: string;
   endDate: string;
@@ -39,6 +40,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     code: '',
     locations: [''],
     typesOfWork: [''],
+    projectCodes: [''],
     description: '',
     startDate: '',
     endDate: '',
@@ -59,6 +61,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         code: initialData.code || '',
         locations: initialData.locations && initialData.locations.length > 0 ? initialData.locations : [''],
         typesOfWork: initialData.typesOfWork && initialData.typesOfWork.length > 0 ? initialData.typesOfWork : [''],
+        projectCodes: initialData.projectCodes && initialData.projectCodes.length > 0 ? initialData.projectCodes : [''],
         description: initialData.description || '',
         startDate: initialData.startDate || '',
         endDate: initialData.endDate || '',
@@ -68,21 +71,21 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         PoContractNumber: initialData.PoContractNumber || '',
       });
       
-      // Initialize project sets based on initial data
-      if (initialData.locations && initialData.typesOfWork) {
-        const maxLength = Math.max(initialData.locations.length, initialData.typesOfWork.length);
-        const newProjectSets = [];
-        for (let i = 0; i < maxLength; i++) {
-          newProjectSets.push({
-            location: initialData.locations[i] || '',
-            typeOfWork: initialData.typesOfWork[i] || '',
-            projectCode: initialData.code || ''
-          });
-        }
-        setProjectSets(newProjectSets.length > 0 ? newProjectSets : [{ location: '', typeOfWork: '', projectCode: '' }]);
-      } else {
-        setProjectSets([{ location: '', typeOfWork: '', projectCode: '' }]);
-      }
+             // Initialize project sets based on initial data
+       if (initialData.locations && initialData.typesOfWork) {
+         const maxLength = Math.max(initialData.locations.length, initialData.typesOfWork.length);
+         const newProjectSets = [];
+         for (let i = 0; i < maxLength; i++) {
+           newProjectSets.push({
+             location: initialData.locations[i] || '',
+             typeOfWork: initialData.typesOfWork[i] || '',
+             projectCode: initialData.projectCodes?.[i] || initialData.code || ''
+           });
+         }
+         setProjectSets(newProjectSets.length > 0 ? newProjectSets : [{ location: '', typeOfWork: '', projectCode: '' }]);
+       } else {
+         setProjectSets([{ location: '', typeOfWork: '', projectCode: '' }]);
+       }
       
       setErrors({});
     }
@@ -129,6 +132,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       ...formData,
       locations: projectSets.map(set => set.location),
       typesOfWork: projectSets.map(set => set.typeOfWork),
+      projectCodes: projectSets.map(set => set.projectCode), // Use individual project codes
       code: projectSets[0]?.projectCode || '' // Using first project code as main code
     };
     setFormData(updatedFormData);
@@ -147,6 +151,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
       code: '',
       locations: [''],
       typesOfWork: [''],
+      projectCodes: [''],
       description: '',
       startDate: '',
       endDate: '',
