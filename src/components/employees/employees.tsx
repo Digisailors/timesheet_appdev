@@ -27,7 +27,10 @@ interface RawEmployee {
   lastName: string;
   email?: string;
   designation?: string;
-  designationType?: string;
+  designationType?: {
+    designationTypeId: string;
+    name: string;
+  };
   specialization?: string;
   address?: string;
   phoneNumber?: string;
@@ -155,8 +158,8 @@ const EmployeesPage: React.FC = () => {
               project: emp.specialization || emp.designation || "",
               workHours: "",
               timeFrame: "",
-              designation: emp.designation || "",
-              designationType: emp.designationType || "",
+                             designation: emp.designation || "",
+               designationType: emp.designationType?.name || "",
               phoneNumber: emp.phoneNumber || "+0000000000",
               email: emp.email || "",
               address: emp.address || "Some Address",
@@ -168,18 +171,18 @@ const EmployeesPage: React.FC = () => {
           }
         );
         setEmployees(enrichedEmployees);
-        const validDesignations = result.data
-          .map((emp: RawEmployee) => emp.designation)
+        
+        // Extract designation type names
+        const designationTypeNames = result.data
+          .map((emp: RawEmployee) => emp.designationType?.name)
           .filter(
-            (designation: string | undefined): designation is string =>
-              designation !== undefined &&
-              designation !== null &&
-              designation !== ""
+            (name: string | undefined): name is string =>
+              name !== undefined && name !== null && name !== ""
           );
-        const uniqueDesignations: string[] = Array.from(
-          new Set(validDesignations)
+        const uniqueDesignationTypes: string[] = Array.from(
+          new Set(designationTypeNames)
         );
-        setAvailableDesignations(uniqueDesignations);
+        setAvailableDesignations(uniqueDesignationTypes);
       } else {
         toast.error("Failed to fetch employees");
       }

@@ -86,11 +86,12 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
                 onChange={(e) => setSelectedDesignation(e.target.value)}
                 className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
               >
-                <option>All Designations Types</option>
-                <option>Regular Employee</option>
-                <option>Rental Employee</option>
-                <option>Regular Driver</option>
-                <option>Coaster Driver</option>
+                <option value="All Designations Types">All Designations Types</option>
+                {availableDesignations.map((designationType) => (
+                  <option key={designationType} value={designationType}>
+                    {designationType}
+                  </option>
+                ))}
               </select>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />

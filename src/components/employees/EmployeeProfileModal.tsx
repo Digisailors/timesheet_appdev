@@ -155,53 +155,53 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   };
 
   const fetchEmployeeById = useCallback(async (id: string) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
-      const result = await response.json();
-      if (result.success && result.data) {
-        const emp = result.data;
-        const fullName = `${emp.firstName} ${emp.lastName}`;
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
+    const result = await response.json();
+    if (result.success && result.data) {
+      const emp = result.data;
+      const fullName = `${emp.firstName} ${emp.lastName}`;
 
-        // Ensure designationType is a string
-        const designationType = typeof emp.designationType === 'object'
-          ? JSON.stringify(emp.designationType)
-          : emp.designationType || '';
+      // Extract the name from designationType if it's an object
+      const designationType = typeof emp.designationType === 'object'
+        ? emp.designationType.name
+        : emp.designationType || '';
 
-        const enrichedEmployee: Employee = {
-          ...emp,
-          name: fullName,
-          avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
-          avatarBg: generateAvatarBg(),
-          project: emp.specialization || emp.designation,
-          workHours: "160h",
-          timeFrame: "This month",
-          designation: emp.designation || "",
-          designationType: designationType,
-          phoneNumber: emp.phoneNumber || "+0000000000",
-          email: emp.email || "",
-          address: emp.address || "Some Address",
-          experience: emp.experience || "0 years",
-          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-          specialization: emp.specialization || emp.designation || "",
-          currentProject: emp.specialization || emp.designation,
-          perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
-          overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
-        };
-
-        setEmployee(enrichedEmployee);
-      } else {
-        toast.error("Failed to fetch employee details");
-        onClose();
-      }
-    } catch (error) {
-      console.error("Error fetching employee by ID:", error);
-      toast.error("Error fetching employee details");
+      const enrichedEmployee: Employee = {
+        ...emp,
+        name: fullName,
+        avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+        avatarBg: generateAvatarBg(),
+        project: emp.specialization || emp.designation,
+        // workHours: "160h",
+        // timeFrame: "This month",
+        designation: emp.designation || "",
+        designationType: designationType,
+        phoneNumber: emp.phoneNumber || "+0000000000",
+        email: emp.email || "",
+        address: emp.address || "Some Address",
+        experience: emp.experience || "0 years",
+        dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+        specialization: emp.specialization || emp.designation || "",
+        currentProject: emp.specialization || emp.designation,
+        perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
+        overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
+      };
+      setEmployee(enrichedEmployee);
+    } else {
+      toast.error("Failed to fetch employee details");
       onClose();
-    } finally {
-      setIsLoading(false);
     }
-  }, [cleanBaseUrl, onClose]);
+  } catch (error) {
+    console.error("Error fetching employee by ID:", error);
+    toast.error("Error fetching employee details");
+    onClose();
+  } finally {
+    setIsLoading(false);
+  }
+}, [cleanBaseUrl, onClose]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -572,6 +572,10 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Normal Hour Rate</label>
                 <p className="text-sm text-gray-900 dark:text-white">{employee.perHourRate}</p>
               </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">OT Hour Rate</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.overtimeRate}</p>
+              </div>
             </div>
             <div className="space-y-6">
               <div>
@@ -590,10 +594,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
                 <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">OT Hour Rate</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.overtimeRate}</p>
-              </div>
+              
             </div>
           </div>
         </div>
