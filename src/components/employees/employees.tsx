@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 import React, { useState, useEffect } from "react";
 import EmployeeHeader from "./EmployeeHeader";
@@ -61,21 +60,16 @@ interface EmployeeAPIPayload {
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [availableDesignations, setAvailableDesignations] = useState<string[]>(
-    []
-  );
+  const [availableDesignations, setAvailableDesignations] = useState<string[]>([]);
+  const [availableJobTitles, setAvailableJobTitles] = useState<string[]>([]); // New state for job titles
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDesignation, setSelectedDesignation] = useState(
-    "All Designations Types"
-  );
+  const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
   const [selectedJobTitle, setSelectedJobTitle] = useState("All Job Titles");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
-    null
-  );
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -111,8 +105,7 @@ const EmployeesPage: React.FC = () => {
           email: emp.email || "",
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
-          dateOfJoining:
-            emp.dateOfJoining || new Date().toISOString().split("T")[0],
+          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split("T")[0],
           specialization: emp.specialization || emp.designation || "",
         };
         return enrichedEmployee;
@@ -147,42 +140,45 @@ const EmployeesPage: React.FC = () => {
       const response = await fetch(`${cleanBaseUrl}/employees/all`);
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
-        const enrichedEmployees = result.data.map(
-          (emp: RawEmployee): Employee => {
-            const fullName = `${emp.firstName} ${emp.lastName}`;
-            return {
-              ...emp,
-              name: fullName,
-              avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
-              avatarBg: generateAvatarBg(emp.id),
-              project: emp.specialization || emp.designation || "",
-              workHours: "",
-              timeFrame: "",
-                             designation: emp.designation || "",
-               designationType: emp.designationType?.name || "",
-              phoneNumber: emp.phoneNumber || "+0000000000",
-              email: emp.email || "",
-              address: emp.address || "Some Address",
-              experience: emp.experience || "0 years",
-              dateOfJoining:
-                emp.dateOfJoining || new Date().toISOString().split("T")[0],
-              specialization: emp.specialization || emp.designation || "",
-            };
-          }
-        );
+        const enrichedEmployees = result.data.map((emp: RawEmployee): Employee => {
+          const fullName = `${emp.firstName} ${emp.lastName}`;
+          return {
+            ...emp,
+            name: fullName,
+            avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+            avatarBg: generateAvatarBg(emp.id),
+            project: emp.specialization || emp.designation || "",
+            workHours: "",
+            timeFrame: "",
+            designation: emp.designation || "",
+            designationType: emp.designationType?.name || "",
+            phoneNumber: emp.phoneNumber || "+0000000000",
+            email: emp.email || "",
+            address: emp.address || "Some Address",
+            experience: emp.experience || "0 years",
+            dateOfJoining: emp.dateOfJoining || new Date().toISOString().split("T")[0],
+            specialization: emp.specialization || emp.designation || "",
+          };
+        });
         setEmployees(enrichedEmployees);
         
-        // Extract designation type names
+        // Extract designation type names (for designation types filter)
         const designationTypeNames = result.data
           .map((emp: RawEmployee) => emp.designationType?.name)
-          .filter(
-            (name: string | undefined): name is string =>
-              name !== undefined && name !== null && name !== ""
+          .filter((name: string | undefined): name is string =>
+            name !== undefined && name !== null && name !== ""
           );
-        const uniqueDesignationTypes: string[] = Array.from(
-          new Set(designationTypeNames)
-        );
+        const uniqueDesignationTypes: string[] = Array.from(new Set(designationTypeNames));
         setAvailableDesignations(uniqueDesignationTypes);
+
+        // Extract job titles (for job titles filter)
+        const jobTitles = result.data
+          .map((emp: RawEmployee) => emp.designation)
+          .filter((designation: string | undefined): designation is string =>
+            designation !== undefined && designation !== null && designation !== ""
+          );
+        const uniqueJobTitles: string[] = Array.from(new Set(jobTitles));
+        setAvailableJobTitles(uniqueJobTitles);
       } else {
         toast.error("Failed to fetch employees");
       }
@@ -218,10 +214,7 @@ const EmployeesPage: React.FC = () => {
 
   const indexOfLastEmployee = currentPage * employeesPerPage;
   const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-  const paginatedEmployees = filteredEmployees.slice(
-    indexOfFirstEmployee,
-    indexOfLastEmployee
-  );
+  const paginatedEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
   const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
 
   const handleView = (id: string) => {
@@ -250,7 +243,6 @@ const EmployeesPage: React.FC = () => {
 
   const performDelete = async (id: string) => {
     setIsDeleting(true);
-
     const minDelay = new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
@@ -291,8 +283,7 @@ const EmployeesPage: React.FC = () => {
         address: employeeData.address || "Some Address",
         phoneNumber: employeeData.phoneNumber || "+0000000000",
         experience: employeeData.experience || "0 years",
-        dateOfJoining:
-          employeeData.dateOfJoining || new Date().toISOString().split("T")[0],
+        dateOfJoining: employeeData.dateOfJoining || new Date().toISOString().split("T")[0],
       };
 
       console.log("Prepared data for submission:", commonData);
@@ -313,9 +304,7 @@ const EmployeesPage: React.FC = () => {
 
       console.log("Response status:", response.status);
 
-      const result = response.headers
-        .get("content-type")
-        ?.includes("application/json")
+      const result = response.headers.get("content-type")?.includes("application/json")
         ? await response.json()
         : null;
 
@@ -330,16 +319,15 @@ const EmployeesPage: React.FC = () => {
           avatar: (newEmp.firstName[0] + newEmp.lastName[0]).toUpperCase(),
           avatarBg: generateAvatarBg(newEmp.id),
           project: newEmp.specialization || newEmp.designation,
-          workHours: "160h",
-          timeFrame: "This month",
+          // workHours: "160h",
+          // timeFrame: "This month",
           designation: newEmp.designation || "",
-          designationType: newEmp.designationType || "",
+          designationType: typeof newEmp.designationType === 'object' ? newEmp.designationType?.name || "" : newEmp.designationType || "",
           phoneNumber: newEmp.phoneNumber || "+0000000000",
           email: newEmp.email || "",
           address: newEmp.address || "Some Address",
           experience: newEmp.experience || "0 years",
-          dateOfJoining:
-            newEmp.dateOfJoining || new Date().toISOString().split("T")[0],
+          dateOfJoining: newEmp.dateOfJoining || new Date().toISOString().split("T")[0],
           specialization: newEmp.specialization || newEmp.designation || "",
         };
 
@@ -347,12 +335,12 @@ const EmployeesPage: React.FC = () => {
           const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);
           const updatedList = [enrichedEmp, ...filtered];
 
-          const uniqueDesignations = [
-            ...new Set(
-              updatedList.map((emp) => emp.designation).filter(Boolean)
-            ),
-          ];
-          setAvailableDesignations(uniqueDesignations);
+          // Update both designation types and job titles
+          const uniqueDesignationTypes = [...new Set(updatedList.map((emp) => emp.designationType).filter((type): type is string => Boolean(type)))];
+          setAvailableDesignations(uniqueDesignationTypes);
+
+          const uniqueJobTitles = [...new Set(updatedList.map((emp) => emp.designation).filter((designation): designation is string => Boolean(designation)))];
+          setAvailableJobTitles(uniqueJobTitles);
 
           return updatedList;
         });
@@ -360,10 +348,7 @@ const EmployeesPage: React.FC = () => {
         setIsAddModalOpen(false);
         setEditingEmployee(null);
       } else {
-        console.error(
-          "Failed to add/update employee:",
-          result?.message || "Unknown error"
-        );
+        console.error("Failed to add/update employee:", result?.message || "Unknown error");
         toast.error("❌ Failed: " + (result?.message || "Unknown error"));
       }
     } catch (error) {
@@ -395,6 +380,7 @@ const EmployeesPage: React.FC = () => {
             setSelectedJobTitle={setSelectedJobTitle}
             projects={projects}
             availableDesignations={availableDesignations}
+            availableJobTitles={availableJobTitles} // Pass job titles separately
             isLoadingProjects={isLoading}
             showSearchInput={true}
             showDesignationFilter={true}
@@ -430,9 +416,7 @@ const EmployeesPage: React.FC = () => {
                 <div className="flex justify-end mt-6">
                   <div className="flex flex-wrap gap-2 items-center">
                     <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
                       className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
                         currentPage === 1
@@ -442,25 +426,21 @@ const EmployeesPage: React.FC = () => {
                     >
                       &#8249;
                     </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-medium transition ${
-                            currentPage === page
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "text-black border-gray-300 hover:bg-gray-100"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      )
-                    )}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-medium transition ${
+                          currentPage === page
+                            ? "bg-blue-500 text-white border-blue-500"
+                            : "text-black border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
                     <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
                       className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
                         currentPage === totalPages
@@ -506,9 +486,7 @@ const EmployeesPage: React.FC = () => {
             </p>
             <div className="flex justify-center gap-4">
               <button
-                onClick={() =>
-                  confirmDeleteId && performDelete(confirmDeleteId)
-                }
+                onClick={() => confirmDeleteId && performDelete(confirmDeleteId)}
                 disabled={isDeleting}
                 className={`px-4 py-2 rounded transition flex items-center justify-center min-w-[100px] ${
                   isDeleting

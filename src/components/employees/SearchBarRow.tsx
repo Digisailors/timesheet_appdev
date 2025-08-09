@@ -15,6 +15,7 @@ interface SearchBarRowProps {
   setSelectedProject: (v: string) => void;
   projects?: Project[];
   availableDesignations?: string[];
+  availableJobTitles?: string[]; // New prop for job titles
   isLoadingProjects?: boolean;
   showSearchInput?: boolean;
   showDesignationFilter?: boolean;
@@ -32,6 +33,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
   setSelectedProject,
   projects = [],
   availableDesignations = [],
+  availableJobTitles = [], // Default to empty array
   isLoadingProjects = false,
   showSearchInput = true,
   showDesignationFilter = true,
@@ -60,6 +62,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
           </div>
         )}
 
+        {/* Job Titles Filter - Now uses availableJobTitles */}
         <div className="relative">
           <select
             value={selectedJobTitle}
@@ -67,9 +70,9 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
             className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-[210px] text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
           >
             <option value="All Job Titles">All Designations</option>
-            {availableDesignations.map((designation) => (
-              <option key={designation} value={designation}>
-                {designation}
+            {availableJobTitles.map((jobTitle) => (
+              <option key={jobTitle} value={jobTitle}>
+                {jobTitle}
               </option>
             ))}
           </select>
@@ -79,6 +82,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
+          {/* Designation Types Filter - Uses availableDesignations */}
           {showDesignationFilter && (
             <div className="relative">
               <select
@@ -99,6 +103,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
             </div>
           )}
 
+          {/* Projects Filter */}
           {showProjectFilter && (
             <div className="relative">
               <select
