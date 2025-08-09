@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { FileText, Edit, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, Edit, X, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
 
 
 import toast from 'react-hot-toast';
@@ -45,6 +45,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [companyExists, setCompanyExists] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -183,6 +185,42 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     console.log('Edit button clicked');
   };
 
+  const handleDelete = async () => {
+    if (!formData.id) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/delete/${formData.id}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: 'Failed to delete company' }));
+        throw new Error(err.message || 'Failed to delete company');
+      }
+      // Reset form state on success
+      setFormData({
+        companyName: '',
+        registrationNumber: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+        website: '',
+        taxID: ''
+      });
+      setCompanyExists(false);
+      setIsEditing(false);
+      toast.success('Company deleted successfully', {
+        style: { background: 'blue', color: 'white' },
+      });
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error while deleting';
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -290,13 +328,24 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         </div>
         <div className="mt-6 flex justify-end items-center">
           {companyExists && (
-            <button
-              onClick={handleEdit}
-              className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 mr-2"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
-            </button>
+            <>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isLoading || isDeleting}
+                className="flex items-center px-3 py-2 mr-2 border border-red-300 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+                aria-label="Delete Company"
+                title="Delete Company"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 mr-2"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit Company Details
+              </button>
+            </>
           )}
           <button
             onClick={handleSave}
@@ -338,6 +387,38 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center mb-4">
+              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Company?</h4>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+              This action will permanently delete the company details. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDeleting && <span className="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>}
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

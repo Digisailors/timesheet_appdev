@@ -75,10 +75,10 @@ const ProjectCard: React.FC<{
           <span className="text-sm">{project.location || 'No Location'}</span>
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center text-gray-600 dark:text-gray-300">
+          {/* <div className="flex items-center text-gray-600 dark:text-gray-300">
             <Users className="w-4 h-4 mr-2" />
             <span className="text-sm">{project.employees || 0} employees</span>
-          </div>
+          </div> */}
           <div className="flex items-center text-gray-600 dark:text-gray-300">
             <Calendar className="w-4 h-4 mr-2" />
             <span className="text-sm">{project.startDate || 'No Start Date'}</span>
