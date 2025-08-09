@@ -66,7 +66,14 @@ const TimeSheetPage = () => {
               </div>
               <button
                 onClick={handleExport}
-                className="px-2 py-1 text-white bg-blue-800 dark:bg-blue-600 rounded-md hover:opacity-90 transition flex items-center gap-1 text-sm"
+                className="px-2 py-1 text-white rounded-md transition flex items-center gap-1 text-sm"
+                style={{ backgroundColor: 'var(--primary-color, #1849D6)' } as React.CSSProperties}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary-color-hover, #1632B0)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary-color, #1849D6)';
+                }}
               >
                 <Image
                   src="/assets/timesheet/export.svg"
@@ -101,7 +108,14 @@ const TimeSheetPage = () => {
               </button>
               <button
                 onClick={handleConfirmExport}
-                className="px-4 py-2 text-white bg-blue-800 rounded hover:bg-blue-700"
+                className="px-4 py-2 text-white rounded"
+                style={{ backgroundColor: 'var(--primary-color, #1849D6)' } as React.CSSProperties}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary-color-hover, #1632B0)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary-color, #1849D6)';
+                }}
               >
                 OK
               </button>

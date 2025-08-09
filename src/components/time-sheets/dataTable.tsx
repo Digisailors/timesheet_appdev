@@ -298,7 +298,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
           />
           <select
-            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            className="w-[180px] text-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
             value={filters.selectedDesignationType}
             onChange={(e) => setFilters({ ...filters, selectedDesignationType: e.target.value })}
           >
@@ -309,7 +309,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             <option value="Coaster Driver">Coaster Driver</option>
           </select>
           <select
-            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            className="w-[180px] text-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
             value={filters.selectedProject}
             onChange={(e) => setFilters({ ...filters, selectedProject: e.target.value })}
           >
@@ -321,7 +321,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             ))}
           </select>
           <select
-            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            className="w-[180px] text-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
             value={filters.selectedLocation}
             onChange={(e) => setFilters({ ...filters, selectedLocation: e.target.value })}
           >
@@ -333,7 +333,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             ))}
           </select>
           <select
-            className="w-[180px] border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
+            className="w-[180px] text-sm border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-3 py-2"
             value={filters.selectedStatus}
             onChange={(e) => setFilters({ ...filters, selectedStatus: e.target.value })}
           >
