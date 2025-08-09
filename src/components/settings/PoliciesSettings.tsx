@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { Shield, Edit } from "lucide-react";
+import { Shield, Edit, Trash2, AlertCircle } from "lucide-react";
 import toast from 'react-hot-toast';
 
 // DTO Interfaces
@@ -84,6 +84,8 @@ const PoliciesSettings: React.FC = () => {
   const [policyExists, setPolicyExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
 
@@ -272,6 +274,46 @@ const PoliciesSettings: React.FC = () => {
     console.log("Edit button clicked");
   };
 
+  const handleDelete = async () => {
+    if (!policyId) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/companypolicy/delete/${policyId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: "Failed to delete policy" }));
+        throw new Error(err.message || "Failed to delete policy");
+      }
+      // Reset state after successful deletion
+      setPolicy({
+        workingDaysPerWeek: "",
+        maxOvertimeHoursPerDay: "",
+        lateArrivalGracePeriodMinutes: "",
+        breakDurationMinutes: "",
+        minimumRestBetweenShiftsHours: "",
+        timesheetSubmissionDeadline: "End of Week",
+        overtimeApprovalRequired: false,
+        travelTimePolicy: "",
+        attendancePolicy: "",
+        overtimePolicy: "",
+        leavePolicy: "",
+      });
+      setPolicyId(null);
+      setPolicyExists(false);
+      setIsEditing(true);
+      toast.success("Policy deleted successfully", {
+        style: { background: "blue", color: "white" },
+      });
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error while deleting";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleCancel = () => {
     setIsEditing(false);
   };
@@ -289,6 +331,7 @@ const PoliciesSettings: React.FC = () => {
   }
 
   return (
+    <>
     <div className="bg-white w-full dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center mb-6">
         <Shield className="w-6 h-6 mr-3 text-gray-700 dark:text-gray-300" />
@@ -297,13 +340,24 @@ const PoliciesSettings: React.FC = () => {
             Company Policies
           </h3>
           {policyExists && !isEditing && (
-            <button
-              onClick={handleEdit}
-              className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isLoading || isDeleting}
+                className="flex items-center px-3 py-2 border border-red-300 text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+                aria-label="Delete Policy"
+                title="Delete Policy"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -496,6 +550,39 @@ const PoliciesSettings: React.FC = () => {
         )}
       </div>
     </div>
+
+    {/* Delete Confirmation Modal */}
+    {showDeleteConfirm && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center mb-4">
+            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Policy?</h4>
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+            This action will permanently delete the company policy. This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isDeleting && <span className="animate-spin inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>}
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
