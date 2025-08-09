@@ -366,7 +366,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full min-h-screen max-w-7xl mx-auto px-2 py-2">
+    <div className="w-full h-full min-h-screen  mx-auto px-2 py-2">
       <div className="px-4 sm:px-6 py-4">
         <EmployeeHeader onAdd={handleAddEmployee} />
         <div className="mt-3">
@@ -487,6 +487,17 @@ const EmployeesPage: React.FC = () => {
             </p>
             <div className="flex justify-center gap-4">
               <button
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={isDeleting}
+                className={`px-4 py-2 rounded transition ${
+                  isDeleting
+                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-300 text-gray-800 hover:bg-gray-400"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
                 onClick={() => confirmDeleteId && performDelete(confirmDeleteId)}
                 disabled={isDeleting}
                 className={`px-4 py-2 rounded transition flex items-center justify-center min-w-[100px] ${
@@ -522,17 +533,6 @@ const EmployeesPage: React.FC = () => {
                 ) : (
                   "Yes, Delete"
                 )}
-              </button>
-              <button
-                onClick={() => setConfirmDeleteId(null)}
-                disabled={isDeleting}
-                className={`px-4 py-2 rounded transition ${
-                  isDeleting
-                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-300 text-gray-800 hover:bg-gray-400"
-                }`}
-              >
-                Cancel
               </button>
             </div>
           </div>
