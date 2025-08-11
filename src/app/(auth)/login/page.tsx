@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,21 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Check for logout success message on component mount
+  React.useEffect(() => {
+    const showLogoutSuccess = localStorage.getItem('showLogoutSuccess');
+    if (showLogoutSuccess === 'true') {
+      toast.success("Logout Successful", {
+        style: {
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+        },
+      });
+      localStorage.removeItem('showLogoutSuccess');
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -143,7 +158,7 @@ export default function LoginPage() {
                       placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                       required
                       disabled={isLoading}
                     />
@@ -157,7 +172,7 @@ export default function LoginPage() {
                       placeholder="Enter your phone number"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                       required
                       disabled={isLoading}
                     />
@@ -181,7 +196,7 @@ export default function LoginPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />

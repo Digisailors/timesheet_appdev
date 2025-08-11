@@ -119,7 +119,7 @@ export default function SignUpPage() {
                     placeholder="First name"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                     required
                     disabled={isLoading}
                   />
@@ -139,7 +139,7 @@ export default function SignUpPage() {
                   placeholder="Last name"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -162,7 +162,7 @@ export default function SignUpPage() {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -185,7 +185,7 @@ export default function SignUpPage() {
                   placeholder="Enter your phone number"
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -208,7 +208,7 @@ export default function SignUpPage() {
                   placeholder="Create password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -230,7 +230,7 @@ export default function SignUpPage() {
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
