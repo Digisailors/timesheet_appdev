@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/Toaster";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("email");
@@ -41,31 +42,18 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    const loginData =
-      activeTab === "email" ? { email, password } : { phoneNumber, password };
+    const credentials = activeTab === "email" 
+      ? { email, password } 
+      : { phoneNumber, password };
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(loginData),
-        }
-      );
+      const result = await signIn("credentials", {
+        ...credentials,
+        redirect: false,
+      });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        localStorage.setItem("user", JSON.stringify(data.data));
-        toast.success("Login successful!");
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000); // Redirect after 2 seconds
-      } else {
-        const errorMessage = data.message || "Login failed. Please try again.";
+      if (result?.error) {
+        const errorMessage = result.error;
         setError(errorMessage);
         if (errorMessage.toLowerCase().includes("email")) {
           toast.error("Incorrect email");
@@ -76,11 +64,14 @@ export default function LoginPage() {
         } else {
           toast.error(errorMessage);
         }
+      } else {
+        toast.success("Login successful!");
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage =
-        "The email/phone number or password is incorrect.Please check your credentials and try again.";
+        "The email/phone number or password is incorrect. Please check your credentials and try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

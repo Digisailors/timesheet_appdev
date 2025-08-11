@@ -3,9 +3,11 @@
 import Sidebar from "@/components/ui/sidebar";
 import Navbar from "@/components/ui/navbar";
 import Supervisor from "@/components/supervisors/supervisors";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function DashboardPage() {
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
       {/* Fixed Sidebar */}
       <Sidebar />
@@ -28,5 +30,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
