@@ -14,7 +14,7 @@ interface Project {
 interface ProjectSelectorProps {
   selectedProject?: string;
   onProjectChange?: (project: string) => void;
-  dateRange?: string;
+  dateRange: string;
   onDateRangeChange?: (dateRange: string) => void;
 }
 
@@ -26,8 +26,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || '');
   const [dateRange, setDateRange] = useState<DateRange>({
-    startDate: '2025-01-01',
-    endDate: '2025-05-21'
+    startDate: '',
+    endDate: ''
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDatePickers, setShowDatePickers] = useState(false);
@@ -38,7 +38,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5088/api/projects/all', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -46,24 +46,24 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           },
           mode: 'cors',
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
-        
+
         if (result.success && result.data) {
           const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
             id: project.id,
             name: project.name
           }));
-          
+
           setProjects(fetchedProjects);
-          
-          // Set the first project as selected if no prop is provided and projects exist
+
           if (!propSelectedProject && fetchedProjects.length > 0) {
             setSelectedProject(fetchedProjects[0].name);
+            onProjectChange?.(fetchedProjects[0].name);
           }
         } else {
           throw new Error('Invalid response format');
@@ -71,8 +71,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
         console.error('Error fetching projects:', err);
-        
-        // Fallback: set empty projects array
         setProjects([]);
       } finally {
         setLoading(false);
@@ -80,7 +78,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     };
 
     fetchProjects();
-  }, [propSelectedProject]);
+  }, [propSelectedProject, onProjectChange]);
 
   const handleProjectChange = (value: string) => {
     setSelectedProject(value);
@@ -90,21 +88,25 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 
   const handleStartDateChange = (value: string) => {
     setDateRange(prev => ({ ...prev, startDate: value }));
-    if (onDateRangeChange) {
-      const newRange = `${new Date(value).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} - ${new Date(dateRange.endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}`;
-      onDateRangeChange(newRange);
-    }
+    updateDateRange(value, dateRange.endDate);
   };
 
   const handleEndDateChange = (value: string) => {
     setDateRange(prev => ({ ...prev, endDate: value }));
-    if (onDateRangeChange) {
-      const newRange = `${new Date(dateRange.startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} - ${new Date(value).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}`;
-      onDateRangeChange(newRange);
+    updateDateRange(dateRange.startDate, value);
+  };
+
+  const updateDateRange = (startDate: string, endDate: string) => {
+    if (startDate && endDate) {
+      const newRange = `${new Date(startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} - ${new Date(endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}`;
+      onDateRangeChange?.(newRange);
     }
   };
 
   const formatDateRange = () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      return 'Select a Date Range';
+    }
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
     return `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}`;
@@ -114,9 +116,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="px-6 py-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Select Project</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Project Selector */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
             <div className="relative">
@@ -146,7 +147,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             </div>
           </div>
 
-          {/* Date Range Selector */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
             <div className="relative">
@@ -159,7 +159,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                 </button>
                 <span className="text-gray-900 dark:text-gray-100 ml-2">{formatDateRange()}</span>
               </div>
-
               {showDatePickers && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
                   <div className="space-y-3">
