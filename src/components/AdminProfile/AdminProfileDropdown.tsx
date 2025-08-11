@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import { LogOut, User, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { signOut } from 'next-auth/react';
 // import Toast from './Toast';
 import ProfileModal from './ProfileModal';
 import { toast } from 'sonner';
@@ -88,44 +89,32 @@ const AdminProfileDropdown: React.FC<AdminProfileDropdownProps> = ({ trigger }) 
   const handleLogoutConfirm = async () => {
     setIsLoggingOut(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for authentication
+      // Use NextAuth signOut
+      await signOut({ 
+        redirect: false,
+        callbackUrl: '/login'
       });
-
-      if (response.ok) {
-        // Clear any local storage or session data if needed
-        localStorage.removeItem('user');
-        sessionStorage.clear();
-        
-        // Show success toast with blue background
-        toast.success("Logout Successful", {
-          style: {
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-          },
-        });
-        
-        // Keep modal open for 2 seconds to show the loading state and toast
-        setTimeout(() => {
-          setShowLogoutConfirm(false);
-          setIsLoggingOut(false);
-          // Redirect to login page
-          window.location.href = '/login';
-        }, 2000);
-      } else {
-        console.error('Logout failed:', response.statusText);
-        toast.error("Logout failed. Please try again.");
-        setIsLoggingOut(false);
+      
+      // Clear any local storage or session data if needed
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      
+      // Show success toast with blue background
+      toast.success("Logout Successful", {
+        style: {
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+        },
+      });
+      
+      // Keep modal open for 2 seconds to show the loading state and toast
+      setTimeout(() => {
         setShowLogoutConfirm(false);
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
-      }
+        setIsLoggingOut(false);
+        // Redirect to login page
+        window.location.href = '/login';
+      }, 2000);
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error("Network error. Please try again.");

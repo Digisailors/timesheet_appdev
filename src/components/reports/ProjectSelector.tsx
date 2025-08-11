@@ -54,7 +54,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         const result = await response.json();
         
         if (result.success && result.data) {
-          const fetchedProjects = result.data.map((project: any) => ({
+          const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
             id: project.id,
             name: project.name
           }));

@@ -4,6 +4,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import {
   HomeIcon,
   UsersIcon,
@@ -48,8 +49,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
     }
   };
 
-  const handleLogout = () => {
-    console.log('Logout clicked');
+  const handleLogout = async () => {
+    await signOut({ 
+      redirect: true,
+      callbackUrl: '/login'
+    });
   };
 
   return (

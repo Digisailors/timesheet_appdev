@@ -1,5 +1,23 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment Setup
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key-here
+
+# API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+```
+
+Generate a secure NEXTAUTH_SECRET using:
+```bash
+openssl rand -base64 32
+```
+
 ## Getting Started
 
 First, run the development server:
