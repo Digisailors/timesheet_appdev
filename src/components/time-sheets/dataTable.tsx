@@ -15,6 +15,7 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { ViewDialogBox } from "./viewdialogbox";
+import { EditDialogBox } from "./EditDialogBox"; // Add this import
 import { getColumns } from "./columns";
 import { TimeSheet } from "../../types/TimeSheet";
 import ExcelJS from "exceljs";
@@ -39,6 +40,8 @@ interface Supervisor {
   id: string;
   fullName: string;
   specialization: string;
+  perHourRate?: string;
+  overtimeRate?: string;
 }
 
 interface Project {
@@ -81,15 +84,39 @@ interface TimeSheetData {
   overTimeSalary?: string;
 }
 
+interface CreateTimesheetRequest {
+  projectId: string;
+  employeeIds: string[];
+  timesheetDate: string;
+  typeofWork: string;
+  location: string;
+  projectCode: string;
+  onsiteTravelStart: string;
+  onsiteTravelEnd: string;
+  onsiteSignIn: string;
+  onsiteBreakStart: string;
+  onsiteBreakEnd: string;
+  onsiteSignOut: string;
+  offsiteTravelStart: string;
+  offsiteTravelEnd: string;
+  isHoliday: boolean;
+  remarks: string;
+  status: string;
+  supervisorId: string;
+}
+
 export interface DataTableHandle {
   exportExcel: () => void;
+  createTimesheet: (timesheetData: CreateTimesheetRequest) => Promise<void>;
 }
 
 export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
   function DataTable({ selectedDate }, ref) {
     const [data, setData] = useState<TimeSheet[]>([]);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Add this state
     const [selectedTimesheetId, setSelectedTimesheetId] = useState<string | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<any>(null); // Add this state
     const [filters, setFilters] = useState({
       searchTerm: "",
       selectedDesignationType: "all",
@@ -106,74 +133,76 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       return `${day}-${month}-${year}`;
     };
 
+    const transformTimesheetData = (timesheet: TimeSheetData) => {
+      const travelStartTime1 = new Date(
+        `1970-01-01T${timesheet.onsiteTravelStart}`
+      ).getTime();
+      const travelEndTime1 = new Date(
+        `1970-01-01T${timesheet.onsiteTravelEnd}`
+      ).getTime();
+      const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
+      const travelStartTime2 = new Date(
+        `1970-01-01T${timesheet.offsiteTravelStart}`
+      ).getTime();
+      const travelEndTime2 = new Date(
+        `1970-01-01T${timesheet.offsiteTravelEnd}`
+      ).getTime();
+      const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+      const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
+      const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
+      const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(
+        totalTravelMinutes
+      )
+        .toString()
+        .padStart(2, "0")}`;
+      const breakStartTime = new Date(
+        `1970-01-01T${timesheet.onsiteBreakStart}`
+      ).getTime();
+      const breakEndTime = new Date(
+        `1970-01-01T${timesheet.onsiteBreakEnd}`
+      ).getTime();
+      const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+      const breakMinutes = (breakTimeInHours % 1) * 60;
+      const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes)
+        .toString()
+        .padStart(2, "0")}`;
+
+      // Determine the employee name and append " (Supervisor)" if the type is "supervisor"
+      const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
+      const isSupervisor = timesheet.type === "supervisor";
+      const designationType = timesheet.employees?.[0]?.designationType || "Unknown";
+
+      return {
+        id: timesheet.id,
+        employee: employeeName,
+        isSupervisor: isSupervisor,
+        designationType: designationType,
+        checkIn: timesheet.onsiteSignIn.substring(0, 5),
+        checkOut: timesheet.onsiteSignOut.substring(0, 5),
+        hours: parseFloat(timesheet.totalDutyHrs),
+        otHours: parseFloat(timesheet.overtime),
+        travelTime: travelTime,
+        location: timesheet.location,
+        project: timesheet.project.name,
+        status: timesheet.status,
+        breakTime: breakTime,
+        timesheetDate: timesheet.timesheetDate,
+        supervisorName: timesheet.supervisorName,
+        remarks: timesheet.remarks,
+        perHourRate: timesheet.employees?.[0]?.perHourRate || timesheet.supervisor?.perHourRate || "0",
+        overtimeRate: timesheet.employees?.[0]?.overtimeRate || timesheet.supervisor?.overtimeRate || "0",
+        regularTimeSalary: timesheet.regularTimeSalary || "0",
+        overTimeSalary: timesheet.overTimeSalary || "0",
+      };
+    };
+
     useEffect(() => {
       const fetchData = async () => {
         try {
           const response = await axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`
           );
-          const timesheets = response.data.data.map((timesheet: TimeSheetData) => {
-            const travelStartTime1 = new Date(
-              `1970-01-01T${timesheet.onsiteTravelStart}`
-            ).getTime();
-            const travelEndTime1 = new Date(
-              `1970-01-01T${timesheet.onsiteTravelEnd}`
-            ).getTime();
-            const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-            const travelStartTime2 = new Date(
-              `1970-01-01T${timesheet.offsiteTravelStart}`
-            ).getTime();
-            const travelEndTime2 = new Date(
-              `1970-01-01T${timesheet.offsiteTravelEnd}`
-            ).getTime();
-            const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-            const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
-            const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-            const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(
-              totalTravelMinutes
-            )
-              .toString()
-              .padStart(2, "0")}`;
-            const breakStartTime = new Date(
-              `1970-01-01T${timesheet.onsiteBreakStart}`
-            ).getTime();
-            const breakEndTime = new Date(
-              `1970-01-01T${timesheet.onsiteBreakEnd}`
-            ).getTime();
-            const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-            const breakMinutes = (breakTimeInHours % 1) * 60;
-            const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes)
-              .toString()
-              .padStart(2, "0")}`;
-
-            // Determine the employee name and append " (Supervisor)" if the type is "supervisor"
-            const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
-            const isSupervisor = timesheet.type === "supervisor";
-            const designationType = timesheet.employees?.[0]?.designationType || "Unknown";
-
-            return {
-              id: timesheet.id,
-              employee: employeeName,
-              isSupervisor: isSupervisor,
-              designationType: designationType,
-              checkIn: timesheet.onsiteSignIn.substring(0, 5),
-              checkOut: timesheet.onsiteSignOut.substring(0, 5),
-              hours: parseFloat(timesheet.totalDutyHrs),
-              otHours: parseFloat(timesheet.overtime),
-              travelTime: travelTime,
-              location: timesheet.location,
-              project: timesheet.project.name,
-              status: timesheet.status,
-              breakTime: breakTime,
-              timesheetDate: timesheet.timesheetDate,
-              supervisorName: timesheet.supervisorName,
-              remarks: timesheet.remarks,
-              perHourRate: timesheet.employees?.[0]?.perHourRate || "0",
-              overtimeRate: timesheet.employees?.[0]?.overtimeRate || "0",
-              regularTimeSalary: timesheet.regularTimeSalary || "0",
-              overTimeSalary: timesheet.overTimeSalary || "0",
-            };
-          });
+          const timesheets = response.data.data.map(transformTimesheetData);
           setData(timesheets);
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -181,6 +210,24 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       };
 
       fetchData();
+    }, []);
+
+    const createTimesheet = useCallback(async (timesheetData: CreateTimesheetRequest) => {
+      try {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/create`,
+          timesheetData
+        );
+        
+        if (response.data.success && response.data.data) {
+          // Transform the new timesheet data and add to existing data
+          const newTimesheets = response.data.data.map(transformTimesheetData);
+          setData(prevData => [...prevData, ...newTimesheets]);
+        }
+      } catch (error) {
+        console.error("Error creating timesheet:", error);
+        throw error;
+      }
     }, []);
 
     const columns = useMemo(() => getColumns(), []);
@@ -191,8 +238,77 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     }, []);
 
     const handleEditClick = useCallback((employee: TimeSheet) => {
+      // Transform TimeSheet data to match EditDialogBox expected format
+      const employeeData = {
+        name: employee.employee,
+        project: employee.project,
+        location: employee.location,
+        date: formatDate(employee.timesheetDate),
+        checkIn: employee.checkIn,
+        checkOut: employee.checkOut,
+        totalHours: employee.hours.toString(),
+        overtime: employee.otHours.toString(),
+        travelTime: employee.travelTime,
+        breakTime: employee.breakTime,
+        supervisorName: employee.supervisorName,
+        remarks: employee.remarks,
+      };
+      setSelectedEmployee(employeeData);
       setSelectedTimesheetId(employee.id);
+      setIsEditDialogOpen(true);
     }, []);
+
+    // Add save handler for edit dialog
+    const handleEditSave = useCallback(async (updatedEmployee: any) => {
+      try {
+        // API call to update the timesheet on the server
+        await axios.put(`http://localhost:5088/api/timesheet/update/${selectedTimesheetId}`, {
+          name: updatedEmployee.name,
+          project: updatedEmployee.project,
+          location: updatedEmployee.location,
+          checkIn: updatedEmployee.checkIn,
+          checkOut: updatedEmployee.checkOut,
+          totalHours: updatedEmployee.totalHours,
+          overtime: updatedEmployee.overtime,
+          travelTime: updatedEmployee.travelTime,
+          breakTime: updatedEmployee.breakTime,
+          supervisorName: updatedEmployee.supervisorName,
+          remarks: updatedEmployee.remarks,
+          status: updatedEmployee.status,
+        });
+
+        // Update the local state after successful API call
+        setData(prevData => 
+          prevData.map(item => 
+            item.id === selectedTimesheetId 
+              ? {
+                  ...item,
+                  employee: updatedEmployee.name,
+                  project: updatedEmployee.project,
+                  location: updatedEmployee.location,
+                  checkIn: updatedEmployee.checkIn,
+                  checkOut: updatedEmployee.checkOut,
+                  hours: parseFloat(updatedEmployee.totalHours),
+                  otHours: parseFloat(updatedEmployee.overtime),
+                  travelTime: updatedEmployee.travelTime,
+                  breakTime: updatedEmployee.breakTime,
+                  supervisorName: updatedEmployee.supervisorName,
+                  remarks: updatedEmployee.remarks,
+                  status: updatedEmployee.status,
+                }
+              : item
+          )
+        );
+        
+        setIsEditDialogOpen(false);
+        setSelectedEmployee(null);
+        setSelectedTimesheetId(null);
+      } catch (error) {
+        console.error("Error updating timesheet:", error);
+        // You can add user-friendly error handling here
+        alert("Failed to update timesheet. Please try again.");
+      }
+    }, [selectedTimesheetId]);
 
     const filteredData = useMemo(() => {
       return data.filter((item: TimeSheet) => {
@@ -223,6 +339,12 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                 className="px-3 py-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
               >
                 View
+              </button>
+              <button
+                onClick={() => handleEditClick(employee)}
+                className="px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition"
+              >
+                Edit
               </button>
             </div>
           );
@@ -286,6 +408,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
 
     useImperativeHandle(ref, () => ({
       exportExcel,
+      createTimesheet,
     }));
 
     return (
@@ -403,6 +526,18 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           }}
           timesheetId={selectedTimesheetId}
         />
+        {selectedEmployee && (
+          <EditDialogBox
+            isOpen={isEditDialogOpen}
+            onClose={() => {
+              setIsEditDialogOpen(false);
+              setSelectedEmployee(null);
+              setSelectedTimesheetId(null);
+            }}
+            employee={selectedEmployee}
+            onSave={handleEditSave}
+          />
+        )}
       </div>
     );
   }
