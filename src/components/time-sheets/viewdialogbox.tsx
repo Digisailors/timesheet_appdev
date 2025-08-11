@@ -25,7 +25,7 @@ interface Employee {
   overtimeRate: string;
   regularTimeSalary: string;
   overTimeSalary: string;
-  type: string; // Added type to track if it's supervisor or employee
+  type: string;
 }
 
 export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, timesheetId }) => {
@@ -43,28 +43,25 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/${timesheetId}`);
       const data = response.data.data;
-      
-      // Calculate travel time
+
       const travelStartTime1 = new Date(`1970-01-01T${data.onsiteTravelStart}`).getTime();
       const travelEndTime1 = new Date(`1970-01-01T${data.onsiteTravelEnd}`).getTime();
       const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-      
+
       const travelStartTime2 = new Date(`1970-01-01T${data.offsiteTravelStart}`).getTime();
       const travelEndTime2 = new Date(`1970-01-01T${data.offsiteTravelEnd}`).getTime();
       const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-      
+
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
 
-      // Calculate break time
       const breakStartTime = new Date(`1970-01-01T${data.onsiteBreakStart}`).getTime();
       const breakEndTime = new Date(`1970-01-01T${data.onsiteBreakEnd}`).getTime();
       const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
       const breakMinutes = (breakTimeInHours % 1) * 60;
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
 
-      // Format date
       const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         const day = date.getDate().toString().padStart(2, "0");
@@ -90,7 +87,7 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         overtimeRate: data.employees?.[0]?.overtimeRate || "0",
         regularTimeSalary: data.regularTimeSalary || "0",
         overTimeSalary: data.overTimeSalary || "0",
-        type: data.type, // Store the type from API response
+        type: data.type,
       };
 
       setEmployee(employeeData);
@@ -128,14 +125,12 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-md text-gray-900 dark:text-white">
         <div className="p-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Time-sheet Details</h2>
             <button onClick={onClose} className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white text-xl">
               &times;
             </button>
           </div>
-          {/* Avatar and Name */}
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
               {employee.name.split(' ').map(n => n[0]).join('')}
@@ -143,11 +138,10 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
             <div>
               <h3 className="font-bold">{employee.name}</h3>
             </div>
-            <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full">
-              Regular
+            <span className={`bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full`}>
+              {employee.type === "employee" ? "Employee" : "Supervisor"}
             </span>
           </div>
-          {/* Project / Location */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Project</p>
@@ -158,7 +152,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
               <p className="font-bold">{employee.location}</p>
             </div>
           </div>
-          {/* Date and Supervisor - Only show supervisor for employees */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="mb-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
@@ -171,7 +164,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
               </div>
             )}
           </div>
-          {/* Check-in/out */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Check In</p>
@@ -182,7 +174,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
               <p className="font-bold">{employee.checkOut}</p>
             </div>
           </div>
-          {/* Hours Breakdown */}
           <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-4">
             <h3 className="text-lg font-bold text-center mb-2">Hours Breakdown</h3>
             <div className="grid grid-cols-4 gap-4 text-center">
@@ -217,7 +208,7 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
               </div>
               <div className="flex justify-between">
                 <p className="font-bold">SAR {employee.regularTimeSalary}</p>
-                <p className="font-bold mr-24">SAR {employee.overTimeSalary}</p>
+                <p className="font-bold mr-20">SAR {employee.overTimeSalary}</p>
               </div>
             </div>
           </div>
