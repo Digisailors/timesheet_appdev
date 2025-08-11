@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Calendar } from 'lucide-react';
 
 interface DateRange {
@@ -23,19 +23,64 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   onProjectChange,
   onDateRangeChange
 }) => {
-  const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || 'Construction Phase 1 (CP001)');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || '');
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: '2025-01-01',
     endDate: '2025-05-21'
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDatePickers, setShowDatePickers] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const projects: Project[] = [
-    { id: '1', name: 'Construction Phase 1 (CP001)' },
-    { id: '2', name: 'Construction Phase 2 (CP002)' },
-    { id: '3', name: 'Construction Phase 3 (CP003)' },
-  ];
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:5088/api/projects/all', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          mode: 'cors',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const fetchedProjects = result.data.map((project: any) => ({
+            id: project.id,
+            name: project.name
+          }));
+          
+          setProjects(fetchedProjects);
+          
+          // Set the first project as selected if no prop is provided and projects exist
+          if (!propSelectedProject && fetchedProjects.length > 0) {
+            setSelectedProject(fetchedProjects[0].name);
+          }
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch projects');
+        console.error('Error fetching projects:', err);
+        
+        // Fallback: set empty projects array
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [propSelectedProject]);
 
   const handleProjectChange = (value: string) => {
     setSelectedProject(value);
@@ -77,12 +122,15 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full px-4 py-2.5 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-2.5 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="text-gray-900 dark:text-gray-100 truncate">{selectedProject}</span>
+                <span className="text-gray-900 dark:text-gray-100 truncate">
+                  {loading ? 'Loading projects...' : error ? 'Error loading projects' : selectedProject || 'Select a project'}
+                </span>
                 <ChevronDown className={`h-4 w-4 text-gray-400 dark:text-gray-300 transition-transform ml-2 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              {isDropdownOpen && (
+              {isDropdownOpen && !loading && !error && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
                   {projects.map((project) => (
                     <button
