@@ -105,7 +105,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{userData.name}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{userData.role} - {userData.department}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{userData.role}  {userData.department}</p>
         </div>
       </div>
 

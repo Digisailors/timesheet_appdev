@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   X,
@@ -28,7 +27,7 @@ import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
 
 interface VacationEntry {
-  id: number;
+  id: string;
   name: string;
   leaveType: string;
   duration: string;
@@ -37,99 +36,108 @@ interface VacationEntry {
   startDate: string;
   endDate: string;
   status: "Paid" | "Unpaid";
+  appliedDate: string;
+  eligibleDays: string;
+  remainingDays: string;
+  reason: string;
+  vacationFrom: string;
+  vacationTo: string;
+  project: string;
+  specialization: string;
 }
 
-const vacationData: VacationEntry[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    leaveType: "Annual Leave",
-    duration: "6 days",
-    role: "Rental",
-    location: "Highway Bridge",
-    startDate: "2024-06-15",
-    endDate: "2024-06-22",
-    status: "Paid",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    leaveType: "Sick Leave",
-    duration: "3 days",
-    role: "Operations",
-    location: "Downtown Office",
-    startDate: "2024-06-18",
-    endDate: "2024-06-20",
-    status: "Paid",
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    leaveType: "Personal Leave",
-    duration: "2 days",
-    role: "Customer Service",
-    location: "Remote",
-    startDate: "2024-06-19",
-    endDate: "2024-06-20",
-    status: "Unpaid",
-  },
-  {
-    id: 4,
-    name: "David Thompson",
-    leaveType: "Annual Leave",
-    duration: "10 days",
-    role: "Engineering",
-    location: "Tech Hub",
-    startDate: "2024-06-25",
-    endDate: "2024-07-05",
-    status: "Paid",
-  },
-  {
-    id: 5,
-    name: "Lisa Wang",
-    leaveType: "Maternity Leave",
-    duration: "90 days",
-    role: "Marketing",
-    location: "Main Office",
-    startDate: "2024-06-01",
-    endDate: "2024-08-30",
-    status: "Paid",
-  },
-];
-
-const summaryData = [
-  {
-    title: "Total Employees on vacation",
-    count: 2,
-    icon: TreePalm,
-    borderColor: "#22c55e",
-    iconColor: "#22c55e",
-  },
-  {
-    title: "Paid Vacation",
-    count: 1,
-    icon: CreditCard,
-    borderColor: "#f59e0b",
-    iconColor: "#f59e0b",
-  },
-  {
-    title: "Unpaid Vacation",
-    count: 1,
-    icon: X,
-    borderColor: "#ef4444",
-    iconColor: "#ef4444",
-  },
-];
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: Array<{
+    id: string;
+    leaveType: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    eligibleDays: number;
+    remainingDays: number;
+    reason: string;
+    employee?: {
+      firstName: string;
+      lastName: string;
+      designation?: string;
+      specialization: string;
+    };
+    supervisor?: {
+      fullName: string;
+      designation?: string;
+      specialization: string;
+    };
+  }>;
+}
 
 export default function VacationManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
-
-  const [selectedVacation, setSelectedVacation] =
-    useState<VacationEntry | null>(null);
+  const [selectedVacation, setSelectedVacation] = useState<VacationEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [vacationData, setVacationData] = useState<VacationEntry[]>([]);
+
+  useEffect(() => {
+    const fetchVacationData = async () => {
+      try {
+        const response = await fetch("/vacations/all");
+        const result: ApiResponse = await response.json();
+
+        if (result.success) {
+          const formattedData = result.data.map((item) => {
+            const name = item.employee
+              ? `${item.employee.firstName} ${item.employee.lastName}`
+              : item.supervisor
+              ? item.supervisor.fullName
+              : "Unknown";
+
+            const location = item.employee
+              ? item.employee.specialization
+              : item.supervisor
+              ? item.supervisor.specialization
+              : "Unknown";
+
+            return {
+              id: item.id,
+              name,
+              leaveType: item.leaveType,
+              duration: `${calculateDuration(item.startDate, item.endDate)} days`,
+              role: item.employee ? item.employee.designation || "Unknown" : item.supervisor ? item.supervisor.designation || "Unknown" : "Unknown",
+              location,
+              startDate: item.startDate,
+              endDate: item.endDate,
+              status: item.status.replace(" Vacation", "") as "Paid" | "Unpaid",
+              appliedDate: new Date().toISOString().split('T')[0],
+              eligibleDays: item.eligibleDays.toString(),
+              remainingDays: item.remainingDays.toString(),
+              reason: item.reason || "No reason provided",
+              vacationFrom: item.startDate,
+              vacationTo: item.endDate,
+              project: item.employee ? item.employee.designation || "Unknown" : "Unknown",
+              specialization: location,
+            };
+          });
+
+          setVacationData(formattedData);
+        }
+      } catch (error) {
+        console.error("Error fetching vacation data:", error);
+      }
+    };
+
+    fetchVacationData();
+  }, []);
+
+  const calculateDuration = (startDate: string, endDate: string): number => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const timeDiff = end.getTime() - start.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  };
 
   const filteredData = vacationData.filter((employee) => {
     const matchesSearch =
@@ -142,7 +150,6 @@ export default function VacationManagement() {
     const matchesType =
       typeFilter === "all" ||
       employee.leaveType.toLowerCase().includes(typeFilter.toLowerCase());
-
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -193,14 +200,12 @@ export default function VacationManagement() {
             <span>Create Vacation</span>
           </Button>
         </div>
-
         {showCreateForm && (
           <CreateVacationForm
             open={showCreateForm}
             onOpenChange={setShowCreateForm}
           />
         )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {summaryData.map((item) => (
             <Card
@@ -233,7 +238,6 @@ export default function VacationManagement() {
             </Card>
           ))}
         </div>
-
         <Card>
           <CardContent className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -246,7 +250,6 @@ export default function VacationManagement() {
                   className="pl-10 h-9 text-sm border border-gray-300 dark:bg-gray-800 text-white"
                 />
               </div>
-
               <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
@@ -265,7 +268,6 @@ export default function VacationManagement() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="h-10 border-gray-300">
@@ -286,7 +288,6 @@ export default function VacationManagement() {
                   </SelectContent>
                 </Select>
               </div>
-
               <Button
                 variant="outline"
                 onClick={clearFilters}
@@ -298,16 +299,13 @@ export default function VacationManagement() {
             </div>
           </CardContent>
         </Card>
-
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold text-gray-900">
             Employees on Vacation ({filteredData.length})
           </h2>
-
           <div className="space-y-4">
             {filteredData.map((employee) => {
               const LeaveIcon = getLeaveTypeIcon(employee.leaveType);
-
               return (
                 <Card
                   key={employee.id}
@@ -338,12 +336,11 @@ export default function VacationManagement() {
                           </p>
                         </div>
                       </div>
-
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <div className="flex flex-row items-start gap-4">
-                            <div className="text-sm text-gray-600  flex flex-col dark:text-white">
-                              <span className="font-bold ">
+                            <div className="text-sm text-gray-600 flex flex-col dark:text-white">
+                              <span className="font-bold">
                                 {employee.startDate}
                               </span>
                               <span>to: {employee.endDate}</span>
@@ -365,7 +362,7 @@ export default function VacationManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 "
+                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50"
                               onClick={() => {
                                 setSelectedVacation(employee);
                                 setIsDialogOpen(true);
@@ -382,7 +379,6 @@ export default function VacationManagement() {
               );
             })}
           </div>
-
           {filteredData.length === 0 && (
             <Card>
               <CardContent className="p-12 text-center">
@@ -393,7 +389,6 @@ export default function VacationManagement() {
             </Card>
           )}
         </div>
-
         {selectedVacation && (
           <ViewVacationDialog
             isOpen={isDialogOpen}
@@ -401,24 +396,34 @@ export default function VacationManagement() {
               setIsDialogOpen(false);
               setSelectedVacation(null);
             }}
-            data={{
-              id: selectedVacation.id.toString(),
-              name: selectedVacation.name,
-              appliedDate: "2024-06-01", // replace with real data
-              vacationFrom: selectedVacation.startDate,
-              vacationTo: selectedVacation.endDate,
-              duration: selectedVacation.duration,
-              eligibleDays: "10",
-              remainingDays: "4",
-              leaveType: selectedVacation.leaveType,
-              status: selectedVacation.status,
-              project: selectedVacation.role,
-              specialization: selectedVacation.location,
-              reason: "Family function", // replace with actual reason if available
-            }}
+            data={selectedVacation}
           />
         )}
       </div>
     </div>
   );
 }
+
+const summaryData = [
+  {
+    title: "Total Employees on vacation",
+    count: 2,
+    icon: TreePalm,
+    borderColor: "#22c55e",
+    iconColor: "#22c55e",
+  },
+  {
+    title: "Paid Vacation",
+    count: 1,
+    icon: CreditCard,
+    borderColor: "#f59e0b",
+    iconColor: "#f59e0b",
+  },
+  {
+    title: "Unpaid Vacation",
+    count: 1,
+    icon: X,
+    borderColor: "#ef4444",
+    iconColor: "#ef4444",
+  },
+];
