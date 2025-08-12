@@ -84,7 +84,7 @@ export default function VacationManagement() {
   useEffect(() => {
     const fetchVacationData = async () => {
       try {
-        const response = await fetch("/vacations/all");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`);
         const result: ApiResponse = await response.json();
 
         if (result.success) {
