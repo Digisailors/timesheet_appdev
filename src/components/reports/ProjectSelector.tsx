@@ -14,21 +14,18 @@ interface Project {
 interface ProjectSelectorProps {
   selectedProject?: string;
   onProjectChange?: (project: string) => void;
-  dateRange: string;
-  onDateRangeChange?: (dateRange: string) => void;
+  dateRange: DateRange;
+  onDateRangeChange?: (dateRange: DateRange) => void;
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProject: propSelectedProject,
   onProjectChange,
-  onDateRangeChange
+  dateRange,
+  onDateRangeChange,
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || '');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    startDate: '',
-    endDate: ''
-  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -56,7 +53,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         if (result.success && result.data) {
           const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
             id: project.id,
-            name: project.name
+            name: project.name,
           }));
 
           setProjects(fetchedProjects);
@@ -87,36 +84,33 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   };
 
   const handleStartDateChange = (value: string) => {
-    setDateRange(prev => ({ ...prev, startDate: value }));
-    updateDateRange(value, dateRange.endDate);
+    const newDateRange = { ...dateRange, startDate: value };
+    onDateRangeChange?.(newDateRange);
   };
 
   const handleEndDateChange = (value: string) => {
-    setDateRange(prev => ({ ...prev, endDate: value }));
-    updateDateRange(dateRange.startDate, value);
-  };
-
-  const updateDateRange = (startDate: string, endDate: string) => {
-    if (startDate && endDate) {
-      const newRange = `${new Date(startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} - ${new Date(endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}`;
-      onDateRangeChange?.(newRange);
-    }
+    const newDateRange = { ...dateRange, endDate: value };
+    onDateRangeChange?.(newDateRange);
   };
 
   const formatDateRange = () => {
     if (!dateRange.startDate || !dateRange.endDate) {
       return 'Select a Date Range';
     }
+
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
-    return `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}`;
+
+    return `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString(
+      'en-US',
+      { month: 'short', day: '2-digit', year: 'numeric' }
+    )}`;
   };
 
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="px-6 py-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Select Project</h2>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
@@ -146,7 +140,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               )}
             </div>
           </div>
-
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
             <div className="relative">

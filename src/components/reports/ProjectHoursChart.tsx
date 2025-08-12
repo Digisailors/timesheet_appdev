@@ -40,8 +40,8 @@ const ProjectHoursChart: React.FC<ProjectHoursChartProps> = ({ timesheetData }) 
     return acc;
   }, []);
 
-  const maxRegular = Math.max(...monthsData.map(data => data.regular));
-  const maxOvertime = Math.max(...monthsData.map(data => data.overtime));
+  const maxRegular = Math.max(...monthsData.map((data) => data.regular));
+  const maxOvertime = Math.max(...monthsData.map((data) => data.overtime));
   const maxValue = Math.max(maxRegular, maxOvertime);
 
   const showTooltip = (event: React.MouseEvent, content: string) => {
@@ -54,7 +54,7 @@ const ProjectHoursChart: React.FC<ProjectHoursChartProps> = ({ timesheetData }) 
   };
 
   const hideTooltip = () => {
-    setTooltip(prev => ({ ...prev, visible: false }));
+    setTooltip((prev) => ({ ...prev, visible: false }));
   };
 
   return (

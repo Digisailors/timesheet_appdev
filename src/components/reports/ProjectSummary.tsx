@@ -2,24 +2,34 @@ import React from 'react';
 import StatCard from './StatCard';
 import ProjectHoursChart from './ProjectHoursChart';
 
-// Define an interface for a timesheet entry
 interface TimesheetEntry {
   timesheetDate: string;
   totalDutyHrs: string;
   normalHrs: string;
   overtime: string;
-  // Add other properties if they exist
 }
 
 interface ProjectSummaryProps {
-  timesheetData: TimesheetEntry[]; // Use the defined interface
+  timesheetData: TimesheetEntry[];
   selectedProject: string;
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
 }
 
-const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selectedProject }) => {
-  const totalHours = timesheetData.reduce((sum, entry) => sum + parseFloat(entry.totalDutyHrs), 0);
-  const regularHours = timesheetData.reduce((sum, entry) => sum + parseFloat(entry.normalHrs), 0);
-  const overtimeHours = timesheetData.reduce((sum, entry) => sum + parseFloat(entry.overtime), 0);
+const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selectedProject, dateRange }) => {
+  // Filter timesheet data based on the selected date range
+  const filteredTimesheetData = timesheetData.filter(entry => {
+    const entryDate = new Date(entry.timesheetDate);
+    const startDate = new Date(dateRange.startDate);
+    const endDate = new Date(dateRange.endDate);
+    return entryDate >= startDate && entryDate <= endDate;
+  });
+
+  const totalHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.totalDutyHrs), 0);
+  const regularHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.normalHrs), 0);
+  const overtimeHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.overtime), 0);
   const regularOTRatio = `${((regularHours / totalHours) * 100).toFixed(0)}% / ${((overtimeHours / totalHours) * 100).toFixed(0)}%`;
 
   return (
@@ -34,7 +44,7 @@ const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selected
         <StatCard title="Regular/OT Ratio" value={regularOTRatio} bgColor="bg-purple-50 dark:bg-purple-900" textColor="text-purple-600 dark:text-purple-300" />
       </div>
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow-inner">
-        <ProjectHoursChart timesheetData={timesheetData} />
+        <ProjectHoursChart timesheetData={filteredTimesheetData} />
       </div>
     </div>
   );
