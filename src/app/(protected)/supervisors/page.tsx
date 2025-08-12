@@ -21,7 +21,7 @@ export default function SupervisorPage() {
         if (data.user) {
           setUserData({
             name: data.user.name,
-            role: 'Site Manager',
+            role: '',
             initial: data.user.name.charAt(0).toUpperCase()
           });
         }
@@ -29,7 +29,7 @@ export default function SupervisorPage() {
         console.error('Error fetching user data:', error);
         setUserData({
           name: 'User',
-          role: 'Site Manager',
+          role: '',
           initial: 'U'
         });
       }
