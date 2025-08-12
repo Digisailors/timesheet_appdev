@@ -1,17 +1,78 @@
 "use client";
-
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronDown } from "lucide-react";
-import { format } from "date-fns"; // Still needed for date formatting
+import { format, addDays } from "date-fns";
 
 interface CreateVacationFormProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-// Custom Modal Component (replaces shadcn Dialog)
+interface Employee {
+  id: string;
+  firstName: string;
+  lastName: string;
+  designation: string;
+  designationType: {
+    designationTypeId: string;
+    name: string;
+  };
+  phoneNumber: string;
+  email: string;
+  address: string;
+  experience: string;
+  dateOfJoining: string;
+  specialization: string;
+  createdAt: string;
+  updatedAt: string;
+  perHourRate: string;
+  overtimeRate: string;
+  isOnVacation: boolean;
+  vacationStatus: string;
+}
+
+interface Supervisor {
+  id: string;
+  fullName: string;
+  specialization: string;
+  phoneNumber: string;
+  emailAddress: string;
+  address: string;
+  dateOfJoining: string;
+  experience: string;
+  createdAt: string;
+  updatedAt: string;
+  perHourRate: string;
+  overtimeRate: string;
+  isOnVacation: boolean;
+  vacationStatus: string;
+}
+
+interface PersonOption {
+  value: string;
+  label: string;
+  isSupervisor: boolean;
+  originalData: Employee | Supervisor;
+}
+
+interface LeaveTypeOption {
+  value: string;
+  label: string;
+}
+
+type SelectOption = PersonOption | LeaveTypeOption;
+
+interface CustomSelectProps {
+  id?: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  options: SelectOption[];
+  className?: string;
+}
+
 const CustomModal = ({
   children,
   isOpen,
@@ -22,16 +83,13 @@ const CustomModal = ({
   onClose: () => void;
 }) => {
   if (!isOpen) return null;
-
   return createPortal(
     <>
-      {/* Backdrop - simple black overlay, no blur */}
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose}></div>
-      {/* Modal Content */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <div
           className="sm:max-w-[700px] w-full rounded-md p-0 bg-white text-black dark:bg-gray-900 dark:text-white shadow-lg"
-          onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing modal
+          onClick={(e) => e.stopPropagation()}
         >
           {children}
         </div>
@@ -40,16 +98,6 @@ const CustomModal = ({
     document.body
   );
 };
-
-// Custom Select Component (replaces shadcn Select)
-interface CustomSelectProps {
-  id?: string; // Added id prop
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  className?: string;
-}
 
 const CustomSelect = ({
   id,
@@ -85,13 +133,24 @@ const CustomSelect = ({
     };
   }, []);
 
-  const selectedLabel =
-    options.find((option) => option.value === value)?.label || placeholder;
+  const selectedOption = options.find((option) => option.value === value);
+  const selectedLabel = selectedOption ? (
+    <div className="flex items-center">
+      {selectedOption.label}
+      {"isSupervisor" in selectedOption && selectedOption.isSupervisor && (
+        <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+          S
+        </span>
+      )}
+    </div>
+  ) : (
+    placeholder
+  );
 
   return (
     <div className={`relative ${className}`} ref={selectRef}>
       <button
-        id={id} // Pass id to the button
+        id={id}
         type="button"
         onClick={handleToggle}
         className="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus:ring-blue-500"
@@ -109,7 +168,14 @@ const CustomSelect = ({
                 option.value === value ? "font-semibold" : ""
               }`}
             >
-              {option.label}
+              <div className="flex items-center">
+                {option.label}
+                {"isSupervisor" in option && option.isSupervisor && (
+                  <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+                    S
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -123,30 +189,135 @@ export default function CreateVacationForm({
   onOpenChange,
 }: CreateVacationFormProps) {
   const [internalOpen, setInternalOpen] = useState(open);
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const tomorrow = addDays(new Date(), 1);
+  const dayAfterTomorrow = addDays(new Date(), 2);
+  const [startDate, setStartDate] = useState<Date>(tomorrow);
+  const [endDate, setEndDate] = useState<Date>(dayAfterTomorrow);
   const [employee, setEmployee] = useState("");
   const [leaveType, setLeaveType] = useState("");
   const [reason, setReason] = useState("");
-  const [eligibleDays, setEligibleDays] = useState("40 days"); // New state for eligible days
+  const [peopleOptions, setPeopleOptions] = useState<PersonOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<PersonOption | null>(null);
 
   const isDialogOpen = onOpenChange ? open : internalOpen;
+
+  useEffect(() => {
+    const fetchPeopleData = async () => {
+      try {
+        setLoading(true);
+
+        const [employeesRes, supervisorsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`),
+          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`)
+        ]);
+
+        if (!employeesRes.ok || !supervisorsRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const employeesData = await employeesRes.json();
+        const supervisorsData = await supervisorsRes.json();
+
+        const employeeOptions = employeesData.data.map((emp: Employee) => ({
+          value: emp.id,
+          label: `${emp.firstName} ${emp.lastName}`,
+          isSupervisor: false,
+          originalData: emp
+        }));
+
+        const supervisorOptions = supervisorsData.data.map((sup: Supervisor) => ({
+          value: sup.id,
+          label: sup.fullName,
+          isSupervisor: true,
+          originalData: sup
+        }));
+
+        setPeopleOptions([...employeeOptions, ...supervisorOptions]);
+      } catch (error) {
+        console.error('Error fetching people data:', error);
+        setError('Failed to load employee/supervisor data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isDialogOpen) {
+      fetchPeopleData();
+    }
+  }, [isDialogOpen]);
+
+  useEffect(() => {
+    if (startDate) {
+      const newEndDate = addDays(startDate, 1);
+      setEndDate(newEndDate);
+    }
+  }, [startDate]);
 
   const closeDialog = () => {
     onOpenChange?.(false);
     setInternalOpen(false);
+    setError(null);
+    setEmployee("");
+    setLeaveType("");
+    setReason("");
+    setSelectedPerson(null);
   };
 
-  const handleSubmit = () => {
-    console.log({
-      employee,
-      leaveType,
-      startDate,
-      endDate,
-      eligibleDays, // Include in console log
-      reason,
-    });
-    closeDialog();
+  const handleEmployeeSelect = (value: string) => {
+    setEmployee(value);
+    const person = peopleOptions.find(p => p.value === value);
+    setSelectedPerson(person || null);
+  };
+
+  const handleSubmit = async () => {
+    if (!employee || !leaveType || !startDate || !endDate || !reason || !selectedPerson) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const apiUrl = selectedPerson.isSupervisor
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;
+
+      const requestBody = {
+        leaveType,
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+        reason
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create vacation');
+      }
+
+      const result = await response.json();
+      console.log('Vacation created successfully:', result);
+      closeDialog();
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error('Error creating vacation:', err);
+        setError(err.message || 'Failed to create vacation. Please try again.');
+      } else {
+        console.error('Unknown error:', err);
+        setError('An unknown error occurred. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -155,30 +326,27 @@ export default function CreateVacationForm({
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : undefined;
-    setStartDate(date);
+    if (date) {
+      setStartDate(date);
+    }
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : undefined;
-    setEndDate(date);
+    if (date && startDate && date > startDate) {
+      setEndDate(date);
+    }
   };
 
-  const handleEligibleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEligibleDays(e.target.value);
-  };
-
-  const employeeOptions = [
-    { value: "john-doe", label: "John Doe" },
-    { value: "jane-smith", label: "Jane Smith" },
-    { value: "mike-johnson", label: "Mike Johnson" },
+  const leaveTypeOptions: LeaveTypeOption[] = [
+    { value: "Annual Leave", label: "Annual Leave" },
+    { value: "Sick Leave", label: "Sick Leave" },
+    { value: "Personal Leave", label: "Personal Leave" },
+    { value: "Emergency Leave", label: "Emergency Leave" },
   ];
 
-  const leaveTypeOptions = [
-    { value: "annual", label: "Annual Leave" },
-    { value: "sick", label: "Sick Leave" },
-    { value: "personal", label: "Personal Leave" },
-    { value: "maternity", label: "Maternity Leave" },
-  ];
+  const minStartDate = format(tomorrow, "yyyy-MM-dd");
+  const minEndDate = startDate ? format(addDays(startDate, 1), "yyyy-MM-dd") : minStartDate;
 
   return (
     <CustomModal isOpen={isDialogOpen} onClose={closeDialog}>
@@ -197,7 +365,11 @@ export default function CreateVacationForm({
         </div>
       </div>
       <div className="px-6 pt-6 pb-0 space-y-6">
-        {/* Employee and Leave Type */}
+        {error && (
+          <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800">
+            {error}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <label
@@ -206,13 +378,17 @@ export default function CreateVacationForm({
             >
               Employee
             </label>
-            <CustomSelect
-              id="employee-select"
-              value={employee}
-              onValueChange={setEmployee}
-              placeholder="Select person"
-              options={employeeOptions}
-            />
+            {loading ? (
+              <div className="h-10 w-full rounded-md border border-gray-300 bg-gray-100 animate-pulse dark:border-gray-600 dark:bg-gray-700"></div>
+            ) : (
+              <CustomSelect
+                id="employee-select"
+                value={employee}
+                onValueChange={handleEmployeeSelect}
+                placeholder="Select person"
+                options={peopleOptions}
+              />
+            )}
           </div>
           <div className="space-y-2">
             <label
@@ -230,7 +406,6 @@ export default function CreateVacationForm({
             />
           </div>
         </div>
-        {/* Start Date and End Date */}
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <label
@@ -242,6 +417,7 @@ export default function CreateVacationForm({
             <input
               id="start-date"
               type="date"
+              min={minStartDate}
               value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
               onChange={handleStartDateChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -257,43 +433,13 @@ export default function CreateVacationForm({
             <input
               id="end-date"
               type="date"
+              min={minEndDate}
               value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
               onChange={handleEndDateChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             />
           </div>
         </div>
-        {/* Eligible Days and Remaining Days */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label
-              htmlFor="eligible-days"
-              className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              Eligible Days
-            </label>
-            <input
-              id="eligible-days"
-              value={eligibleDays} // Bind to state
-              onChange={handleEligibleDaysChange} // Add onChange handler
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div className="space-y-2">
-            <label
-              htmlFor="remaining-days"
-              className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              Remaining Days
-            </label>
-            <input
-              id="remaining-days"
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-        </div>
-        {/* Reason for Leave */}
         <div className="space-y-2">
           <label
             htmlFor="reason-for-leave"
@@ -310,21 +456,22 @@ export default function CreateVacationForm({
           />
         </div>
       </div>
-      {/* Footer */}
       <div className="flex justify-end items-center gap-4 px-6 py-4 border-t border-gray-200 bg-gray-100 dark:bg-gray-900 dark:border-gray-700">
         <button
           type="button"
           className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white"
           onClick={handleCancel}
+          disabled={isSubmitting}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 hover:bg-blue-700 text-white h-10 px-4 py-2"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 hover:bg-blue-700 text-white h-10 px-4 py-2 disabled:bg-blue-400"
           onClick={handleSubmit}
+          disabled={isSubmitting}
         >
-          Submit
+          {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
       </div>
     </CustomModal>
