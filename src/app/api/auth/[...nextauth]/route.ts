@@ -1,7 +1,7 @@
 import NextAuth from "next-auth/next"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-export default NextAuth({
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -92,3 +92,5 @@ export default NextAuth({
     strategy: "jwt",
   },
 })
+
+export { handler as GET, handler as POST }

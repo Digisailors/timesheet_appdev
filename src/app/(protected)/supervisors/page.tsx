@@ -4,6 +4,7 @@ import Sidebar from "@/components/ui/sidebar";
 import Navbar from "@/components/ui/navbar";
 import Supervisor from "@/components/supervisors/supervisors"; // Replace with your actual supervisor component
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { getSession } from "@/lib/api";
 
 export default function SupervisorPage() {
   const [userData, setUserData] = useState({
@@ -15,8 +16,7 @@ export default function SupervisorPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/session');
-        const data = await response.json();
+        const data = await getSession();
         
         if (data.user) {
           setUserData({

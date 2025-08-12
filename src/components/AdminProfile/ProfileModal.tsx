@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { getSession } from '@/lib/api';
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -24,8 +25,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/session');
-        const data = await response.json();
+        const data = await getSession();
         
         if (data.user) {
           // Map API response to your UserData format
