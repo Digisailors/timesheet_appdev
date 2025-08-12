@@ -14,6 +14,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 ```
 
 Generate a secure NEXTAUTH_SECRET using:
+
 ```bash
 openssl rand -base64 32
 ```
