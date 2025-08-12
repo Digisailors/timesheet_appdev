@@ -11,6 +11,7 @@ import {
   House,
   Baby,
 } from "lucide-react";
+import { LucideIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
+
+type IconType = LucideIcon;
 
 interface VacationEntry {
   id: string;
@@ -72,6 +75,14 @@ interface ApiResponse {
   }>;
 }
 
+interface SummaryData {
+  title: string;
+  count: number;
+  icon: IconType;
+  borderColor: string;
+  iconColor: string;
+}
+
 export default function VacationManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -80,13 +91,13 @@ export default function VacationManagement() {
   const [selectedVacation, setSelectedVacation] = useState<VacationEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [vacationData, setVacationData] = useState<VacationEntry[]>([]);
+  const [summaryData, setSummaryData] = useState<SummaryData[]>([]);
 
   useEffect(() => {
     const fetchVacationData = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`);
         const result: ApiResponse = await response.json();
-
         if (result.success) {
           const formattedData = result.data.map((item) => {
             const name = item.employee
@@ -94,13 +105,11 @@ export default function VacationManagement() {
               : item.supervisor
               ? item.supervisor.fullName
               : "Unknown";
-
             const location = item.employee
               ? item.employee.specialization
               : item.supervisor
               ? item.supervisor.specialization
               : "Unknown";
-
             return {
               id: item.id,
               name,
@@ -121,6 +130,34 @@ export default function VacationManagement() {
               specialization: location,
             };
           });
+
+          const totalEmployees = formattedData.length;
+          const paidVacation = formattedData.filter(employee => employee.status === "Paid").length;
+          const unpaidVacation = formattedData.filter(employee => employee.status === "Unpaid").length;
+
+          setSummaryData([
+            {
+              title: "Total Employees on vacation",
+              count: totalEmployees,
+              icon: TreePalm,
+              borderColor: "#22c55e",
+              iconColor: "#22c55e",
+            },
+            {
+              title: "Paid Vacation",
+              count: paidVacation,
+              icon: CreditCard,
+              borderColor: "#f59e0b",
+              iconColor: "#f59e0b",
+            },
+            {
+              title: "Unpaid Vacation",
+              count: unpaidVacation,
+              icon: X,
+              borderColor: "#ef4444",
+              iconColor: "#ef4444",
+            },
+          ]);
 
           setVacationData(formattedData);
         }
@@ -167,7 +204,7 @@ export default function VacationManagement() {
       .toUpperCase();
   };
 
-  const getLeaveTypeIcon = (leaveType: string) => {
+  const getLeaveTypeIcon = (leaveType: string): IconType => {
     switch (leaveType.toLowerCase()) {
       case "personal leave":
         return House;
@@ -403,27 +440,3 @@ export default function VacationManagement() {
     </div>
   );
 }
-
-const summaryData = [
-  {
-    title: "Total Employees on vacation",
-    count: 2,
-    icon: TreePalm,
-    borderColor: "#22c55e",
-    iconColor: "#22c55e",
-  },
-  {
-    title: "Paid Vacation",
-    count: 1,
-    icon: CreditCard,
-    borderColor: "#f59e0b",
-    iconColor: "#f59e0b",
-  },
-  {
-    title: "Unpaid Vacation",
-    count: 1,
-    icon: X,
-    borderColor: "#ef4444",
-    iconColor: "#ef4444",
-  },
-];
