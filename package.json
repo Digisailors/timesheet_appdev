@@ -27,6 +27,8 @@
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "form-data": "^4.0.4",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.525.0",
     "next": "^15.4.5",
     "next-auth": "^4.24.11",
@@ -38,7 +40,8 @@
     "react-hot-toast": "^2.5.2",
     "react-toastify": "^11.0.5",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
