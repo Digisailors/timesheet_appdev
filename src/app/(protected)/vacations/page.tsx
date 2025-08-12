@@ -1,11 +1,43 @@
 'use client';
-
+import { useState, useEffect } from 'react';
 import Sidebar from "@/components/ui/sidebar";
 import Navbar from "@/components/ui/navbar";
 import VacationPage from "@/components/vacations/VacationPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function DashboardPage() {
+  const [userData, setUserData] = useState({
+    name: 'Loading...',
+    role: 'Loading...',
+    initial: 'L'
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/session');
+        const data = await response.json();
+        
+        if (data.user) {
+          setUserData({
+            name: data.user.name,
+            role: '',
+            initial: data.user.name.charAt(0).toUpperCase()
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUserData({
+          name: 'User',
+          role: '',
+          initial: 'U'
+        });
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   return (
     <ProtectedRoute>
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
@@ -18,9 +50,9 @@ export default function DashboardPage() {
         <div className="sticky top-0 z-30">
           <Navbar
             title="Vacations Management"
-            userName="Admin User"
-            userRole="Site Manager"
-            userInitial="A"
+            userName={userData.name}
+            userRole={userData.role}
+            userInitial={userData.initial}
           />
         </div>
 

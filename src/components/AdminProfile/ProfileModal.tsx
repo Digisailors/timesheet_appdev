@@ -31,10 +31,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
           // Map API response to your UserData format
           const mappedUserData: UserData = {
             name: data.user.name,
-            role: 'Site Manager', // You can modify this based on your needs
+            role: '', // You can modify this based on your needs
             email: data.user.email,
             phone: data.user.phoneNumber || 'Not provided',
-            department: 'IT Administration', // You can modify this based on your needs
+            department: '', // You can modify this based on your needs
             joinDate: new Date(data.user.createdAt).toLocaleDateString('en-GB', {
               day: '2-digit',
               month: 'short',
@@ -59,10 +59,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
         // Fallback to default data if API fails
         setUserData({
           name: 'User',
-          role: 'Site Manager',
+          role: '',
           email: 'user@company.com',
           phone: 'Not provided',
-          department: 'IT Administration',
+          department: '',
           joinDate: 'N/A',
           lastLogin: 'N/A',
           permissions: ['Limited Access'],
@@ -116,17 +116,17 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
         <div className="font-medium text-gray-700 dark:text-gray-300">Phone:</div>
         <div className="text-gray-600 dark:text-gray-400">{userData.phone}</div>
 
-        <div className="font-medium text-gray-700 dark:text-gray-300">Location:</div>
-        <div className="text-gray-600 dark:text-gray-400">{userData.location}</div>
+        {/* <div className="font-medium text-gray-700 dark:text-gray-300">Location:</div>
+        <div className="text-gray-600 dark:text-gray-400">{userData.location}</div> */}
 
-        <div className="font-medium text-gray-700 dark:text-gray-300">Join Date:</div>
-        <div className="text-gray-600 dark:text-gray-400">{userData.joinDate}</div>
+        {/* <div className="font-medium text-gray-700 dark:text-gray-300">Join Date:</div>
+        <div className="text-gray-600 dark:text-gray-400">{userData.joinDate}</div> */}
 
-        <div className="font-medium text-gray-700 dark:text-gray-300">Last Login:</div>
-        <div className="text-gray-600 dark:text-gray-400">{userData.lastLogin}</div>
+        {/* <div className="font-medium text-gray-700 dark:text-gray-300">Last Login:</div>
+        <div className="text-gray-600 dark:text-gray-400">{userData.lastLogin}</div> */}
       </div>
 
-      <div className="border-t border-gray-200 dark:border-slate-600 pt-4">
+      {/* <div className="border-t border-gray-200 dark:border-slate-600 pt-4">
         <div className="flex items-center mb-2">
           <Shield className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
           <span className="font-medium text-gray-700 dark:text-gray-300">Permissions</span>
@@ -141,7 +141,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
             </span>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
