@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ProfileModalProps {
   onClose: () => void;
