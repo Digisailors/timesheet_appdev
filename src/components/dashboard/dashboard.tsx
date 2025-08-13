@@ -7,7 +7,6 @@ import {
   CalendarDaysIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  // CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import StatCard from './StatCard';
 import ProjectHighlights from './ProjectHighlights';
@@ -72,8 +71,8 @@ type DayOfWeek = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
 
 const getCurrentWeekRange = () => {
   const now = new Date();
-  const day = now.getDay(); // 0 (Sun) to 6 (Sat)
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(now.setDate(diff));
   monday.setHours(0, 0, 0, 0);
   const sunday = new Date(monday);
@@ -82,14 +81,19 @@ const getCurrentWeekRange = () => {
   return { start: monday, end: sunday };
 };
 
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
   const [stats, setStats] = useState({
     totalTimesheets: 0,
     totalEmployees: 0,
-    activeLocations: 5,
+    activeLocations: 0,
     daysWithTimesheets: 0,
     totalOvertimeHours: 0,
-    missingEntries: 0
+    missingEntries: 0,
   });
   const [weeklyStats, setWeeklyStats] = useState({
     totalEntries: 0,
@@ -115,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       employees: 6,
       workHours: 48.0,
       otHours: 9.0,
-      lastUpdated: '5/20/2025'
+      lastUpdated: '5/20/2025',
     },
     {
       name: 'Bridge Renovation',
@@ -124,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       employees: 6,
       workHours: 48.0,
       otHours: 5.0,
-      lastUpdated: '5/18/2025'
+      lastUpdated: '5/18/2025',
     },
     {
       name: 'Project Beta',
@@ -133,8 +137,8 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       employees: 4,
       workHours: 32.0,
       otHours: 2.0,
-      lastUpdated: '5/21/2025'
-    }
+      lastUpdated: '5/21/2025',
+    },
   ];
 
   const recentActivity = [
@@ -142,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     { id: '2', user: 'Jane Smith', action: 'checked out', time: 'Today, 5:15 PM', type: 'checkout' },
     { id: '3', user: 'Robert Johnson', action: 'submitted timesheet', time: 'Today, 5:30 PM', type: 'timesheet' },
     { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
-    { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' }
+    { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' },
   ];
 
   useEffect(() => {
@@ -153,9 +157,9 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       try {
         const response = await fetch(`${cleanBaseUrl}/employees/all`);
         const data = await response.json();
-        setStats(prevStats => ({
+        setStats((prevStats) => ({
           ...prevStats,
-          totalEmployees: Array.isArray(data.data) ? data.data.length : 0
+          totalEmployees: Array.isArray(data.data) ? data.data.length : 0,
         }));
       } catch (error) {
         console.error("Error fetching employees:", error);
@@ -168,22 +172,48 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
           const timesheets = result.data as Timesheet[];
-          const { start, end } = getCurrentWeekRange();
+          const today = getTodayDate();
 
-          // Filter for current week
+          // Filter timesheets for today
+          const todayTimesheets = timesheets.filter(
+            (ts: Timesheet) => ts.timesheetDate === today
+          );
+
+          // Extract unique locations for today
+          const uniqueLocations = new Set<string>();
+          todayTimesheets.forEach((ts: Timesheet) => {
+            if (ts.location) {
+              uniqueLocations.add(ts.location);
+            }
+          });
+
+          // Update stats with the count of unique locations
+          setStats((prev) => ({
+            ...prev,
+            activeLocations: uniqueLocations.size,
+          }));
+
+          // Calculate total overtime hours for all time
+          const totalOvertimeHoursAllTime = timesheets.reduce(
+            (sum: number, ts: Timesheet) => sum + parseFloat(ts.overtime || '0'),
+            0
+          );
+
+          // Rest of your existing logic for weekly stats
+          const { start, end } = getCurrentWeekRange();
           const currentWeekTimesheets = timesheets.filter((ts: Timesheet) => {
             const tsDate = new Date(ts.timesheetDate);
             return tsDate >= start && tsDate <= end;
           });
-
-          // Calculate stats
           const totalEntries = currentWeekTimesheets.length;
-          const totalWorkHours = currentWeekTimesheets.reduce((sum: number, ts: Timesheet) =>
-            sum + parseFloat(ts.totalDutyHrs || '0'), 0);
-          const totalOvertimeHours = currentWeekTimesheets.reduce((sum: number, ts: Timesheet) =>
-            sum + parseFloat(ts.overtime || '0'), 0);
-
-          // Get unique employee IDs for active employees
+          const totalWorkHours = currentWeekTimesheets.reduce(
+            (sum: number, ts: Timesheet) => sum + parseFloat(ts.totalDutyHrs || '0'),
+            0
+          );
+          const totalOvertimeHoursWeekly = currentWeekTimesheets.reduce(
+            (sum: number, ts: Timesheet) => sum + parseFloat(ts.overtime || '0'),
+            0
+          );
           const uniqueEmployeeIds = new Set<string>();
           currentWeekTimesheets.forEach((ts: Timesheet) => {
             if (ts.employees) {
@@ -194,11 +224,8 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
             }
           });
           const activeEmployees = uniqueEmployeeIds.size;
-
-          // Calculate average (normalHrs + overtime) per day
-          const dayCounts: Record<DayOfWeek, number> = { 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0 };
-          const dayTotals: Record<DayOfWeek, number> = { 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0 };
-
+          const dayCounts: Record<DayOfWeek, number> = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+          const dayTotals: Record<DayOfWeek, number> = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
           currentWeekTimesheets.forEach((ts: Timesheet) => {
             const day = new Date(ts.timesheetDate).toLocaleDateString('en-US', { weekday: 'short' }) as DayOfWeek;
             let totalHrs = 0;
@@ -213,30 +240,30 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
             dayTotals[day] += totalHrs;
             dayCounts[day]++;
           });
-
           const avgData: Record<DayOfWeek, number> = {
-            'Sun': dayCounts['Sun'] ? dayTotals['Sun'] / dayCounts['Sun'] : 0,
-            'Mon': dayCounts['Mon'] ? dayTotals['Mon'] / dayCounts['Mon'] : 0,
-            'Tue': dayCounts['Tue'] ? dayTotals['Tue'] / dayCounts['Tue'] : 0,
-            'Wed': dayCounts['Wed'] ? dayTotals['Wed'] / dayCounts['Wed'] : 0,
-            'Thu': dayCounts['Thu'] ? dayTotals['Thu'] / dayCounts['Thu'] : 0,
-            'Fri': dayCounts['Fri'] ? dayTotals['Fri'] / dayCounts['Fri'] : 0,
-            'Sat': dayCounts['Sat'] ? dayTotals['Sat'] / dayCounts['Sat'] : 0,
+            Sun: dayCounts.Sun ? dayTotals.Sun / dayCounts.Sun : 0,
+            Mon: dayCounts.Mon ? dayTotals.Mon / dayCounts.Mon : 0,
+            Tue: dayCounts.Tue ? dayTotals.Tue / dayCounts.Tue : 0,
+            Wed: dayCounts.Wed ? dayTotals.Wed / dayCounts.Wed : 0,
+            Thu: dayCounts.Thu ? dayTotals.Thu / dayCounts.Thu : 0,
+            Fri: dayCounts.Fri ? dayTotals.Fri / dayCounts.Fri : 0,
+            Sat: dayCounts.Sat ? dayTotals.Sat / dayCounts.Sat : 0,
           };
 
-          // Update state
-          setStats(prev => ({
+          setStats((prev) => ({
             ...prev,
             totalTimesheets: timesheets.length,
-            totalOvertimeHours: parseFloat(totalOvertimeHours.toFixed(2)),
+            totalOvertimeHours: parseFloat(totalOvertimeHoursAllTime.toFixed(2)),
             daysWithTimesheets: new Set(timesheets.map((ts: Timesheet) => ts.timesheetDate)).size,
           }));
+
           setWeeklyStats({
             totalEntries,
             workHours: parseFloat(totalWorkHours.toFixed(2)),
-            otHours: parseFloat(totalOvertimeHours.toFixed(2)),
+            otHours: parseFloat(totalOvertimeHoursWeekly.toFixed(2)),
             activeEmployees,
           });
+
           setTimesheetData(avgData);
         }
       } catch (error) {
@@ -252,7 +279,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
           const missingEntries = result.data.filter(
             (emp: { isAssignedToday: boolean }) => !emp.isAssignedToday
           ).length;
-          setStats(prev => ({
+          setStats((prev) => ({
             ...prev,
             missingEntries,
           }));

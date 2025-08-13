@@ -1,5 +1,4 @@
 "use client";
-
 import React from 'react';
 import {
   ClipboardDocumentListIcon,
@@ -7,7 +6,7 @@ import {
   CheckIcon,
   ClockIcon,
   EyeIcon,
-  ChevronRightIcon
+  // ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 interface ActivityItem {
@@ -42,7 +41,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ recentActivity }) => {
 
   return (
     <div>
-      <div>
+      {/* <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
           <ClipboardDocumentListIcon className="w-5 h-5 mr-2" />
           Recent Activity
@@ -70,7 +69,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ recentActivity }) => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
