@@ -12,7 +12,7 @@ import StatCard from './StatCard';
 import ProjectHighlights from './ProjectHighlights';
 import WeeklySnapshot from './WeeklySnapshot';
 import TimesheetActivity from './TimesheetActivity';
-import RecentActivity from './RecentActivity';
+// import RecentActivity from './RecentActivity';
 import { DashboardProps } from './types';
 
 interface Timesheet {
@@ -141,13 +141,13 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     },
   ];
 
-  const recentActivity = [
-    { id: '1', user: 'John Doe', action: 'checked in', time: 'Today, 8:30 AM', type: 'checkin' },
-    { id: '2', user: 'Jane Smith', action: 'checked out', time: 'Today, 5:15 PM', type: 'checkout' },
-    { id: '3', user: 'Robert Johnson', action: 'submitted timesheet', time: 'Today, 5:30 PM', type: 'timesheet' },
-    { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
-    { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' },
-  ];
+  // const recentActivity = [
+  //   { id: '1', user: 'John Doe', action: 'checked in', time: 'Today, 8:30 AM', type: 'checkin' },
+  //   { id: '2', user: 'Jane Smith', action: 'checked out', time: 'Today, 5:15 PM', type: 'checkout' },
+  //   { id: '3', user: 'Robert Johnson', action: 'submitted timesheet', time: 'Today, 5:30 PM', type: 'timesheet' },
+  //   { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
+  //   { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' },
+  // ];
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -356,7 +356,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
           </div>
           <div className="space-y-6">
             <TimesheetActivity timesheetData={timesheetData} />
-            <RecentActivity recentActivity={recentActivity} />
+            {/* <RecentActivity recentActivity={recentActivity} /> */}
           </div>
         </div>
       </div>

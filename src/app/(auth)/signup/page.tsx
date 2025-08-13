@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, User, Phone } from "lucide-react";
+import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { Toaster } from "@/components/ui/Toaster"; 
+import { Toaster } from "@/components/ui/Toaster";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -21,9 +21,16 @@ export default function SignUpPage() {
     confirmPassword: "",
     agreeToTerms: false,
   });
-
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isEdgeBrowser, setIsEdgeBrowser] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent;
+    setIsEdgeBrowser(userAgent.includes("Edg"));
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,7 +54,6 @@ export default function SignUpPage() {
       toast.error("Please agree to the terms and conditions");
       return;
     }
-
     setIsLoading(true);
     try {
       const response = await fetch(
@@ -60,13 +66,12 @@ export default function SignUpPage() {
           body: JSON.stringify(formData),
         }
       );
-
       const data = await response.json();
       if (response.ok) {
         toast.success("Account created successfully!");
         setTimeout(() => {
           router.push("/login");
-        }, 2000); // Redirect after 2 seconds
+        }, 2000);
       } else {
         toast.error(data.message || "Something went wrong. Please try again.");
       }
@@ -79,34 +84,37 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
       <Toaster />
       {/* Left side - Image and branding */}
-      <div className="hidden lg:flex lg:w-1/2 justify-center items-center">
-        <Image
-          src="/assets/auth/login.png"
-          width={600}
-          height={600}
-          alt="Login Image"
-        />
+      <div className="hidden lg:flex lg:w-1/2 justify-center items-center h-screen bg-gray-100">
+        <div className="relative w-full h-full flex justify-center items-center">
+          <Image
+            src="/assets/auth/login.png"
+            fill
+            style={{ objectFit: "contain" }}
+            alt="Sign Up Image"
+            priority
+          />
+        </div>
       </div>
       {/* Right side - Sign up form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 h-screen">
         <div className="w-full max-w-md">
           {/* Welcome text */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
               Create Account
             </h1>
             <p className="text-gray-600">Sign up for Time Sheet App</p>
           </div>
-          <form onSubmit={handleSignUp} className="space-y-6">
+          <form onSubmit={handleSignUp} className="space-y-4">
             {/* Name fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label
                   htmlFor="firstName"
-                  className="text-sm font-medium text-gray-700 mb-2 block"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
                 >
                   First Name
                 </Label>
@@ -119,7 +127,7 @@ export default function SignUpPage() {
                     placeholder="First name"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                    className="pl-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                     required
                     disabled={isLoading}
                   />
@@ -128,7 +136,7 @@ export default function SignUpPage() {
               <div>
                 <Label
                   htmlFor="lastName"
-                  className="text-sm font-medium text-gray-700 mb-2 block"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
                 >
                   Last Name
                 </Label>
@@ -139,7 +147,7 @@ export default function SignUpPage() {
                   placeholder="Last name"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -149,7 +157,7 @@ export default function SignUpPage() {
             <div>
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-gray-700 mb-2 block"
+                className="text-sm font-medium text-gray-700 mb-1 block"
               >
                 Email
               </Label>
@@ -162,7 +170,7 @@ export default function SignUpPage() {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                  className="pl-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -172,7 +180,7 @@ export default function SignUpPage() {
             <div>
               <Label
                 htmlFor="phoneNumber"
-                className="text-sm font-medium text-gray-700 mb-2 block"
+                className="text-sm font-medium text-gray-700 mb-1 block"
               >
                 Phone Number
               </Label>
@@ -185,7 +193,7 @@ export default function SignUpPage() {
                   placeholder="Enter your phone number"
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                  className="pl-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
@@ -195,7 +203,7 @@ export default function SignUpPage() {
             <div>
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-gray-700 mb-2 block"
+                className="text-sm font-medium text-gray-700 mb-1 block"
               >
                 Password
               </Label>
@@ -204,20 +212,29 @@ export default function SignUpPage() {
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                  className="pl-10 pr-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
+                {!isEdgeBrowser && (
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                )}
               </div>
             </div>
             <div>
               <Label
                 htmlFor="confirmPassword"
-                className="text-sm font-medium text-gray-700 mb-2 block"
+                className="text-sm font-medium text-gray-700 mb-1 block"
               >
                 Confirm Password
               </Label>
@@ -226,18 +243,27 @@ export default function SignUpPage() {
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="pl-12 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
+                  className="pl-10 pr-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black"
                   required
                   disabled={isLoading}
                 />
+                {!isEdgeBrowser && (
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                )}
               </div>
             </div>
             {/* Terms checkbox */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mt-2">
               <Checkbox
                 id="terms"
                 checked={formData.agreeToTerms}
@@ -251,13 +277,13 @@ export default function SignUpPage() {
             {/* Create account button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+              className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg mt-2"
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
             {/* Sign in link */}
-            <div className="text-center">
+            <div className="text-center mt-3">
               <span className="text-sm text-gray-600">
                 Already have an account?{" "}
               </span>
