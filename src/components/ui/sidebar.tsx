@@ -59,8 +59,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '', onItemClick }) => {
   return (
     <div className={`bg-blue-800 dark:bg-gray-900 text-white dark:text-gray-200 h-screen w-64 flex flex-col fixed left-0 top-0 z-40 ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-blue-700 dark:border-gray-700 flex-shrink-0">
-        <h1 className="text-xl font-semibold">Timesheet Admin</h1>
+      <div className="px-6 py-4 border-b border-blue-700 dark:border-gray-700 flex-shrink-0">
+        <h1 className="text-2xl font-semibold">Timesheet Admin</h1>
       </div>
 
       {/* Navigation */}
