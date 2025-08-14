@@ -6,7 +6,7 @@ export interface ProjectFormData {
   code: string;
   locations: string[];
   typesOfWork: string[];
-  projectCodes: string[]; // Add individual project codes
+  projectCodes: string[];
   description: string;
   startDate: string;
   endDate: string;
@@ -49,7 +49,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     clientName: '',
     PoContractNumber: '',
   });
-
   const [errors, setErrors] = useState<Partial<Record<keyof ProjectFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectSets, setProjectSets] = useState([{ location: '', typeOfWork: '', projectCode: '' }]);
@@ -70,73 +69,57 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
         clientName: initialData.clientName || '',
         PoContractNumber: initialData.PoContractNumber || '',
       });
-      
-             // Initialize project sets based on initial data
-       if (initialData.locations && initialData.typesOfWork) {
-         const maxLength = Math.max(initialData.locations.length, initialData.typesOfWork.length);
-         const newProjectSets = [];
-         for (let i = 0; i < maxLength; i++) {
-           newProjectSets.push({
-             location: initialData.locations[i] || '',
-             typeOfWork: initialData.typesOfWork[i] || '',
-             projectCode: initialData.projectCodes?.[i] || initialData.code || ''
-           });
-         }
-         setProjectSets(newProjectSets.length > 0 ? newProjectSets : [{ location: '', typeOfWork: '', projectCode: '' }]);
-       } else {
-         setProjectSets([{ location: '', typeOfWork: '', projectCode: '' }]);
-       }
-      
+
+      // Initialize project sets based on initial data
+      if (initialData.locations && initialData.typesOfWork) {
+        const maxLength = Math.max(initialData.locations.length, initialData.typesOfWork.length);
+        const newProjectSets = [];
+        for (let i = 0; i < maxLength; i++) {
+          newProjectSets.push({
+            location: initialData.locations[i] || '',
+            typeOfWork: initialData.typesOfWork[i] || '',
+            projectCode: initialData.projectCodes?.[i] || initialData.code || ''
+          });
+        }
+        setProjectSets(newProjectSets.length > 0 ? newProjectSets : [{ location: '', typeOfWork: '', projectCode: '' }]);
+      } else {
+        setProjectSets([{ location: '', typeOfWork: '', projectCode: '' }]);
+      }
+
       setErrors({});
     }
   }, [isOpen, initialData]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProjectFormData, string>> = {};
-    if (!formData.name.trim()) newErrors.name = 'Project name is required';
-    if (!formData.clientName.trim()) newErrors.clientName = 'Client name is required';
-    
-    // Validate project sets
-    const hasEmptyLocation = projectSets.some(set => !set.location.trim());
-    const hasEmptyTypeOfWork = projectSets.some(set => !set.typeOfWork.trim());
-    const hasEmptyProjectCode = projectSets.some(set => !set.projectCode.trim());
-    
-    if (hasEmptyLocation) {
-      newErrors.locations = 'All location fields are required';
-    }
-    if (hasEmptyTypeOfWork) {
-      newErrors.typesOfWork = 'All type of work fields are required';
-    }
-    if (hasEmptyProjectCode) {
-      newErrors.code = 'All project code fields are required';
-    }
-    
-    if (!formData.startDate) newErrors.startDate = 'Start date is required';
-    if (!formData.budget.trim()) {
-      newErrors.budget = 'Budget is required';
-    } else if (isNaN(Number(formData.budget))) {
+
+    // Only validate budget if provided
+    if (formData.budget.trim() && isNaN(Number(formData.budget))) {
       newErrors.budget = 'Budget must be a valid number';
     }
-    if (formData.endDate && formData.startDate && new Date(formData.endDate) < new Date(formData.startDate)) {
+
+    // Only validate dates if provided
+    if (formData.startDate && formData.endDate && new Date(formData.endDate) < new Date(formData.startDate)) {
       newErrors.endDate = 'End date must be after start date';
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (isViewMode) return;
-    
+
     // Update formData with project sets data before validation
     const updatedFormData = {
       ...formData,
       locations: projectSets.map(set => set.location),
       typesOfWork: projectSets.map(set => set.typeOfWork),
-      projectCodes: projectSets.map(set => set.projectCode), // Use individual project codes
-      code: projectSets[0]?.projectCode || '' // Using first project code as main code
+      projectCodes: projectSets.map(set => set.projectCode),
+      code: projectSets[0]?.projectCode || ''
     };
     setFormData(updatedFormData);
-    
+
     if (!validateForm()) return;
     setIsSubmitting(true);
     await onSubmit(updatedFormData);
@@ -186,17 +169,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
     const newProjectSets = [...projectSets];
     newProjectSets[index][field] = value;
     setProjectSets(newProjectSets);
-    
-    // Clear related errors when user starts typing
-    if (field === 'location' && errors.locations) {
-      setErrors(prev => ({ ...prev, locations: undefined }));
-    }
-    if (field === 'typeOfWork' && errors.typesOfWork) {
-      setErrors(prev => ({ ...prev, typesOfWork: undefined }));
-    }
-    if (field === 'projectCode' && errors.code) {
-      setErrors(prev => ({ ...prev, code: undefined }));
-    }
   };
 
   if (!isOpen) return null;
@@ -221,13 +193,12 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
             <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
-
         {/* Form Content */}
         <div className="space-y-4 sm:space-y-6">
           {/* Client Name and Project Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client Name*</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client Name</label>
               <input
                 type="text"
                 value={formData.clientName}
@@ -240,7 +211,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.clientName && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.clientName}</p>}
             </div>
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name*</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name</label>
               <input
                 type="text"
                 value={formData.name}
@@ -253,20 +224,17 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.name && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.name}</p>}
             </div>
           </div>
-
           {/* Project Sets Section */}
           <div className="space-y-3 sm:space-y-4">
             <div>
               <h3 className="text-base sm:text-lg font-medium">Project Details</h3>
             </div>
-
             {projectSets.map((projectSet, index) => (
               <div key={index} className="border rounded-md p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                {/* Mobile: Stack all fields vertically */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div className="sm:col-span-2 lg:col-span-1">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Location* {index > 0 && `(${index + 1})`}
+                      Location {index > 0 && `(${index + 1})`}
                     </label>
                     <input
                       type="text"
@@ -278,10 +246,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                       readOnly={isViewMode}
                     />
                   </div>
-                  
+
                   <div className="sm:col-span-2 lg:col-span-1">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Type of Work* {index > 0 && `(${index + 1})`}
+                      Type of Work {index > 0 && `(${index + 1})`}
                     </label>
                     <input
                       type="text"
@@ -293,11 +261,11 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                       readOnly={isViewMode}
                     />
                   </div>
-                  
+
                   <div className="flex flex-col sm:flex-row sm:items-end gap-2">
                     <div className="flex-1">
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Project Code* {index > 0 && `(${index + 1})`}
+                        Project Code {index > 0 && `(${index + 1})`}
                       </label>
                       <input
                         type="text"
@@ -322,8 +290,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 </div>
               </div>
             ))}
-
-            {/* Add and Save buttons - Mobile responsive */}
             {!isViewMode && (
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2 sm:gap-0">
                 <button
@@ -333,16 +299,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
                 >
                   Add
                 </button>
-               
               </div>
             )}
-
-            {/* Error messages for project sets */}
-            {errors.locations && <p className="text-red-500 text-xs sm:text-sm">{errors.locations}</p>}
-            {errors.typesOfWork && <p className="text-red-500 text-xs sm:text-sm">{errors.typesOfWork}</p>}
-            {errors.code && <p className="text-red-500 text-xs sm:text-sm">{errors.code}</p>}
           </div>
-
           {/* Po/Contract Number */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Po/Contract Number</label>
@@ -356,7 +315,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               readOnly={isViewMode}
             />
           </div>
-
           {/* Description */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
@@ -370,11 +328,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               readOnly={isViewMode}
             />
           </div>
-
           {/* Date Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date*</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
               <input
                 type="date"
                 value={formData.startDate}
@@ -400,11 +357,10 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {errors.endDate && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.endDate}</p>}
             </div>
           </div>
-
           {/* Budget and Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget ($)*</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Budget ($)</label>
               <input
                 type="text"
                 value={formData.budget}
@@ -431,7 +387,6 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
               </select>
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:space-x-3 sm:gap-0 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
