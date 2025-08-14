@@ -95,6 +95,8 @@ export default function VacationManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [vacationData, setVacationData] = useState<VacationEntry[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData[]>([]);
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [typeOptions, setTypeOptions] = useState<string[]>([]);
 
   const fetchVacationData = async () => {
     try {
@@ -132,13 +134,18 @@ export default function VacationManagement() {
             returnstatus: item.returnstatus,
           };
         });
-  
-        // Get current month and year
+
+        // Extract unique status and type values
+        const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus)));
+        const uniqueTypes = Array.from(new Set(response.data.data.map(item => item.leaveType)));
+
+        setStatusOptions(uniqueStatuses);
+        setTypeOptions(uniqueTypes);
+
+        // Summary logic
         const now = new Date();
-        const currentMonth = now.getMonth(); // 0-11
+        const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-  
-        // Filter data for this month
         const thisMonthData = formattedData.filter((employee) => {
           const startDate = new Date(employee.startDate);
           const endDate = new Date(employee.endDate);
@@ -147,17 +154,13 @@ export default function VacationManagement() {
             (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear)
           );
         });
-  
-        // Track unique employees/supervisors for this month
         const uniqueEmployeesThisMonth = new Set<string>();
         thisMonthData.forEach((employee) => {
           uniqueEmployeesThisMonth.add(employee.name);
         });
-  
-        // Count paid/unpaid vacations for this month
         const paidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Paid").length;
         const unpaidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Unpaid").length;
-  
+
         setSummaryData([
           {
             title: "Total Employees on vacation",
@@ -186,7 +189,7 @@ export default function VacationManagement() {
     } catch (error) {
       console.error("Error fetching vacation data:", error);
     }
-  };   
+  };
 
   useEffect(() => {
     fetchVacationData();
@@ -205,11 +208,10 @@ export default function VacationManagement() {
       employee.leaveType.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "paid" && employee.status === "Paid") ||
-      (statusFilter === "unpaid" && employee.status === "Unpaid");
+      employee.returnstatus.toLowerCase() === statusFilter.toLowerCase();
     const matchesType =
       typeFilter === "all" ||
-      employee.leaveType.toLowerCase().includes(typeFilter.toLowerCase());
+      employee.leaveType.toLowerCase() === typeFilter.toLowerCase();
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -317,39 +319,31 @@ export default function VacationManagement() {
               </div>
               <div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-10 border-gray-300">
-                    {statusFilter === "all" ? (
-                      <span className="text-black dark:text-white">
-                        All Status
-                      </span>
-                    ) : (
-                      <SelectValue />
-                    )}
+                  <SelectTrigger className="h-10 border-gray-300 text-black dark:text-white dark:bg-gray-800">
+                    <SelectValue placeholder="All Status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-800">
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status.toLowerCase()} className="dark:text-white">
+                        {status}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-10 border-gray-300">
-                    {typeFilter === "all" ? (
-                      <span className="text-black dark:text-white">
-                        All Types
-                      </span>
-                    ) : (
-                      <SelectValue />
-                    )}
+                  <SelectTrigger className="h-10 border-gray-300 text-black dark:text-white dark:bg-gray-800">
+                    <SelectValue placeholder="All Types" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-800">
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="annual">Annual Leave</SelectItem>
-                    <SelectItem value="sick">Sick Leave</SelectItem>
-                    <SelectItem value="personal">Personal Leave</SelectItem>
-                    <SelectItem value="maternity">Maternity Leave</SelectItem>
+                    {typeOptions.map((type) => (
+                      <SelectItem key={type} value={type.toLowerCase()} className="dark:text-white">
+                        {type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -365,7 +359,7 @@ export default function VacationManagement() {
           </CardContent>
         </Card>
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Employees on Vacation ({filteredData.length})
           </h2>
           <div className="space-y-4">
@@ -374,7 +368,7 @@ export default function VacationManagement() {
               return (
                 <Card
                   key={employee.id}
-                  className="hover:shadow-md transition-shadow"
+                  className="hover:shadow-md transition-shadow dark:bg-gray-800"
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -393,10 +387,10 @@ export default function VacationManagement() {
                           <h3 className="font-semibold text-gray-900 dark:text-white">
                             {employee.name}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-white">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
                             {employee.leaveType} • {employee.duration}
                           </p>
-                          <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block dark:text-white">
+                          <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block dark:text-white dark:border-gray-600">
                             {employee.location}
                           </p>
                         </div>
@@ -404,7 +398,7 @@ export default function VacationManagement() {
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <div className="flex flex-row items-start gap-4">
-                            <div className="text-sm text-gray-600 flex flex-col dark:text-white">
+                            <div className="text-sm text-gray-600 flex flex-col dark:text-gray-300">
                               <span className="font-bold">
                                 {employee.startDate}
                               </span>
@@ -415,8 +409,8 @@ export default function VacationManagement() {
                                 variant={employee.status === "Paid" ? "default" : "destructive"}
                                 className={
                                   employee.status === "Paid"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                    : ""
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-200"
+                                    : "dark:bg-red-900 dark:text-red-200"
                                 }
                               >
                                 {employee.status} Vacation
@@ -424,7 +418,7 @@ export default function VacationManagement() {
                               {employee.returnstatus && (
                                 <Badge
                                   variant="outline"
-                                  className="text-xs bg-blue-700 border-blue-500 text-gray-700 dark:text-gray-300"
+                                  className="text-xs bg-blue-700 border-blue-500 text-white dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600"
                                 >
                                   {employee.returnstatus === "Returned" ? "R" : "NR"}
                                 </Badge>
@@ -433,7 +427,7 @@ export default function VacationManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50"
+                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 dark:border-gray-600"
                               onClick={() => {
                                 setSelectedVacation(employee);
                                 setIsDialogOpen(true);
@@ -451,9 +445,9 @@ export default function VacationManagement() {
             })}
           </div>
           {filteredData.length === 0 && (
-            <Card>
+            <Card className="dark:bg-gray-800">
               <CardContent className="p-12 text-center">
-                <p className="text-gray-500">
+                <p className="text-gray-500 dark:text-gray-300">
                   No employees found matching your criteria.
                 </p>
               </CardContent>
