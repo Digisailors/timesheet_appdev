@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
+import axios from "axios";
 
 type IconType = LucideIcon;
 
@@ -47,6 +48,7 @@ interface VacationEntry {
   vacationTo: string;
   project: string;
   specialization: string;
+  returnstatus: string;
 }
 
 interface ApiResponse {
@@ -61,6 +63,7 @@ interface ApiResponse {
     eligibleDays: number;
     remainingDays: number;
     reason: string;
+    returnstatus: string;
     employee?: {
       firstName: string;
       lastName: string;
@@ -93,79 +96,99 @@ export default function VacationManagement() {
   const [vacationData, setVacationData] = useState<VacationEntry[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData[]>([]);
 
-  useEffect(() => {
-    const fetchVacationData = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`);
-        const result: ApiResponse = await response.json();
-        if (result.success) {
-          const formattedData = result.data.map((item) => {
-            const name = item.employee
-              ? `${item.employee.firstName} ${item.employee.lastName}`
-              : item.supervisor
-              ? item.supervisor.fullName
-              : "Unknown";
-            const location = item.employee
-              ? item.employee.specialization
-              : item.supervisor
-              ? item.supervisor.specialization
-              : "Unknown";
-            return {
-              id: item.id,
-              name,
-              leaveType: item.leaveType,
-              duration: `${calculateDuration(item.startDate, item.endDate)} days`,
-              role: item.employee ? item.employee.designation || "Unknown" : item.supervisor ? item.supervisor.designation || "Unknown" : "Unknown",
-              location,
-              startDate: item.startDate,
-              endDate: item.endDate,
-              status: item.status.replace(" Vacation", "") as "Paid" | "Unpaid",
-              appliedDate: new Date().toISOString().split('T')[0],
-              eligibleDays: item.eligibleDays.toString(),
-              remainingDays: item.remainingDays.toString(),
-              reason: item.reason || "No reason provided",
-              vacationFrom: item.startDate,
-              vacationTo: item.endDate,
-              project: item.employee ? item.employee.designation || "Unknown" : "Unknown",
-              specialization: location,
-            };
-          });
-
-          const totalEmployees = formattedData.length;
-          const paidVacation = formattedData.filter(employee => employee.status === "Paid").length;
-          const unpaidVacation = formattedData.filter(employee => employee.status === "Unpaid").length;
-
-          setSummaryData([
-            {
-              title: "Total Employees on vacation",
-              count: totalEmployees,
-              icon: TreePalm,
-              borderColor: "#22c55e",
-              iconColor: "#22c55e",
-            },
-            {
-              title: "Paid Vacation",
-              count: paidVacation,
-              icon: CreditCard,
-              borderColor: "#f59e0b",
-              iconColor: "#f59e0b",
-            },
-            {
-              title: "Unpaid Vacation",
-              count: unpaidVacation,
-              icon: X,
-              borderColor: "#ef4444",
-              iconColor: "#ef4444",
-            },
-          ]);
-
-          setVacationData(formattedData);
-        }
-      } catch (error) {
-        console.error("Error fetching vacation data:", error);
+  const fetchVacationData = async () => {
+    try {
+      const response = await axios.get<ApiResponse>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`);
+      if (response.data.success) {
+        const formattedData = response.data.data.map((item) => {
+          const name = item.employee
+            ? `${item.employee.firstName} ${item.employee.lastName}`
+            : item.supervisor
+            ? item.supervisor.fullName
+            : "Unknown";
+          const location = item.employee
+            ? item.employee.specialization
+            : item.supervisor
+            ? item.supervisor.specialization
+            : "Unknown";
+          return {
+            id: item.id,
+            name,
+            leaveType: item.leaveType,
+            duration: `${calculateDuration(item.startDate, item.endDate)} days`,
+            role: item.employee ? item.employee.designation || "Unknown" : item.supervisor ? item.supervisor.designation || "Unknown" : "Unknown",
+            location,
+            startDate: item.startDate,
+            endDate: item.endDate,
+            status: item.status.replace(" Vacation", "") as "Paid" | "Unpaid",
+            appliedDate: new Date().toISOString().split('T')[0],
+            eligibleDays: item.eligibleDays.toString(),
+            remainingDays: item.remainingDays.toString(),
+            reason: item.reason || "No reason provided",
+            vacationFrom: item.startDate,
+            vacationTo: item.endDate,
+            project: item.employee ? item.employee.designation || "Unknown" : "Unknown",
+            specialization: location,
+            returnstatus: item.returnstatus,
+          };
+        });
+  
+        // Get current month and year
+        const now = new Date();
+        const currentMonth = now.getMonth(); // 0-11
+        const currentYear = now.getFullYear();
+  
+        // Filter data for this month
+        const thisMonthData = formattedData.filter((employee) => {
+          const startDate = new Date(employee.startDate);
+          const endDate = new Date(employee.endDate);
+          return (
+            (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) ||
+            (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear)
+          );
+        });
+  
+        // Track unique employees/supervisors for this month
+        const uniqueEmployeesThisMonth = new Set<string>();
+        thisMonthData.forEach((employee) => {
+          uniqueEmployeesThisMonth.add(employee.name);
+        });
+  
+        // Count paid/unpaid vacations for this month
+        const paidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Paid").length;
+        const unpaidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Unpaid").length;
+  
+        setSummaryData([
+          {
+            title: "Total Employees on vacation",
+            count: uniqueEmployeesThisMonth.size,
+            icon: TreePalm,
+            borderColor: "#22c55e",
+            iconColor: "#22c55e",
+          },
+          {
+            title: "Paid Vacation",
+            count: paidVacationThisMonth,
+            icon: CreditCard,
+            borderColor: "#f59e0b",
+            iconColor: "#f59e0b",
+          },
+          {
+            title: "Unpaid Vacation",
+            count: unpaidVacationThisMonth,
+            icon: X,
+            borderColor: "#ef4444",
+            iconColor: "#ef4444",
+          },
+        ]);
+        setVacationData(formattedData);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching vacation data:", error);
+    }
+  };   
 
+  useEffect(() => {
     fetchVacationData();
   }, []);
 
@@ -219,6 +242,10 @@ export default function VacationManagement() {
     }
   };
 
+  const handleVacationCreated = () => {
+    fetchVacationData();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-0 dark:bg-gray-900">
       <div className="max-w-9xl mx-auto space-y-6 p-6">
@@ -241,6 +268,7 @@ export default function VacationManagement() {
           <CreateVacationForm
             open={showCreateForm}
             onOpenChange={setShowCreateForm}
+            onSuccess={handleVacationCreated}
           />
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -382,20 +410,26 @@ export default function VacationManagement() {
                               </span>
                               <span>to: {employee.endDate}</span>
                             </div>
-                            <Badge
-                              variant={
-                                employee.status === "Paid"
-                                  ? "default"
-                                  : "destructive"
-                              }
-                              className={
-                                employee.status === "Paid"
-                                  ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                  : ""
-                              }
-                            >
-                              {employee.status} Vacation
-                            </Badge>
+                            <div className="flex flex-col items-center gap-3">
+                              <Badge
+                                variant={employee.status === "Paid" ? "default" : "destructive"}
+                                className={
+                                  employee.status === "Paid"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                    : ""
+                                }
+                              >
+                                {employee.status} Vacation
+                              </Badge>
+                              {employee.returnstatus && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-blue-700 border-blue-500 text-gray-700 dark:text-gray-300"
+                                >
+                                  {employee.returnstatus === "Returned" ? "R" : "NR"}
+                                </Badge>
+                              )}
+                            </div>
                             <Button
                               variant="outline"
                               size="sm"
@@ -434,6 +468,7 @@ export default function VacationManagement() {
               setSelectedVacation(null);
             }}
             data={selectedVacation}
+            onReturn={fetchVacationData}
           />
         )}
       </div>

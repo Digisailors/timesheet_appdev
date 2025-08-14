@@ -5,6 +5,7 @@ import { X, Undo2 } from "lucide-react";
 interface VacationDetailsProps {
   isOpen: boolean;
   onClose: () => void;
+  onReturn: () => void; // <-- Add this
   data: {
     name: string;
     id: string;
@@ -21,31 +22,30 @@ interface VacationDetailsProps {
     reason: string;
     startDate: string;
     endDate: string;
+    returnstatus: string;
   };
 }
 
-const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, data }) => {
+const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, onReturn, data }) => {
   if (!isOpen) return null;
 
   const handleReturn = async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/return/${data.id}`, {
-        method: 'PUT', // or 'GET' depending on your API
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
       if (!response.ok) {
         throw new Error('Failed to trigger return');
       }
-
       const result = await response.json();
       console.log('Return successful:', result);
-      // Optionally, you can close the dialog or show a success message here
+      onReturn(); // <-- Call this to refetch data
+      onClose();
     } catch (error) {
       console.error('Error triggering return:', error);
-      // Optionally, show an error message to the user
     }
   };
 
@@ -64,11 +64,22 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, d
           </div>
           <div className="flex gap-2">
             <button
-              onClick={handleReturn}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-              title="Return"
+              onClick={data.returnstatus === "Not Return" ? handleReturn : undefined}
+              disabled={data.returnstatus === "Returned"}
+              className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex items-center ${
+                data.returnstatus === "Returned" ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              title={data.returnstatus === "Returned" ? "Returned" : "Return"}
             >
-              <Undo2 size={20} className="text-gray-400 dark:text-gray-300" />
+              <Undo2
+                size={20}
+                className={`${
+                  data.returnstatus === "Returned" ? "text-blue-500" : "text-gray-400 dark:text-gray-300"
+                }`}
+              />
+              <span className="ml-1 text-xs">
+                {data.returnstatus === "Returned" ? "Returned" : "Return"}
+              </span>
             </button>
             <button
               onClick={onClose}

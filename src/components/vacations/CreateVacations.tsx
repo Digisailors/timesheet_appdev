@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronDown } from "lucide-react";
 import { format, addDays } from "date-fns";
+import axios from "axios";
 
 interface CreateVacationFormProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 interface Employee {
@@ -109,14 +111,11 @@ const CustomSelect = ({
 }: CustomSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
-
   const handleToggle = () => setIsOpen(!isOpen);
-
   const handleSelect = (itemValue: string) => {
     onValueChange(itemValue);
     setIsOpen(false);
   };
-
   const handleClickOutside = (event: MouseEvent) => {
     if (
       selectRef.current &&
@@ -125,14 +124,12 @@ const CustomSelect = ({
       setIsOpen(false);
     }
   };
-
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption ? (
     <div className="flex items-center">
@@ -146,7 +143,6 @@ const CustomSelect = ({
   ) : (
     placeholder
   );
-
   return (
     <div className={`relative ${className}`} ref={selectRef}>
       <button
@@ -187,6 +183,7 @@ const CustomSelect = ({
 export default function CreateVacationForm({
   open = true,
   onOpenChange,
+  onSuccess,
 }: CreateVacationFormProps) {
   const [internalOpen, setInternalOpen] = useState(open);
   const tomorrow = addDays(new Date(), 1);
@@ -201,40 +198,28 @@ export default function CreateVacationForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<PersonOption | null>(null);
-
   const isDialogOpen = onOpenChange ? open : internalOpen;
 
   useEffect(() => {
     const fetchPeopleData = async () => {
       try {
         setLoading(true);
-
         const [employeesRes, supervisorsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`),
-          fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`)
+          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`),
+          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`)
         ]);
-
-        if (!employeesRes.ok || !supervisorsRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const employeesData = await employeesRes.json();
-        const supervisorsData = await supervisorsRes.json();
-
-        const employeeOptions = employeesData.data.map((emp: Employee) => ({
+        const employeeOptions = employeesRes.data.data.map((emp: Employee) => ({
           value: emp.id,
           label: `${emp.firstName} ${emp.lastName}`,
           isSupervisor: false,
           originalData: emp
         }));
-
-        const supervisorOptions = supervisorsData.data.map((sup: Supervisor) => ({
+        const supervisorOptions = supervisorsRes.data.data.map((sup: Supervisor) => ({
           value: sup.id,
           label: sup.fullName,
           isSupervisor: true,
           originalData: sup
         }));
-
         setPeopleOptions([...employeeOptions, ...supervisorOptions]);
       } catch (error) {
         console.error('Error fetching people data:', error);
@@ -243,7 +228,6 @@ export default function CreateVacationForm({
         setLoading(false);
       }
     };
-
     if (isDialogOpen) {
       fetchPeopleData();
     }
@@ -283,34 +267,20 @@ export default function CreateVacationForm({
       const apiUrl = selectedPerson.isSupervisor
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;
-
       const requestBody = {
         leaveType,
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         reason
       };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create vacation');
-      }
-
-      const result = await response.json();
-      console.log('Vacation created successfully:', result);
+      const response = await axios.post(apiUrl, requestBody);
+      console.log('Vacation created successfully:', response.data);
       closeDialog();
+      onSuccess?.();
     } catch (err) {
-      if (err instanceof Error) {
+      if (axios.isAxiosError(err)) {
         console.error('Error creating vacation:', err);
-        setError(err.message || 'Failed to create vacation. Please try again.');
+        setError(err.response?.data?.message || 'Failed to create vacation. Please try again.');
       } else {
         console.error('Unknown error:', err);
         setError('An unknown error occurred. Please try again.');

@@ -3,23 +3,8 @@ import { FileText, Download } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import toast from 'react-hot-toast';
-
-// Define a type for the autoTable options
-interface AutoTableOptions {
-  head: Array<Array<string>>;
-  body: Array<Array<string>>;
-  startY: number;
-}
-
-// Extend the jsPDF type to include autoTable with a specific type
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: AutoTableOptions) => jsPDF;
-  }
-}
 
 interface Employee {
   id: string;
@@ -39,6 +24,85 @@ interface Timesheet {
   totalTravelHrs: string;
   employees?: Array<{ id: string }>;
 }
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    fontFamily: 'Helvetica',
+  },
+  title: {
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  employeeName: {
+    fontSize: 12,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  table: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingVertical: 5,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    fontWeight: 'bold',
+    paddingVertical: 5,
+    backgroundColor: '#f0f0f0',
+  },
+  tableCell: {
+    padding: 5,
+    width: '12.5%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    fontSize: 10,
+  },
+  headerCell: {
+    padding: 5,
+    width: '12.5%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+});
+
+const MyDocument = ({ data, employeeName }: { data: Timesheet[]; employeeName: string }) => (
+  <Document>
+    <Page style={styles.page} size="A4">
+      <Text style={styles.title}>Employee Timesheet Report</Text>
+      <Text style={styles.employeeName}>Employee: {employeeName}</Text>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          {['Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks'].map((header) => (
+            <Text key={header} style={styles.headerCell}>{header}</Text>
+          ))}
+        </View>
+        {data.map((timesheet, index) => (
+          <View key={index} style={styles.tableRow}>
+            <Text style={styles.tableCell}>{timesheet.timesheetDate}</Text>
+            <Text style={styles.tableCell}>{timesheet.location}</Text>
+            <Text style={styles.tableCell}>{timesheet.onsiteSignIn}</Text>
+            <Text style={styles.tableCell}>{timesheet.onsiteSignOut}</Text>
+            <Text style={styles.tableCell}>{timesheet.normalHrs}</Text>
+            <Text style={styles.tableCell}>{timesheet.overtime}</Text>
+            <Text style={styles.tableCell}>{timesheet.totalTravelHrs}</Text>
+            <Text style={styles.tableCell}>{timesheet.remarks}</Text>
+          </View>
+        ))}
+      </View>
+    </Page>
+  </Document>
+);
 
 const EmployeeReport: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -136,61 +200,28 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
-    const worksheet = XLSX.utils.json_to_sheet(filteredTimesheets.map(timesheet => ({
-      Date: timesheet.timesheetDate,
-      Location: timesheet.location,
-      'Check-In': timesheet.onsiteSignIn,
-      'Check-Out': timesheet.onsiteSignOut,
-      'Regular Hours': timesheet.normalHrs,
-      'OT Hours': timesheet.overtime,
-      'Travel Time': timesheet.totalTravelHrs,
-      Remarks: timesheet.remarks,
-    })));
+
+    const employeeName = selectedEmployee
+      ? `${employees.find(emp => emp.id === selectedEmployee)?.firstName || ''} ${employees.find(emp => emp.id === selectedEmployee)?.lastName || ''}`
+      : 'All Employees';
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      filteredTimesheets.map(timesheet => ({
+        Employee: employeeName,
+        Date: timesheet.timesheetDate,
+        Location: timesheet.location,
+        'Check-In': timesheet.onsiteSignIn,
+        'Check-Out': timesheet.onsiteSignOut,
+        'Regular Hours': timesheet.normalHrs,
+        'OT Hours': timesheet.overtime,
+        'Travel Time': timesheet.totalTravelHrs,
+        Remarks: timesheet.remarks,
+      }))
+    );
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");
-  };
-
-  const exportToPDF = () => {
-    if (filteredTimesheets.length === 0) {
-      toast('No data to export', {
-        style: {
-          borderRadius: '10px',
-          background: 'blue',
-          color: '#fff',
-        },
-      });
-      return;
-    }
-
-    const doc = new jsPDF();
-
-    // Add title
-    doc.text('Employee Timesheet Report', 14, 16);
-
-    // Define table data
-    const tableData = filteredTimesheets.map(timesheet => [
-      timesheet.timesheetDate,
-      timesheet.location,
-      timesheet.onsiteSignIn,
-      timesheet.onsiteSignOut,
-      timesheet.normalHrs,
-      timesheet.overtime,
-      timesheet.totalTravelHrs,
-      timesheet.remarks,
-    ]);
-
-    // Use autoTable with the defined options type
-    const autoTableOptions: AutoTableOptions = {
-      head: [['Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks']],
-      body: tableData,
-      startY: 20,
-    };
-
-    doc.autoTable(autoTableOptions);
-
-    // Save the PDF
-    doc.save('Timesheets.pdf');
   };
 
   return (
@@ -246,13 +277,45 @@ const EmployeeReport: React.FC = () => {
                 <FileText size={16} />
                 Export Excel
               </button>
-              <button
-                onClick={exportToPDF}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Download size={16} />
-                Export PDF
-              </button>
+              {filteredTimesheets.length > 0 ? (
+                <PDFDownloadLink
+                  document={
+                    <MyDocument
+                      data={filteredTimesheets}
+                      employeeName={
+                        selectedEmployee
+                          ? `${employees.find(emp => emp.id === selectedEmployee)?.firstName || ''} ${employees.find(emp => emp.id === selectedEmployee)?.lastName || ''}`
+                          : 'All Employees'
+                      }
+                    />
+                  }
+                  fileName="Timesheets.pdf"
+                >
+                  {({ loading }) => (
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      disabled={loading}
+                    >
+                      <Download size={16} />
+                      {loading ? 'Generating PDF...' : 'Export PDF'}
+                    </button>
+                  )}
+                </PDFDownloadLink>
+              ) : (
+                <button
+                  onClick={() => toast('No data to export', {
+                    style: {
+                      borderRadius: '10px',
+                      background: 'blue',
+                      color: '#fff',
+                    },
+                  })}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Download size={16} />
+                  Export PDF
+                </button>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
