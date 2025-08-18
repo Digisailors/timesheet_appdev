@@ -105,9 +105,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     normalHours: "",
     otHours: "",
   });
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-  const [designationTypes, setDesignationTypes] = useState<DesignationType[]>([]);
+  const [designationTypes, setDesignationTypes] = useState<DesignationType[]>(
+    []
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -167,21 +170,21 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/rules/all`
       );
       const data = await response.json();
-
+      
       if (data.success && Array.isArray(data.data)) {
         const designationTypesMap = new Map<string, DesignationType>();
-
+        
         data.data.forEach((rule: Rule) => {
           const designation = rule.designation;
           if (designation && designation.status === "active") {
             designationTypesMap.set(designation.designationId, {
               id: designation.designationId,
               name: designation.name,
-              status: designation.status,
+              status: designation.status
             });
           }
         });
-
+        
         const uniqueDesignationTypes = Array.from(designationTypesMap.values());
         setDesignationTypes(uniqueDesignationTypes);
       } else {
@@ -205,30 +208,47 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 
   const validateField = (name: string, value: string) => {
     switch (name) {
+      case "firstName":
+        return !value.trim() ? "Please fill this field" : "";
+      case "lastName":
+        return !value.trim() ? "Please fill this field" : "";
       case "email":
-        if (value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+        if (!value.trim()) return "Please fill this field";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value))
           return "Please enter a valid email address";
         if (checkEmailExists(value)) return "This email already exists";
         return "";
+      case "designation":
+        return !value.trim() ? "Please fill this field" : "";
+      case "designationType":
+        return !value.trim() ? "Please fill this field" : "";
       case "phoneNumber":
-        if (value.trim()) {
-          const phoneDigits = value.replace(/\D/g, "");
-          if (phoneDigits.length !== 10) return "Please enter exactly 10 numbers";
-        }
+        if (!value.trim()) return "Please fill this field";
+        const phoneDigits = value.replace(/\D/g, "");
+        if (phoneDigits.length !== 10) return "Please enter exactly 10 numbers";
         return "";
+      case "address":
+        return !value.trim() ? "Please fill this field" : "";
+      case "experience":
+        return !value.trim() ? "Please fill this field" : "";
+      case "dateOfJoining":
+        return !value.trim() ? "Please fill this field" : "";
+      case "specialization":
+        return !value.trim() ? "Please fill this field" : "";
+      case "workingHours":
+        return !value.trim() ? "Please fill this field" : "";
       case "normalHours":
-        if (value.trim()) {
-          const normalHoursNum = parseFloat(value);
-          if (isNaN(normalHoursNum) || normalHoursNum < 0)
-            return "Please enter a valid number";
-        }
+        if (!value.trim()) return "Please fill this field";
+        const normalHoursNum = parseFloat(value);
+        if (isNaN(normalHoursNum) || normalHoursNum < 0)
+          return "Please enter a valid number";
         return "";
       case "otHours":
-        if (value.trim()) {
-          const otHoursNum = parseFloat(value);
-          if (isNaN(otHoursNum) || otHoursNum < 0)
-            return "Please enter a valid number";
-        }
+        if (!value.trim()) return "Please fill this field";
+        const otHoursNum = parseFloat(value);
+        if (isNaN(otHoursNum) || otHoursNum < 0)
+          return "Please enter a valid number";
         return "";
       default:
         return "";
@@ -314,6 +334,46 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submission initiated");
+
+    const newErrors: { [key: string]: string } = {};
+    const allFields = [
+      "firstName",
+      "lastName",
+      "email",
+      "designation",
+      "designationType",
+      "phoneNumber",
+      "address",
+      "experience",
+      "dateOfJoining",
+      "specialization",
+      "normalHours",
+      "otHours",
+    ];
+
+    allFields.forEach((field) => {
+      const error = validateField(
+        field,
+        formData[field as keyof EmployeeFormData]
+      );
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    const newTouched: { [key: string]: boolean } = {};
+    allFields.forEach((field) => {
+      newTouched[field] = true;
+    });
+
+    setTouched((prev) => ({ ...prev, ...newTouched }));
+
+    if (Object.keys(newErrors).length > 0) {
+      console.log("Validation errors found:", newErrors);
+      setErrors(newErrors);
+      return;
+    }
+
     const apiPayload: EmployeeAPIPayload = {
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -325,10 +385,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       experience: formData.experience,
       dateOfJoining: formData.dateOfJoining,
       specialization: formData.specialization,
-      perHourRate: formData.normalHours ? parseFloat(formData.normalHours) : 0,
-      overtimeRate: formData.otHours ? parseFloat(formData.otHours) : 0,
+      perHourRate: parseFloat(formData.normalHours),
+      overtimeRate: parseFloat(formData.otHours),
     };
+
     console.log("API Payload:", apiPayload);
+
     try {
       onSubmit(apiPayload);
       onClose();
@@ -354,6 +416,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   if (!isOpen) return null;
+
   const isEditing = !!editingEmployee;
 
   return (
@@ -378,7 +441,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  First Name
+                  First Name *
                 </label>
                 <input
                   type="text"
@@ -391,6 +454,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "firstName",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.firstName && touched.firstName && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -400,7 +464,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Last Name
+                  Last Name *
                 </label>
                 <input
                   type="text"
@@ -413,6 +477,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "lastName",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.lastName && touched.lastName && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -422,7 +487,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email Address
+                  Email Address *
                 </label>
                 <input
                   type="email"
@@ -435,6 +500,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "email",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.email && touched.email && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -444,7 +510,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Phone Number
+                  Phone Number *
                 </label>
                 <input
                   type="tel"
@@ -458,6 +524,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "phoneNumber",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.phoneNumber && touched.phoneNumber && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -467,7 +534,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Designation
+                  Designation *
                 </label>
                 <input
                   type="text"
@@ -480,6 +547,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "designation",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.designation && touched.designation && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -489,7 +557,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Designation Type
+                  Designation Type *
                 </label>
                 <select
                   name="designationType"
@@ -500,6 +568,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "designationType",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 >
                   <option value="">Select Designation Type</option>
                   {designationTypes.map((type) => (
@@ -516,7 +585,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Date of Joining
+                  Date of Joining *
                 </label>
                 <input
                   type="date"
@@ -528,6 +597,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "dateOfJoining",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.dateOfJoining && touched.dateOfJoining && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -537,7 +607,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Experience
+                  Experience *
                 </label>
                 <input
                   type="text"
@@ -550,6 +620,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "experience",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.experience && touched.experience && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -559,7 +630,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Per Hour Rate
+                  Per Hour Rate *
                 </label>
                 <input
                   type="text"
@@ -572,6 +643,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "normalHours",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.normalHours && touched.normalHours && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -581,7 +653,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Overtime Rate
+                  Overtime Rate *
                 </label>
                 <input
                   type="text"
@@ -594,6 +666,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "otHours",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.otHours && touched.otHours && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -603,7 +676,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Specialization/Skills
+                  Specialization/Skills *
                 </label>
                 <input
                   type="text"
@@ -616,6 +689,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "specialization",
                     "w-175 px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
+                  required
                 />
                 {errors.specialization && touched.specialization && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -625,7 +699,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Address
+                  Address *
                 </label>
                 <textarea
                   name="address"
@@ -638,6 +712,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "address",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-[80px]"
                   )}
+                  required
                 />
                 {errors.address && touched.address && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">

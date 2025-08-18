@@ -257,26 +257,22 @@ export default function CreateVacationForm({
   };
 
   const handleSubmit = async () => {
-    if (!selectedPerson) {
-      setError('Please select an employee');
+    if (!employee || !leaveType || !startDate || !endDate || !reason || !selectedPerson) {
+      setError('Please fill in all required fields');
       return;
     }
-
     setIsSubmitting(true);
     setError(null);
-
     try {
       const apiUrl = selectedPerson.isSupervisor
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;
-
       const requestBody = {
         leaveType,
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         reason
       };
-
       const response = await axios.post(apiUrl, requestBody);
       console.log('Vacation created successfully:', response.data);
       closeDialog();
