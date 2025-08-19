@@ -56,10 +56,10 @@ export default function SupervisorDialog({
   const [showPassword, setShowPassword] = useState(false);
 
   // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  // const getTodayDate = () => {
+  //   const today = new Date();
+  //   return today.toISOString().split('T')[0];
+  // };
 
   // Prevent background scroll when dialog is open
   useEffect(() => {
@@ -383,16 +383,16 @@ export default function SupervisorDialog({
 
             {/* Date of Joining & Experience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Date of Joining"
-                name="dateOfJoining"
-                type="date"
-                value={formData.dateOfJoining || ''}
-                error={errors.dateOfJoining}
-                onChange={handleInputChange}
-                placeholder=""
-                min={getTodayDate()}
-              />
+            <FormInput
+              label="Date of Joining"
+              name="dateOfJoining"
+              type="date"
+              value={formData.dateOfJoining || ''}
+              error={errors.dateOfJoining}
+              onChange={handleInputChange}
+              placeholder=""
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+            />
               <FormInput
                 label="Experience"
                 name="experience"
@@ -435,7 +435,7 @@ const FormInput = ({
   onChange,
   placeholder,
   required = false,
-  min
+  onClick,
 }: {
   label: string;
   name: string;
@@ -445,7 +445,7 @@ const FormInput = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
-  min?: string;
+  onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
 }) => (
   <div>
     <label className="text-sm font-medium">
@@ -457,7 +457,7 @@ const FormInput = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      min={min}
+      onClick={onClick}
       className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
     />
     {error && <p className="text-red-500 text-sm">{error}</p>}

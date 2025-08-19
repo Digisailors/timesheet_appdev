@@ -109,13 +109,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,4fr)] gap-x-4 gap-y-2 text-sm mb-4">
         <div className="font-medium text-gray-700 dark:text-gray-300">Email:</div>
         <div className="text-gray-600 dark:text-gray-400">{userData.email}</div>
 
         <div className="font-medium text-gray-700 dark:text-gray-300">Phone:</div>
         <div className="text-gray-600 dark:text-gray-400">{userData.phone}</div>
 
+        {/* Commented fields */}
         {/* <div className="font-medium text-gray-700 dark:text-gray-300">Location:</div>
         <div className="text-gray-600 dark:text-gray-400">{userData.location}</div> */}
 
@@ -124,8 +125,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
 
         {/* <div className="font-medium text-gray-700 dark:text-gray-300">Last Login:</div>
         <div className="text-gray-600 dark:text-gray-400">{userData.lastLogin}</div> */}
-      </div>
 
+      </div>
       {/* <div className="border-t border-gray-200 dark:border-slate-600 pt-4">
         <div className="flex items-center mb-2">
           <Shield className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />

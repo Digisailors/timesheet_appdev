@@ -143,15 +143,14 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
             <div className="relative">
-              <div className="flex items-center px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <button
-                  onClick={() => setShowDatePickers(!showDatePickers)}
-                  className="flex items-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1 transition-colors -ml-1"
-                >
-                  <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-pointer" />
-                </button>
+              <button
+                type="button"
+                onClick={() => setShowDatePickers(!showDatePickers)}
+                className="w-full flex items-center px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+              >
+                <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-pointer" />
                 <span className="text-gray-900 dark:text-gray-100 ml-2">{formatDateRange()}</span>
-              </div>
+              </button>
               {showDatePickers && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
                   <div className="space-y-3">
@@ -161,6 +160,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                         type="date"
                         value={dateRange.startDate}
                         onChange={(e) => handleStartDateChange(e.target.value)}
+                        onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -170,6 +170,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                         type="date"
                         value={dateRange.endDate}
                         onChange={(e) => handleEndDateChange(e.target.value)}
+                        onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>

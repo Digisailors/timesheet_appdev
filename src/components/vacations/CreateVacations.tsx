@@ -315,8 +315,8 @@ export default function CreateVacationForm({
     { value: "Emergency Leave", label: "Emergency Leave" },
   ];
 
-  const minStartDate = format(tomorrow, "yyyy-MM-dd");
-  const minEndDate = startDate ? format(addDays(startDate, 1), "yyyy-MM-dd") : minStartDate;
+  // const minStartDate = format(tomorrow, "yyyy-MM-dd");
+  // const minEndDate = startDate ? format(addDays(startDate, 1), "yyyy-MM-dd") : minStartDate;
 
   return (
     <CustomModal isOpen={isDialogOpen} onClose={closeDialog}>
@@ -377,22 +377,22 @@ export default function CreateVacationForm({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label
-              htmlFor="start-date"
-              className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              Start Date
-            </label>
-            <input
-              id="start-date"
-              type="date"
-              min={minStartDate}
-              value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
-              onChange={handleStartDateChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            />
-          </div>
+        <div className="space-y-2">
+          <label
+            htmlFor="start-date"
+            className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+          >
+            Start Date
+          </label>
+          <input
+            id="start-date"
+            type="date"
+            value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
+            onChange={handleStartDateChange}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          />
+        </div>
           <div className="space-y-2">
             <label
               htmlFor="end-date"
@@ -403,9 +403,9 @@ export default function CreateVacationForm({
             <input
               id="end-date"
               type="date"
-              min={minEndDate}
               value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
               onChange={handleEndDateChange}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             />
           </div>

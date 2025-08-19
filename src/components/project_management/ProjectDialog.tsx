@@ -201,11 +201,11 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
   if (!isOpen) return null;
 
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  };
+  // const getTomorrowDate = () => {
+  //   const tomorrow = new Date();
+  //   tomorrow.setDate(tomorrow.getDate() + 1);
+  //   return tomorrow.toISOString().split('T')[0];
+  // };
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
@@ -373,32 +373,32 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
           {/* Date Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date*</label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
-                className={`w-full px-2 sm:px-3 py-2 border rounded-md text-sm sm:text-base ${errors.startDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'} dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                disabled={isViewMode}
-                readOnly={isViewMode}
-                min={new Date().toISOString().split("T")[0]}
-              />
-              {errors.startDate && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.startDate}</p>}
-            </div>
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected End Date</label>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => handleInputChange('endDate', e.target.value)}
-                className={`w-full px-2 sm:px-3 py-2 border rounded-md text-sm sm:text-base ${errors.endDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'} dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                disabled={isViewMode}
-                readOnly={isViewMode}
-                min={getTomorrowDate()}
-              />
-              {errors.endDate && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.endDate}</p>}
-            </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date*</label>
+            <input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => handleInputChange('startDate', e.target.value)}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+              className={`w-full px-2 sm:px-3 py-2 border rounded-md text-sm sm:text-base ${errors.startDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'} dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              disabled={isViewMode}
+              readOnly={isViewMode}
+            />
+            {errors.startDate && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.startDate}</p>}
+          </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected End Date</label>
+            <input
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => handleInputChange('endDate', e.target.value)}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+              className={`w-full px-2 sm:px-3 py-2 border rounded-md text-sm sm:text-base ${errors.endDate ? 'border-red-500' : 'border-gray-300'} ${isViewMode ? 'bg-gray-200 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'} dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              disabled={isViewMode}
+              readOnly={isViewMode}
+            />
+            {errors.endDate && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.endDate}</p>}
+          </div>
           </div>
 
           {/* Budget and Status */}

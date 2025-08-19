@@ -593,6 +593,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   value={formData.dateOfJoining}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()} // Ensures date picker opens on click
                   className={getFieldClassName(
                     "dateOfJoining",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

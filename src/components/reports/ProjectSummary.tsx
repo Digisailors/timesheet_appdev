@@ -30,7 +30,11 @@ const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selected
   const totalHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.totalDutyHrs), 0);
   const regularHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.normalHrs), 0);
   const overtimeHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.overtime), 0);
-  const regularOTRatio = `${((regularHours / totalHours) * 100).toFixed(0)}% / ${((overtimeHours / totalHours) * 100).toFixed(0)}%`;
+
+  const regularOTRatio =
+    totalHours > 0
+      ? `${((regularHours / totalHours) * 100).toFixed(0)}% / ${((overtimeHours / totalHours) * 100).toFixed(0)}%`
+      : '0% / 0%';
 
   return (
     <div className="bg-white dark:bg-gray-900 shadow-md rounded-xl mb-6 p-6">
