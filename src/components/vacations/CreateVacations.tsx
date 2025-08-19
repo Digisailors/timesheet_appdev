@@ -113,7 +113,6 @@ const CustomSelect = ({
   const selectRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => setIsOpen(!isOpen);
-
   const handleSelect = (itemValue: string) => {
     onValueChange(itemValue);
     setIsOpen(false);
@@ -166,18 +165,16 @@ const CustomSelect = ({
             <div
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 hover:text-gray-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-50 ${
+              className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-sm py-1.5 pl-3 pr-2 text-sm outline-none hover:bg-gray-100 hover:text-gray-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-50 ${
                 option.value === value ? "font-semibold" : ""
               }`}
             >
-              <div className="flex items-center">
-                {option.label}
-                {"isSupervisor" in option && option.isSupervisor && (
-                  <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-                    S
-                  </span>
-                )}
-              </div>
+              <span>{option.label}</span>
+              {"isSupervisor" in option && option.isSupervisor && (
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+                  S
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -263,14 +260,13 @@ export default function CreateVacationForm({
   };
 
   const handleSubmit = async () => {
+    if (!employee || !leaveType || !startDate || !endDate || !reason || !selectedPerson) {
+      setError('Please fill in all required fields');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
-      if (!selectedPerson) {
-        setError('Please select an employee or supervisor');
-        setIsSubmitting(false);
-        return;
-      }
       const apiUrl = selectedPerson.isSupervisor
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;

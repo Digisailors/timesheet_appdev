@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
+import EditVacationDialog from "./EditVacationDialog";
 import axios from "axios";
 
 type IconType = LucideIcon;
@@ -92,7 +93,9 @@ export default function VacationManagement() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationEntry | null>(null);
+  const [selectedVacationForEdit, setSelectedVacationForEdit] = useState<VacationEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [vacationData, setVacationData] = useState<VacationEntry[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
@@ -134,15 +137,10 @@ export default function VacationManagement() {
             returnstatus: item.returnstatus,
           };
         });
-
-        // Extract unique status and type values
         const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus)));
         const uniqueTypes = Array.from(new Set(response.data.data.map(item => item.leaveType)));
-
         setStatusOptions(uniqueStatuses);
         setTypeOptions(uniqueTypes);
-
-        // Summary logic
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -160,7 +158,6 @@ export default function VacationManagement() {
         });
         const paidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Paid").length;
         const unpaidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Unpaid").length;
-
         setSummaryData([
           {
             title: "Total Employees on vacation",
@@ -424,17 +421,30 @@ export default function VacationManagement() {
                                 </Badge>
                               )}
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 dark:border-gray-600"
-                              onClick={() => {
-                                setSelectedVacation(employee);
-                                setIsDialogOpen(true);
-                              }}
-                            >
-                              View Details
-                            </Button>
+                            <div className="flex flex-col items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-[100px] border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 dark:border-gray-600"
+                                onClick={() => {
+                                  setSelectedVacation(employee);
+                                  setIsDialogOpen(true);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-[100px] border border-gray-800 text-black hover:bg-gray-100 dark:text-white dark:hover:text-black dark:hover:bg-gray-50 dark:border-gray-600"
+                                onClick={() => {
+                                  setSelectedVacationForEdit(employee);
+                                  setShowEditForm(true);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -463,6 +473,17 @@ export default function VacationManagement() {
             }}
             data={selectedVacation}
             onReturn={fetchVacationData}
+          />
+        )}
+        {selectedVacationForEdit && (
+          <EditVacationDialog
+            isOpen={showEditForm}
+            onClose={() => {
+              setShowEditForm(false);
+              setSelectedVacationForEdit(null);
+            }}
+            onEditSuccess={fetchVacationData}
+            data={selectedVacationForEdit}
           />
         )}
       </div>

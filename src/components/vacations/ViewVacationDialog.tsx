@@ -1,11 +1,11 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { X, Undo2 } from "lucide-react";
 
 interface VacationDetailsProps {
   isOpen: boolean;
   onClose: () => void;
-  onReturn: () => void; // <-- Add this
+  onReturn: () => void;
   data: {
     name: string;
     id: string;
@@ -27,6 +27,8 @@ interface VacationDetailsProps {
 }
 
 const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, onReturn, data }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+
   if (!isOpen) return null;
 
   const handleReturn = async () => {
@@ -42,11 +44,24 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
       }
       const result = await response.json();
       console.log('Return successful:', result);
-      onReturn(); // <-- Call this to refetch data
+      onReturn();
       onClose();
     } catch (error) {
       console.error('Error triggering return:', error);
     }
+  };
+
+  const handleConfirmReturn = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmYes = () => {
+    setShowConfirm(false);
+    handleReturn();
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -63,24 +78,22 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={data.returnstatus === "Not Return" ? handleReturn : undefined}
-              disabled={data.returnstatus === "Returned"}
-              className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex items-center ${
-                data.returnstatus === "Returned" ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              title={data.returnstatus === "Returned" ? "Returned" : "Return"}
-            >
-              <Undo2
-                size={20}
-                className={`${
-                  data.returnstatus === "Returned" ? "text-blue-500" : "text-gray-400 dark:text-gray-300"
-                }`}
-              />
-              <span className="ml-1 text-xs">
-                {data.returnstatus === "Returned" ? "Returned" : "Return"}
-              </span>
-            </button>
+          <button
+            onClick={data.returnstatus === "Not Return" ? handleConfirmReturn : undefined}
+            disabled={data.returnstatus === "Returned"}
+            className={`p-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-full transition-colors flex items-center ${
+              data.returnstatus === "Returned" ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            title={data.returnstatus === "Returned" ? "Returned" : "Return"}
+          >
+            <Undo2
+              size={20}
+              className="text-white"
+            />
+            <span className="ml-1 text-xs text-white">
+              {data.returnstatus === "Returned" ? "Returned" : "Return"}
+            </span>
+          </button>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -90,6 +103,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </button>
           </div>
         </div>
+
         {/* Dialog Content */}
         <div className="p-6 text-sm text-gray-900 dark:text-gray-100">
           <div className="grid grid-cols-2 gap-y-6 gap-x-8">
@@ -103,7 +117,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </div>
             <div>
               <p className="text-gray-400 dark:text-gray-500">Duration</p>
-              <p>{data.eligibleDays} days</p>
+              <p>{data.duration} days</p>
             </div>
             <div>
               <p className="text-gray-400 dark:text-gray-500">Remaining Days</p>
@@ -136,6 +150,31 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 max-w-sm w-full">
+            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Are you sure this Employee/Supervisor is returned? This can&#39;t be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleConfirmNo}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmYes}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
