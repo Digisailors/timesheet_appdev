@@ -111,11 +111,14 @@ const CustomSelect = ({
 }: CustomSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
+
   const handleToggle = () => setIsOpen(!isOpen);
+
   const handleSelect = (itemValue: string) => {
     onValueChange(itemValue);
     setIsOpen(false);
   };
+
   const handleClickOutside = (event: MouseEvent) => {
     if (
       selectRef.current &&
@@ -124,12 +127,14 @@ const CustomSelect = ({
       setIsOpen(false);
     }
   };
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
   const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption ? (
     <div className="flex items-center">
@@ -143,6 +148,7 @@ const CustomSelect = ({
   ) : (
     placeholder
   );
+
   return (
     <div className={`relative ${className}`} ref={selectRef}>
       <button
@@ -257,13 +263,14 @@ export default function CreateVacationForm({
   };
 
   const handleSubmit = async () => {
-    if (!employee || !leaveType || !startDate || !endDate || !reason || !selectedPerson) {
-      setError('Please fill in all required fields');
-      return;
-    }
     setIsSubmitting(true);
     setError(null);
     try {
+      if (!selectedPerson) {
+        setError('Please select an employee or supervisor');
+        setIsSubmitting(false);
+        return;
+      }
       const apiUrl = selectedPerson.isSupervisor
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;
@@ -314,9 +321,6 @@ export default function CreateVacationForm({
     { value: "Personal Leave", label: "Personal Leave" },
     { value: "Emergency Leave", label: "Emergency Leave" },
   ];
-
-  // const minStartDate = format(tomorrow, "yyyy-MM-dd");
-  // const minEndDate = startDate ? format(addDays(startDate, 1), "yyyy-MM-dd") : minStartDate;
 
   return (
     <CustomModal isOpen={isDialogOpen} onClose={closeDialog}>
@@ -377,22 +381,22 @@ export default function CreateVacationForm({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label
-            htmlFor="start-date"
-            className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-          >
-            Start Date
-          </label>
-          <input
-            id="start-date"
-            type="date"
-            value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
-            onChange={handleStartDateChange}
-            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-          />
-        </div>
+          <div className="space-y-2">
+            <label
+              htmlFor="start-date"
+              className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+            >
+              Start Date
+            </label>
+            <input
+              id="start-date"
+              type="date"
+              value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
+              onChange={handleStartDateChange}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            />
+          </div>
           <div className="space-y-2">
             <label
               htmlFor="end-date"
