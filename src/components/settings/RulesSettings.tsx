@@ -659,6 +659,7 @@ const RulesSettings: React.FC = () => {
                 <input
                   id="normal-hours"
                   type="text"
+                  placeholder="Enter Normal Hours"
                   name="normalHours"
                   value={newRule.normalHours}
                   onChange={handleInputChange}
@@ -676,6 +677,7 @@ const RulesSettings: React.FC = () => {
                 <input
                   id="break-time"
                   type="text"
+                  placeholder="Enter Break Time"
                   name="breakTime"
                   value={newRule.breakTime}
                   onChange={handleInputChange}
@@ -693,6 +695,7 @@ const RulesSettings: React.FC = () => {
               </label>
               <input
                 id="allowed-travel-hours"
+                placeholder="Enter Allowed Travel Hours"
                 type="text"
                 name="allowedTravelHours"
                 value={newRule.allowedTravelHours}

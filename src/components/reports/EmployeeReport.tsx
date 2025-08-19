@@ -321,15 +321,15 @@ const EmployeeReport: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Regular Hours</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">{selectedEmployee ? regularHours : 'N/A'}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">{selectedEmployee ? regularHours : '0'}</p>
             </div>
             <div className="bg-orange-50 dark:bg-orange-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Overtime Hours</p>
-              <p className="text-3xl font-bold text-orange-600 dark:text-orange-300">{selectedEmployee ? overtimeHours : 'N/A'}</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-300">{selectedEmployee ? overtimeHours : '0'}</p>
             </div>
             <div className="bg-green-50 dark:bg-green-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Days Worked</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-300">{selectedEmployee ? daysWorked : 'N/A'}</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-300">{selectedEmployee ? daysWorked : '0'}</p>
             </div>
           </div>
           <div className="overflow-x-auto">
