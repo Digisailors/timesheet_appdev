@@ -10,6 +10,7 @@ import {
   CreditCard,
   House,
   Baby,
+  ChevronDown,
 } from "lucide-react";
 import { LucideIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,13 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
 import EditVacationDialog from "./EditVacationDialog";
@@ -120,7 +114,7 @@ export default function VacationManagement() {
             id: item.id,
             name,
             leaveType: item.leaveType,
-            duration: `${calculateDuration(item.startDate, item.endDate)} days`,
+            duration: `${calculateDuration(item.startDate, item.endDate)}`,
             role: item.employee ? item.employee.designation || "Unknown" : item.supervisor ? item.supervisor.designation || "Unknown" : "Unknown",
             location,
             startDate: item.startDate,
@@ -305,6 +299,7 @@ export default function VacationManagement() {
         <Card>
           <CardContent className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -314,36 +309,46 @@ export default function VacationManagement() {
                   className="pl-10 h-9 text-sm border border-gray-300 dark:bg-gray-800 text-white"
                 />
               </div>
-              <div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-10 border-gray-300 text-black dark:text-white dark:bg-gray-800">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-gray-800">
-                    <SelectItem value="all">All Status</SelectItem>
-                    {statusOptions.map((status) => (
-                      <SelectItem key={status} value={status.toLowerCase()} className="dark:text-white">
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              {/* Status Filter (native select) */}
+              <div className="relative">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+                >
+                  <option value="all">All Status</option>
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status.toLowerCase()}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+                </div>
               </div>
-              <div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-10 border-gray-300 text-black dark:text-white dark:bg-gray-800">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-gray-800">
-                    <SelectItem value="all">All Types</SelectItem>
-                    {typeOptions.map((type) => (
-                      <SelectItem key={type} value={type.toLowerCase()} className="dark:text-white">
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              {/* Type Filter (native select) */}
+              <div className="relative">
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
+                >
+                  <option value="all">All Types</option>
+                  {typeOptions.map((type) => (
+                    <option key={type} value={type.toLowerCase()}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+                </div>
               </div>
+
+              {/* Clear Filters Button */}
               <Button
                 variant="outline"
                 onClick={clearFilters}
