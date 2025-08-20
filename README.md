@@ -4,7 +4,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 Create a `.env` file in the root directory with the following variables:
 
-```bash
+``bash
 
 # NextAuth Configuration
 
@@ -15,7 +15,7 @@ NEXTAUTH_SECRET=your-secret-key-here
 
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 
-```
+``
 
 Generate a secure NEXTAUTH_SECRET using:
 
