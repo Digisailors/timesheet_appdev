@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download } from 'lucide-react';
-import DatePicker from 'react-datepicker';
+import { FileText, Download, Calendar } from 'lucide-react';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
@@ -10,6 +9,11 @@ interface Employee {
   id: string;
   firstName: string;
   lastName: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
 }
 
 interface Timesheet {
@@ -23,6 +27,12 @@ interface Timesheet {
   remarks: string;
   totalTravelHrs: string;
   employees?: Array<{ id: string }>;
+  project?: Project;
+}
+
+interface DateRange {
+  startDate: string;
+  endDate: string;
 }
 
 const styles = StyleSheet.create({
@@ -106,8 +116,14 @@ const MyDocument = ({ data, employeeName }: { data: Timesheet[]; employeeName: s
 
 const EmployeeReport: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: '',
+    endDate: '',
+  });
+  const [showDatePickers, setShowDatePickers] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +165,15 @@ const EmployeeReport: React.FC = () => {
         const result = await response.json();
         if (result.success && result.data) {
           setTimesheets(result.data);
+          // Extract unique projects
+          const uniqueProjects = Array.from(
+            new Map(
+              result.data
+                .filter((ts: Timesheet) => ts.project)
+                .map((ts: Timesheet) => [ts.project!.id, ts.project!])
+            ).values()
+          ) as Project[];
+          setProjects(uniqueProjects);
         } else {
           throw new Error('Invalid response format');
         }
@@ -166,14 +191,18 @@ const EmployeeReport: React.FC = () => {
 
   const filteredTimesheets = timesheets.filter((timesheet) => {
     const timesheetDate = new Date(timesheet.timesheetDate);
-    const isSameMonth = selectedMonth
-      ? timesheetDate.getMonth() === selectedMonth.getMonth() &&
-        timesheetDate.getFullYear() === selectedMonth.getFullYear()
-      : true;
     const isSameEmployee = selectedEmployee
       ? timesheet.employees && timesheet.employees.some(emp => emp.id === selectedEmployee)
       : false;
-    return isSameMonth && isSameEmployee;
+    const isSameProject = selectedProject
+      ? timesheet.project && timesheet.project.id === selectedProject
+      : true;
+    const isInDateRange =
+      dateRange.startDate && dateRange.endDate
+        ? timesheetDate >= new Date(dateRange.startDate) &&
+          timesheetDate <= new Date(dateRange.endDate)
+        : false;
+    return isSameEmployee && isSameProject && isInDateRange;
   });
 
   const calculateTotalHours = (filteredTimesheets: Timesheet[]) => {
@@ -200,11 +229,9 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
-
     const employeeName = selectedEmployee
       ? `${employees.find(emp => emp.id === selectedEmployee)?.firstName || ''} ${employees.find(emp => emp.id === selectedEmployee)?.lastName || ''}`
       : 'All Employees';
-
     const worksheet = XLSX.utils.json_to_sheet(
       filteredTimesheets.map(timesheet => ({
         Employee: employeeName,
@@ -218,7 +245,6 @@ const EmployeeReport: React.FC = () => {
         Remarks: timesheet.remarks,
       }))
     );
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");
@@ -229,7 +255,7 @@ const EmployeeReport: React.FC = () => {
       <div className="max-w-8xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Employee-Wise Report</h1>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Employee</label>
               <select
@@ -253,14 +279,71 @@ const EmployeeReport: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Month</label>
-              <DatePicker
-                selected={selectedMonth}
-                onChange={(date: Date | null) => setSelectedMonth(date)}
-                dateFormat="MMMM yyyy"
-                showMonthYearPicker
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Project</label>
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-              />
+                disabled={loading}
+              >
+                <option value="">All Projects</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Date Range</label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePickers(!showDatePickers)}
+                  className="w-full flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                >
+                  <Calendar size={16} />
+                  <span>
+                    {dateRange.startDate && dateRange.endDate
+                      ? `${new Date(dateRange.startDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${new Date(dateRange.endDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}`
+                      : 'Select a Date Range'}
+                  </span>
+                </button>
+                {showDatePickers && (
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={dateRange.startDate}
+                          onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                          onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={dateRange.endDate}
+                          onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                          onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <button
+                          onClick={() => setShowDatePickers(false)}
+                          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

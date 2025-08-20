@@ -6,7 +6,7 @@ interface Employee {
   name: string;
   email: string;
   designation: string;
-  designationType?: string;
+  designationType?: string | { designationTypeId: string; name: string };
   phoneNumber?: string;
   address?: string;
   experience?: string;
@@ -108,15 +108,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-  const [designationTypes, setDesignationTypes] = useState<DesignationType[]>(
-    []
-  );
+  const [designationTypes, setDesignationTypes] = useState<DesignationType[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       fetchDesignationTypes();
     }
-    if (editingEmployee) {
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (editingEmployee && designationTypes.length > 0) {
       const nameParts = editingEmployee.name.split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
@@ -124,11 +125,25 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       if (workingHoursValue && !workingHoursValue.includes("hr")) {
         workingHoursValue = workingHoursValue + "hr";
       }
+
+      // Match the designationType name to the correct id
+      let designationTypeId = "";
+      if (typeof editingEmployee.designationType === "string") {
+        const matchingType = designationTypes.find(type => type.name === editingEmployee.designationType);
+        designationTypeId = matchingType ? matchingType.id : "";
+        console.log("Matched designationTypeId:", designationTypeId);
+      } else if (typeof editingEmployee.designationType === "object" && editingEmployee.designationType) {
+        designationTypeId = editingEmployee.designationType.designationTypeId;
+      }
+
+      console.log("Editing employee designationType:", editingEmployee.designationType);
+      console.log("Available designationTypes:", designationTypes);
+
       setFormData({
         firstName,
         lastName,
         designation: editingEmployee.designation || "",
-        designationType: editingEmployee.designationType || "",
+        designationType: designationTypeId,
         phoneNumber: editingEmployee.phoneNumber || "+0000000000",
         email: editingEmployee.email || "",
         address: editingEmployee.address || "Some Address",
@@ -143,7 +158,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           editingEmployee.perHourRate || editingEmployee.normalHours || "",
         otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "",
       });
-    } else {
+    } else if (!editingEmployee && isOpen) {
       setFormData({
         firstName: "",
         lastName: "",
@@ -162,7 +177,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     }
     setErrors({});
     setTouched({});
-  }, [editingEmployee, isOpen]);
+  }, [editingEmployee, isOpen, designationTypes]);
 
   const fetchDesignationTypes = async () => {
     try {
@@ -170,23 +185,24 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/rules/all`
       );
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         const designationTypesMap = new Map<string, DesignationType>();
-        
+
         data.data.forEach((rule: Rule) => {
           const designation = rule.designation;
           if (designation && designation.status === "active") {
             designationTypesMap.set(designation.designationId, {
               id: designation.designationId,
               name: designation.name,
-              status: designation.status
+              status: designation.status,
             });
           }
         });
-        
+
         const uniqueDesignationTypes = Array.from(designationTypesMap.values());
         setDesignationTypes(uniqueDesignationTypes);
+        console.log("Fetched designationTypes:", uniqueDesignationTypes);
       } else {
         setDesignationTypes([]);
       }
@@ -288,9 +304,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       }
     } else if (name === "designationType") {
       let autoWorkingHours = "";
-      if (value === "Rental Employee" || value === "Coaster Driver") {
+      const selectedType = designationTypes.find((type) => type.id === value);
+      if (selectedType?.name === "Rental Employee" || selectedType?.name === "Coaster Driver") {
         autoWorkingHours = "10hr";
-      } else if (value === "Regular Employee" || value === "Regular Driver") {
+      } else if (selectedType?.name === "Regular Employee" || selectedType?.name === "Regular Driver") {
         autoWorkingHours = "8hr";
       }
       setFormData((prev) => ({
@@ -334,7 +351,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submission initiated");
-
     const newErrors: { [key: string]: string } = {};
     const allFields = [
       "firstName",
@@ -350,7 +366,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       "normalHours",
       "otHours",
     ];
-
     allFields.forEach((field) => {
       const error = validateField(
         field,
@@ -360,20 +375,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         newErrors[field] = error;
       }
     });
-
     const newTouched: { [key: string]: boolean } = {};
     allFields.forEach((field) => {
       newTouched[field] = true;
     });
-
     setTouched((prev) => ({ ...prev, ...newTouched }));
-
     if (Object.keys(newErrors).length > 0) {
       console.log("Validation errors found:", newErrors);
       setErrors(newErrors);
       return;
     }
-
     const apiPayload: EmployeeAPIPayload = {
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -388,9 +399,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       perHourRate: parseFloat(formData.normalHours),
       overtimeRate: parseFloat(formData.otHours),
     };
-
     console.log("API Payload:", apiPayload);
-
     try {
       onSubmit(apiPayload);
       onClose();
@@ -416,7 +425,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   if (!isOpen) return null;
-
   const isEditing = !!editingEmployee;
 
   return (
@@ -593,7 +601,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   value={formData.dateOfJoining}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()} // Ensures date picker opens on click
+                  onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
                   className={getFieldClassName(
                     "dateOfJoining",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

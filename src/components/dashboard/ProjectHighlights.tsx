@@ -59,7 +59,7 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
           Project Highlights
         </h2>
       </div>
-      <div className="p-6">
+      <div className="py-6">
         {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading projects...</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
 

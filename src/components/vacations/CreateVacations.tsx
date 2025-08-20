@@ -260,7 +260,7 @@ export default function CreateVacationForm({
   };
 
   const handleSubmit = async () => {
-    if (!employee || !leaveType || !startDate || !endDate || !reason || !selectedPerson) {
+    if (!employee || !leaveType || !startDate || !endDate || !selectedPerson) {
       setError('Please fill in all required fields');
       return;
     }
@@ -291,7 +291,7 @@ export default function CreateVacationForm({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  };  
 
   const handleCancel = () => {
     closeDialog();
@@ -422,7 +422,7 @@ export default function CreateVacationForm({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Please provide details about your leave request..."
-            className="min-h-[100px] mb-5 resize-none w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm bg-gray-50 placeholder:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-blue-400"
+            className="min-h-[100px] mb-5 resize-none w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm bg-gray-50 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder:text-blue-400"
           />
         </div>
       </div>

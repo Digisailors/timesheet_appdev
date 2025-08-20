@@ -304,7 +304,7 @@ const ProjectsPage = () => {
             employees: 0,
           };
           setProjects((prev) => [...prev, newProject]);
-          toast.success("✅ Project created successfully");
+          toast.success("Project created successfully");
         } else {
           throw new Error(result.message || "Failed to create project");
         }

@@ -31,6 +31,11 @@ const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selected
   const regularHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.normalHrs), 0);
   const overtimeHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.overtime), 0);
 
+  // Format values to one decimal place
+  const formattedTotalHours = totalHours.toFixed(1);
+  const formattedRegularHours = regularHours.toFixed(1);
+  const formattedOvertimeHours = overtimeHours.toFixed(1);
+
   const regularOTRatio =
     totalHours > 0
       ? `${((regularHours / totalHours) * 100).toFixed(0)}% / ${((overtimeHours / totalHours) * 100).toFixed(0)}%`
@@ -42,9 +47,9 @@ const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selected
         {selectedProject} - Project Summary
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
-        <StatCard title="Total Hours" value={totalHours.toString()} bgColor="bg-blue-50 dark:bg-blue-900" textColor="text-blue-600 dark:text-blue-300" />
-        <StatCard title="Regular Hours" value={regularHours.toString()} bgColor="bg-green-50 dark:bg-green-900" textColor="text-green-600 dark:text-green-300" />
-        <StatCard title="Overtime Hours" value={overtimeHours.toString()} bgColor="bg-orange-50 dark:bg-orange-900" textColor="text-orange-600 dark:text-orange-300" />
+        <StatCard title="Total Hours" value={formattedTotalHours} bgColor="bg-blue-50 dark:bg-blue-900" textColor="text-blue-600 dark:text-blue-300" />
+        <StatCard title="Regular Hours" value={formattedRegularHours} bgColor="bg-green-50 dark:bg-green-900" textColor="text-green-600 dark:text-green-300" />
+        <StatCard title="Overtime Hours" value={formattedOvertimeHours} bgColor="bg-orange-50 dark:bg-orange-900" textColor="text-orange-600 dark:text-orange-300" />
         <StatCard title="Regular/OT Ratio" value={regularOTRatio} bgColor="bg-purple-50 dark:bg-purple-900" textColor="text-purple-600 dark:text-purple-300" />
       </div>
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow-inner">

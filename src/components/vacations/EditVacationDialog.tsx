@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 interface VacationDetailsProps {
   isOpen: boolean;
@@ -96,6 +97,12 @@ const EditVacationDialog: React.FC<VacationDetailsProps> = ({
         payload
       );
       if (response.data.success) {
+        toast.success("Vacation updated successfully!", {
+          style: {
+            background: "blue", // Blue-500
+            color: "#fff",
+          },
+        });
         onEditSuccess();
         onClose();
       } else {
@@ -134,7 +141,6 @@ const EditVacationDialog: React.FC<VacationDetailsProps> = ({
             <X size={20} className="text-gray-400 dark:text-gray-300" />
           </button>
         </div>
-
         {/* Dialog Content */}
         <form onSubmit={handleSubmit} className="p-6 text-sm text-gray-900 dark:text-gray-100">
           <div className="grid grid-cols-2 gap-y-6 gap-x-8">
