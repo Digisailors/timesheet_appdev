@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 
@@ -17,14 +16,15 @@ interface SupervisorData {
   assignedProject?: string;
   assignedProjectId?: string;
 }
+
 interface SupervisorDialogProps {
   isOpen?: boolean;
   onClose?: () => void;
   mode?: 'add' | 'edit';
   initialData?: SupervisorData;
   onSubmit?: (data: SupervisorData, mode: 'add' | 'edit') => void;
-  projects?: { id: string; name: string }[]; // list of projects
-  selectedProjectId?: string | null; // selected project id
+  projects?: { id: string; name: string }[];
+  selectedProjectId?: string | null;
   setSelectedProjectId?: (id: string | null) => void;
 }
 
@@ -48,28 +48,18 @@ export default function SupervisorDialog({
   initialData,
   onSubmit,
   projects = [],
-  
   setSelectedProjectId,
 }: SupervisorDialogProps) {
   const [formData, setFormData] = useState<SupervisorData>(defaultFormData);
   const [errors, setErrors] = useState<Partial<SupervisorData>>({});
   const [showPassword, setShowPassword] = useState(false);
 
-  // Get today's date in YYYY-MM-DD format
-  // const getTodayDate = () => {
-  //   const today = new Date();
-  //   return today.toISOString().split('T')[0];
-  // };
-
-  // Prevent background scroll when dialog is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -91,8 +81,6 @@ export default function SupervisorDialog({
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Clear error on change
     if (errors[name as keyof SupervisorData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -100,15 +88,10 @@ export default function SupervisorDialog({
 
   const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
-    // Check if the value contains only letters and spaces
     const nameRegex = /^[a-zA-Z\s]*$/;
-    
     if (nameRegex.test(value)) {
       setFormData(prev => ({ ...prev, fullName: value }));
     }
-
-    // Clear error on change
     if (errors.fullName) {
       setErrors(prev => ({ ...prev, fullName: '' }));
     }
@@ -116,11 +99,8 @@ export default function SupervisorDialog({
 
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and limit to 10 digits
     const numericValue = value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, phoneNumber: numericValue }));
-
-    // Clear error on change
     if (errors.phoneNumber) {
       setErrors(prev => ({ ...prev, phoneNumber: '' }));
     }
@@ -128,16 +108,10 @@ export default function SupervisorDialog({
 
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Only allow numbers and decimal point
     const numericValue = value.replace(/[^0-9.]/g, '');
-    
-    // Prevent multiple decimal points
     const parts = numericValue.split('.');
     const formattedValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
-    
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
-
-    // Clear error on change
     if (errors[name as keyof SupervisorData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -145,16 +119,12 @@ export default function SupervisorDialog({
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SupervisorData> = {};
-
-    // Validation for required fields
     if (!formData.fullName?.trim()) {
       newErrors.fullName = 'Name is required';
     } else {
-      // Check if name contains only letters and spaces
       const nameRegex = /^[a-zA-Z\s]+$/;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const phoneRegex = /\d/;
-      
       if (!nameRegex.test(formData.fullName.trim())) {
         if (emailRegex.test(formData.fullName.trim())) {
           newErrors.fullName = 'Name cannot be an email address';
@@ -165,12 +135,12 @@ export default function SupervisorDialog({
         }
       }
     }
-    
-    if (!formData.emailAddress?.trim()) {
-      newErrors.emailAddress = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
+
+    // Email is now optional
+    if (formData.emailAddress?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
       newErrors.emailAddress = 'Invalid email format';
     }
+
     if (formData.specialization !== undefined && !formData.specialization.trim()) {
       newErrors.specialization = 'Specialization is required';
     }
@@ -205,7 +175,6 @@ export default function SupervisorDialog({
         newErrors.password = 'Min 6 characters';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -213,7 +182,6 @@ export default function SupervisorDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     const dataToSend: SupervisorData = {
       fullName: formData.fullName,
       emailAddress: formData.emailAddress,
@@ -226,7 +194,6 @@ export default function SupervisorDialog({
       perHourRate: formData.perHourRate,
       overtimeRate: formData.overtimeRate,
     };
-
     onSubmit?.(dataToSend, mode);
     onClose?.();
   };
@@ -255,7 +222,6 @@ export default function SupervisorDialog({
             <X size={24} />
           </button>
         </div>
-
         {/* Form */}
         <div className="overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -275,18 +241,19 @@ export default function SupervisorDialog({
                 />
                 {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
               </div>
-              <FormInput
-                label="Email Address"
-                name="emailAddress"
-                type="email"
-                value={formData.emailAddress}
-                error={errors.emailAddress}
-                onChange={handleInputChange}
-                placeholder="Enter email address"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium">Email Address</label>
+                <input
+                  type="email"
+                  name="emailAddress"
+                  value={formData.emailAddress}
+                  onChange={handleInputChange}
+                  placeholder="Enter email address"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.emailAddress && <p className="text-red-500 text-sm">{errors.emailAddress}</p>}
+              </div>
             </div>
-
             {/* Specialization & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormInput
@@ -296,6 +263,7 @@ export default function SupervisorDialog({
                 error={errors.specialization}
                 onChange={handleInputChange}
                 placeholder="Enter specialization"
+                required
               />
               <div>
                 <label className="text-sm font-medium">Phone Number</label>
@@ -311,7 +279,6 @@ export default function SupervisorDialog({
                 {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
               </div>
             </div>
-
             {/* Per Hour Rate & Overtime Rate */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -339,7 +306,6 @@ export default function SupervisorDialog({
                 {errors.overtimeRate && <p className="text-red-500 text-sm">{errors.overtimeRate}</p>}
               </div>
             </div>
-
             {/* Password (only in add mode) */}
             {mode === 'add' && (
               <div>
@@ -366,7 +332,6 @@ export default function SupervisorDialog({
                 {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
               </div>
             )}
-
             {/* Address */}
             <div>
               <label className="text-sm font-medium">Address</label>
@@ -380,19 +345,19 @@ export default function SupervisorDialog({
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             </div>
-
             {/* Date of Joining & Experience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormInput
-              label="Date of Joining"
-              name="dateOfJoining"
-              type="date"
-              value={formData.dateOfJoining || ''}
-              error={errors.dateOfJoining}
-              onChange={handleInputChange}
-              placeholder=""
-              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
-            />
+              <FormInput
+                label="Date of Joining"
+                name="dateOfJoining"
+                type="date"
+                value={formData.dateOfJoining || ''}
+                error={errors.dateOfJoining}
+                onChange={handleInputChange}
+                placeholder=""
+                onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                required
+              />
               <FormInput
                 label="Experience"
                 name="experience"
@@ -400,9 +365,9 @@ export default function SupervisorDialog({
                 error={errors.experience}
                 onChange={handleInputChange}
                 placeholder="Enter experience (e.g., 5 years)"
+                required
               />
             </div>
-
             {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
