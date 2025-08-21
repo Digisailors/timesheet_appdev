@@ -12,7 +12,7 @@ import StatCard from './StatCard';
 import ProjectHighlights from './ProjectHighlights';
 import WeeklySnapshot from './WeeklySnapshot';
 import TimesheetActivity from './TimesheetActivity';
-// import RecentActivity from './RecentActivity';
+import { getSession } from 'next-auth/react'; // Import getSession
 import { DashboardProps } from './types';
 
 interface Timesheet {
@@ -110,7 +110,6 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     'Fri': 0,
     'Sat': 0,
   });
-
   const projects = [
     {
       name: 'Maintenance',
@@ -141,65 +140,58 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
     },
   ];
 
-  // const recentActivity = [
-  //   { id: '1', user: 'John Doe', action: 'checked in', time: 'Today, 8:30 AM', type: 'checkin' },
-  //   { id: '2', user: 'Jane Smith', action: 'checked out', time: 'Today, 5:15 PM', type: 'checkout' },
-  //   { id: '3', user: 'Robert Johnson', action: 'submitted timesheet', time: 'Today, 5:30 PM', type: 'timesheet' },
-  //   { id: '4', user: 'Alice Williams', action: 'edited by supervisor', time: 'Today, 6:09 PM', type: 'edit' },
-  //   { id: '5', user: 'Project Beta', action: 'was added to locations', time: 'Yesterday, 9:00 AM', type: 'project' },
-  // ];
-
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    const cleanBaseUrl = baseUrl?.replace(/\/$/, "");
+    const fetchData = async () => {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        console.error("No access token found");
+        return;
+      }
 
-    const fetchEmployees = async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const cleanBaseUrl = baseUrl?.replace(/\/$/, "");
+
+      const fetchWithAuth = async (url: string) => {
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+        });
+        return response;
+      };
+
       try {
-        const response = await fetch(`${cleanBaseUrl}/employees/all`);
-        const data = await response.json();
+        // Fetch employees
+        const employeesResponse = await fetchWithAuth(`${cleanBaseUrl}/employees/all`);
+        const employeesData = await employeesResponse.json();
         setStats((prevStats) => ({
           ...prevStats,
-          totalEmployees: Array.isArray(data.data) ? data.data.length : 0,
+          totalEmployees: Array.isArray(employeesData.data) ? employeesData.data.length : 0,
         }));
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      }
-    };
 
-    const fetchTimesheets = async () => {
-      try {
-        const response = await fetch(`${cleanBaseUrl}/timesheet/all`);
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          const timesheets = result.data as Timesheet[];
+        // Fetch timesheets
+        const timesheetsResponse = await fetchWithAuth(`${cleanBaseUrl}/timesheet/all`);
+        const timesheetsResult = await timesheetsResponse.json();
+        if (timesheetsResult.success && Array.isArray(timesheetsResult.data)) {
+          const timesheets = timesheetsResult.data as Timesheet[];
           const today = getTodayDate();
-
-          // Filter timesheets for today
           const todayTimesheets = timesheets.filter(
             (ts: Timesheet) => ts.timesheetDate === today
           );
-
-          // Extract unique locations for today
           const uniqueLocations = new Set<string>();
           todayTimesheets.forEach((ts: Timesheet) => {
             if (ts.location) {
               uniqueLocations.add(ts.location);
             }
           });
-
-          // Update stats with the count of unique locations
           setStats((prev) => ({
             ...prev,
             activeLocations: uniqueLocations.size,
           }));
-
-          // Calculate total overtime hours for all time
           const totalOvertimeHoursAllTime = timesheets.reduce(
             (sum: number, ts: Timesheet) => sum + parseFloat(ts.overtime || '0'),
             0
           );
-
-          // Rest of your existing logic for weekly stats
           const { start, end } = getCurrentWeekRange();
           const currentWeekTimesheets = timesheets.filter((ts: Timesheet) => {
             const tsDate = new Date(ts.timesheetDate);
@@ -249,34 +241,31 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
             Fri: dayCounts.Fri ? dayTotals.Fri / dayCounts.Fri : 0,
             Sat: dayCounts.Sat ? dayTotals.Sat / dayCounts.Sat : 0,
           };
-
           setStats((prev) => ({
             ...prev,
             totalTimesheets: timesheets.length,
             totalOvertimeHours: parseFloat(totalOvertimeHoursAllTime.toFixed(2)),
             daysWithTimesheets: new Set(timesheets.map((ts: Timesheet) => ts.timesheetDate)).size,
           }));
-
           setWeeklyStats({
             totalEntries,
             workHours: parseFloat(totalWorkHours.toFixed(2)),
             otHours: parseFloat(totalOvertimeHoursWeekly.toFixed(2)),
             activeEmployees,
           });
-
           setTimesheetData(avgData);
         }
       } catch (error) {
         console.error("Error fetching timesheets:", error);
       }
-    };
 
-    const fetchMissingEntries = async () => {
       try {
-        const response = await fetch(`${cleanBaseUrl}/employees/allemployeebyTodaystatus`);
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          const missingEntries = result.data.filter(
+        // Fetch missing entries
+        const date= new Date()
+        const missingEntriesResponse = await fetchWithAuth(`${cleanBaseUrl}/employees/allemployeebyTodaystatus/${date}`);
+        const missingEntriesResult = await missingEntriesResponse.json();
+        if (missingEntriesResult.success && Array.isArray(missingEntriesResult.data)) {
+          const missingEntries = missingEntriesResult.data.filter(
             (emp: { isAssignedToday: boolean }) => !emp.isAssignedToday
           ).length;
           setStats((prev) => ({
@@ -289,9 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
       }
     };
 
-    fetchEmployees();
-    fetchTimesheets();
-    fetchMissingEntries();
+    fetchData();
   }, []);
 
   return (
@@ -356,7 +343,6 @@ const Dashboard: React.FC<DashboardProps> = ({ className = '' }) => {
           </div>
           <div className="space-y-6">
             <TimesheetActivity timesheetData={timesheetData} />
-            {/* <RecentActivity recentActivity={recentActivity} /> */}
           </div>
         </div>
       </div>

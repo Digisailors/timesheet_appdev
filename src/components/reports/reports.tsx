@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProjectSelector from './ProjectSelector';
 import ProjectSummary from './ProjectSummary';
 import EmployeeReport from './EmployeeReport';
+import { getSession } from 'next-auth/react';
 
 const ReportsPage = () => {
   const [timesheetData, setTimesheetData] = useState([]);
@@ -12,9 +13,24 @@ const ReportsPage = () => {
     const fetchTimesheetData = async () => {
       try {
         if (selectedProject !== 'Select Project' && dateRange.startDate && dateRange.endDate) {
+          const session = await getSession();
+          if (!session?.accessToken) {
+            throw new Error("No access token found");
+          }
+
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all?project=${selectedProject}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all?project=${selectedProject}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${session.accessToken}`,
+              }
+            }
           );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
           const data = await response.json();
           setTimesheetData(data.data);
         }

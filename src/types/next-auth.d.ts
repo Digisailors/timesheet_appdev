@@ -1,35 +1,33 @@
-// Type declarations for NextAuth
+/* eslint-disable */
+import NextAuth from "next-auth";
 
 declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      name: string
-      email: string
-      phoneNumber: string
-      isActive: boolean
-      createdAt: string
-      updatedAt: string
-    }
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    token?: string;
   }
 
-  interface User {
-    id: string
-    name: string
-    email: string
-    phoneNumber: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
+  interface Session {
+    user: User;
+    accessToken?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string
-    phoneNumber: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    accessToken?: string;
   }
 }

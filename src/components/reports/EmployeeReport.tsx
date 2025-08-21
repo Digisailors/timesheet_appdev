@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import toast from 'react-hot-toast';
+import { getSession } from 'next-auth/react';
 
 interface Employee {
   id: string;
@@ -132,10 +133,24 @@ const EmployeeReport: React.FC = () => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }
+        );
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const result = await response.json();
         if (result.success && result.data) {
           const fetchedEmployees = result.data.map((employee: Employee) => ({
@@ -158,10 +173,24 @@ const EmployeeReport: React.FC = () => {
     const fetchTimesheets = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }
+        );
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const result = await response.json();
         if (result.success && result.data) {
           setTimesheets(result.data);
@@ -229,9 +258,11 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
+
     const employeeName = selectedEmployee
       ? `${employees.find(emp => emp.id === selectedEmployee)?.firstName || ''} ${employees.find(emp => emp.id === selectedEmployee)?.lastName || ''}`
       : 'All Employees';
+
     const worksheet = XLSX.utils.json_to_sheet(
       filteredTimesheets.map(timesheet => ({
         Employee: employeeName,
@@ -245,6 +276,7 @@ const EmployeeReport: React.FC = () => {
         Remarks: timesheet.remarks,
       }))
     );
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");

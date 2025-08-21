@@ -20,6 +20,7 @@ import { getColumns } from "./columns";
 import { TimeSheet } from "../../types/TimeSheet";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { getSession } from "next-auth/react";
 
 interface DataTableProps {
   selectedDate: Date | undefined;
@@ -163,25 +164,20 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
       const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
       const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-
       const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
       const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
       const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-
       const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
       const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
       const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
       const breakMinutes = (breakTimeInHours % 1) * 60;
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
-
       const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
       const isSupervisor = timesheet.type === "supervisor";
       const designationType = isSupervisor ? "Supervisor" : timesheet.employees?.[0]?.designation || "Unknown";
-
       return {
         id: timesheet.id,
         employee: employeeName,
@@ -217,8 +213,18 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     useEffect(() => {
       const fetchData = async () => {
         try {
+          const session = await getSession();
+          if (!session?.accessToken) {
+            throw new Error("No access token found");
+          }
+
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
+            {
+              headers: {
+                'Authorization': `Bearer ${session.accessToken}`,
+              }
+            }
           );
           const timesheets = response.data.data.map(transformTimesheetData);
           setData(timesheets);
@@ -231,11 +237,20 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
 
     const createTimesheet = useCallback(async (timesheetData: CreateTimesheetRequest) => {
       try {
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/create`,
-          timesheetData
+          timesheetData,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }
         );
-
         if (response.data.success && response.data.data) {
           const newTimesheets = response.data.data.map(transformTimesheetData);
           setData(prevData => [...prevData, ...newTimesheets]);
@@ -266,7 +281,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         offsiteTravelEnd: employee.offsiteTravelEnd || '',
         remarks: employee.remarks || '',
       };
-
       setSelectedEmployee(employeeData);
       setSelectedTimesheetId(employee.id);
       setIsEditDialogOpen(true);
@@ -274,18 +288,31 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
 
     const handleEditSave = useCallback(async (updatedEmployee: UpdatedEmployee) => {
       try {
-        await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/update/${selectedTimesheetId}`, {
-          name: updatedEmployee.name,
-          onsiteTravelStart: updatedEmployee.travelStart,
-          onsiteTravelEnd: updatedEmployee.travelEnd,
-          onsiteSignIn: updatedEmployee.signIn,
-          onsiteBreakStart: updatedEmployee.breakStart,
-          onsiteBreakEnd: updatedEmployee.breakEnd,
-          onsiteSignOut: updatedEmployee.signOut,
-          offsiteTravelStart: updatedEmployee.offsiteTravelStart,
-          offsiteTravelEnd: updatedEmployee.offsiteTravelEnd,
-          remarks: updatedEmployee.remarks,
-        });
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
+        await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/update/${selectedTimesheetId}`,
+          {
+            name: updatedEmployee.name,
+            onsiteTravelStart: updatedEmployee.travelStart,
+            onsiteTravelEnd: updatedEmployee.travelEnd,
+            onsiteSignIn: updatedEmployee.signIn,
+            onsiteBreakStart: updatedEmployee.breakStart,
+            onsiteBreakEnd: updatedEmployee.breakEnd,
+            onsiteSignOut: updatedEmployee.signOut,
+            offsiteTravelStart: updatedEmployee.offsiteTravelStart,
+            offsiteTravelEnd: updatedEmployee.offsiteTravelEnd,
+            remarks: updatedEmployee.remarks,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }
+        );
 
         setData(prevData =>
           prevData.map(item =>
@@ -306,7 +333,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               : item
           )
         );
-
         setIsEditDialogOpen(false);
         setSelectedEmployee(null);
         setSelectedTimesheetId(null);
@@ -369,47 +395,56 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     });
 
     const exportExcel = useCallback(async () => {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Timesheet");
-      worksheet.columns = [
-        { header: "Employee", key: "employee", width: 20 },
-        { header: "Project", key: "project", width: 20 },
-        { header: "Location", key: "location", width: 15 },
-        { header: "Date", key: "date", width: 15 },
-        { header: "Check In", key: "checkIn", width: 10 },
-        { header: "Check Out", key: "checkOut", width: 10 },
-        { header: "Total Hours", key: "hours", width: 12 },
-        { header: "Overtime", key: "otHours", width: 10 },
-        { header: "Travel Time", key: "travelTime", width: 12 },
-        { header: "Break Time", key: "breakTime", width: 12 },
-        { header: "Supervisor", key: "supervisorName", width: 18 },
-        { header: "Remarks", key: "remarks", width: 22 },
-        { header: "Status", key: "status", width: 10 },
-      ];
+      try {
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
 
-      const exportData = filteredData.map((row) => ({
-        employee: row.employee,
-        project: row.project,
-        location: row.location,
-        date: formatDate(row.timesheetDate),
-        checkIn: row.checkIn,
-        checkOut: row.checkOut,
-        hours: row.hours,
-        otHours: row.otHours,
-        travelTime: row.travelTime,
-        breakTime: row.breakTime,
-        supervisorName: row.supervisorName,
-        remarks: row.remarks,
-        status: row.status,
-      }));
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Timesheet");
+        worksheet.columns = [
+          { header: "Employee", key: "employee", width: 20 },
+          { header: "Project", key: "project", width: 20 },
+          { header: "Location", key: "location", width: 15 },
+          { header: "Date", key: "date", width: 15 },
+          { header: "Check In", key: "checkIn", width: 10 },
+          { header: "Check Out", key: "checkOut", width: 10 },
+          { header: "Total Hours", key: "hours", width: 12 },
+          { header: "Overtime", key: "otHours", width: 10 },
+          { header: "Travel Time", key: "travelTime", width: 12 },
+          { header: "Break Time", key: "breakTime", width: 12 },
+          { header: "Supervisor", key: "supervisorName", width: 18 },
+          { header: "Remarks", key: "remarks", width: 22 },
+          { header: "Status", key: "status", width: 10 },
+        ];
 
-      worksheet.addRows(exportData);
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const selectedDateString = selectedDate ? formatDate(selectedDate.toISOString()) : formatDate(new Date().toISOString());
-      saveAs(blob, `Timesheet_${selectedDateString}.xlsx`);
+        const exportData = filteredData.map((row) => ({
+          employee: row.employee,
+          project: row.project,
+          location: row.location,
+          date: formatDate(row.timesheetDate),
+          checkIn: row.checkIn,
+          checkOut: row.checkOut,
+          hours: row.hours,
+          otHours: row.otHours,
+          travelTime: row.travelTime,
+          breakTime: row.breakTime,
+          supervisorName: row.supervisorName,
+          remarks: row.remarks,
+          status: row.status,
+        }));
+
+        worksheet.addRows(exportData);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const selectedDateString = selectedDate ? formatDate(selectedDate.toISOString()) : formatDate(new Date().toISOString());
+        saveAs(blob, `Timesheet_${selectedDateString}.xlsx`);
+      } catch (error) {
+        console.error("Error exporting Excel:", error);
+      }
     }, [filteredData, selectedDate]);
 
     useImperativeHandle(ref, () => ({
