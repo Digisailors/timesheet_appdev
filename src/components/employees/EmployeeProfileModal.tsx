@@ -1,7 +1,9 @@
+"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-hot-toast";
 import ExcelJS from 'exceljs';
+import { getSession } from "next-auth/react";
 
 interface Employee {
   id: string;
@@ -105,15 +107,19 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   });
 
   const cleanBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
   const generateAvatarBg = () => "bg-blue-600";
 
   const createEmployee = async (employeeData: CreateEmployeeData): Promise<Employee | null> => {
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
       const response = await fetch(`${cleanBaseUrl}/employees/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify(employeeData),
       });
@@ -155,53 +161,55 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
   };
 
   const fetchEmployeeById = useCallback(async (id: string) => {
-  setIsLoading(true);
-  try {
-    const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
-    const result = await response.json();
-    if (result.success && result.data) {
-      const emp = result.data;
-      const fullName = `${emp.firstName} ${emp.lastName}`;
-
-      // Extract the name from designationType if it's an object
-      const designationType = typeof emp.designationType === 'object'
-        ? emp.designationType.name
-        : emp.designationType || '';
-
-      const enrichedEmployee: Employee = {
-        ...emp,
-        name: fullName,
-        avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
-        avatarBg: generateAvatarBg(),
-        project: emp.specialization || emp.designation,
-        // workHours: "160h",
-        // timeFrame: "This month",
-        designation: emp.designation || "",
-        designationType: designationType,
-        phoneNumber: emp.phoneNumber || "+0000000000",
-        email: emp.email || "",
-        address: emp.address || "Some Address",
-        experience: emp.experience || "0 years",
-        dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-        specialization: emp.specialization || emp.designation || "",
-        currentProject: emp.specialization || emp.designation,
-        perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
-        overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
-      };
-      setEmployee(enrichedEmployee);
-    } else {
-      toast.error("Failed to fetch employee details");
+    setIsLoading(true);
+    try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+      const response = await fetch(`${cleanBaseUrl}/employees/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        const emp = result.data;
+        const fullName = `${emp.firstName} ${emp.lastName}`;
+        const designationType = typeof emp.designationType === 'object'
+          ? emp.designationType.name
+          : emp.designationType || '';
+        const enrichedEmployee: Employee = {
+          ...emp,
+          name: fullName,
+          avatar: (emp.firstName[0] + emp.lastName[0]).toUpperCase(),
+          avatarBg: generateAvatarBg(),
+          project: emp.specialization || emp.designation,
+          designation: emp.designation || "",
+          designationType: designationType,
+          phoneNumber: emp.phoneNumber || "+0000000000",
+          email: emp.email || "",
+          address: emp.address || "Some Address",
+          experience: emp.experience || "0 years",
+          dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+          specialization: emp.specialization || emp.designation || "",
+          currentProject: emp.specialization || emp.designation,
+          perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
+          overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
+        };
+        setEmployee(enrichedEmployee);
+      } else {
+        toast.error("Failed to fetch employee details");
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error fetching employee by ID:", error);
+      toast.error("Error fetching employee details");
       onClose();
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching employee by ID:", error);
-    toast.error("Error fetching employee details");
-    onClose();
-  } finally {
-    setIsLoading(false);
-  }
-}, [cleanBaseUrl, onClose]);
-
+  }, [cleanBaseUrl, onClose]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -260,7 +268,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       { header: 'Supervisor', key: 'supervisorName', width: 20 },
       { header: 'Remarks', key: 'description', width: 50 },
     ];
-
     timesheetData.forEach((entry) => {
       worksheet.addRow({
         fullName: entry.employees[0].fullName,
@@ -275,7 +282,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
         description: entry.remarks || employee?.designationType || 'Regular Employee',
       });
     });
-
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
@@ -292,7 +298,18 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       fetchEmployeeById(employeeId);
       const fetchTimesheetData = async () => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/employeehistory/${employeeId}`);
+          const session = await getSession();
+          if (!session?.accessToken) {
+            throw new Error("No access token found");
+          }
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/employeehistory/${employeeId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${session.accessToken}`,
+              },
+            }
+          );
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
             setTimesheetData(result.data);
@@ -541,7 +558,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
 
   const OverviewTab = () => {
     if (!employee) return null;
-
     return (
       <div className="bg-gray-50 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">
@@ -594,7 +610,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
                 <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
               </div>
-              
             </div>
           </div>
         </div>
@@ -615,7 +630,6 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       }
       exportToExcel();
     };
-
     return (
       <div className="bg-gray-50 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg mx-auto max-w-2xl my-8 p-8">

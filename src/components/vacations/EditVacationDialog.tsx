@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { getSession } from "next-auth/react";
 
 interface VacationDetailsProps {
   isOpen: boolean;
@@ -88,14 +89,26 @@ const EditVacationDialog: React.FC<VacationDetailsProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const payload = {
         ...formData,
         status: formData.status === "Paid Vacation" ? "Paid Vacation" : "Unpaid Vacation",
       };
+
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/update/${data.id}`,
-        payload
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          }
+        }
       );
+
       if (response.data.success) {
         toast.success("Vacation updated successfully!", {
           style: {

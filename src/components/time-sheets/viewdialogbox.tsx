@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { getSession } from 'next-auth/react';
 
 interface ViewDialogBoxProps {
   isOpen: boolean;
@@ -41,21 +42,30 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
   const fetchTimesheetDetails = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/${timesheetId}`);
-      const data = response.data.data;
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
 
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/${timesheetId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          }
+        }
+      );
+
+      const data = response.data.data;
       const travelStartTime1 = new Date(`1970-01-01T${data.onsiteTravelStart}`).getTime();
       const travelEndTime1 = new Date(`1970-01-01T${data.onsiteTravelEnd}`).getTime();
       const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-
       const travelStartTime2 = new Date(`1970-01-01T${data.offsiteTravelStart}`).getTime();
       const travelEndTime2 = new Date(`1970-01-01T${data.offsiteTravelEnd}`).getTime();
       const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
-
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-
       const breakStartTime = new Date(`1970-01-01T${data.onsiteBreakStart}`).getTime();
       const breakEndTime = new Date(`1970-01-01T${data.onsiteBreakEnd}`).getTime();
       const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
@@ -89,7 +99,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         overTimeSalary: data.overTimeSalary || "0",
         type: data.type,
       };
-
       setEmployee(employeeData);
     } catch (error) {
       console.error("Error fetching timesheet details:", error);

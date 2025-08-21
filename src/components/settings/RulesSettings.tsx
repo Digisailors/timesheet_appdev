@@ -1,11 +1,11 @@
 "use client";
-
 import { useMemo } from "react";
 import { useRef } from "react";
 import type React from "react";
 import { useState, useEffect, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { Edit, Trash2, Calculator, X, ChevronDown } from "lucide-react";
+import { getSession } from 'next-auth/react';
 
 // Custom Modal Component
 const CustomModal = ({
@@ -172,9 +172,7 @@ interface DesignationOption {
 
 const RulesSettings: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
-  const [designationOptions, setDesignationOptions] = useState<
-    DesignationOption[]
-  >([]);
+  const [designationOptions, setDesignationOptions] = useState<DesignationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -188,22 +186,31 @@ const RulesSettings: React.FC = () => {
     normalHours: "",
   });
   const [submitting, setSubmitting] = useState(false);
-
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const fetchRules = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/rules/all`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/rules/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        }
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch rules: ${response.statusText}`);
       }
+
       const data = await response.json();
       const rulesArray: Rule[] = Array.isArray(data) ? data : data.data || [];
       setRules(rulesArray);
-      console.log("Fetched rules:", rulesArray); // Log fetched rules
+      console.log("Fetched rules:", rulesArray);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch rules");
       console.error("Error fetching rules:", err);
@@ -215,18 +222,23 @@ const RulesSettings: React.FC = () => {
 
   const fetchDesignationTypes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/designationTypes/all`);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch designation types: ${response.statusText}`
-        );
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
       }
-      const data = await response.json();
-      const designationsArray: Designation[] = Array.isArray(data)
-        ? data
-        : data.data || [];
 
-      // Filter only active designations and create options
+      const response = await fetch(`${API_BASE_URL}/designationTypes/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch designation types: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const designationsArray: Designation[] = Array.isArray(data) ? data : data.data || [];
       const options = designationsArray
         .filter((d: Designation) => d.status === "active")
         .map((d: Designation) => ({
@@ -236,13 +248,11 @@ const RulesSettings: React.FC = () => {
         }));
 
       setDesignationOptions(options);
-      console.log("Fetched active designation options:", options); // Log fetched active designation options
+      console.log("Fetched active designation options:", options);
     } catch (err) {
       console.error("Error fetching designation types:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load designation types for dropdown."
+        err instanceof Error ? err.message : "Failed to load designation types for dropdown."
       );
     }
   };
@@ -252,26 +262,17 @@ const RulesSettings: React.FC = () => {
     fetchDesignationTypes();
   }, []);
 
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const numericRegex = /^-?\d*\.?\d*$/;
-
     setNewRule((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    // Always clear the general error message on any input change
-    // The validation in handleSave will re-evaluate on submit
     setError(null);
 
-    // Re-apply specific numeric validation error if the input is invalid
     if (
-      (name === "breakTime" ||
-        name === "allowedTravelHours" ||
-        name === "normalHours") &&
+      (name === "breakTime" || name === "allowedTravelHours" || name === "normalHours") &&
       value !== "" &&
       !numericRegex.test(value)
     ) {
@@ -284,12 +285,10 @@ const RulesSettings: React.FC = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear the general error message on any select change
     setError(null);
   };
 
   const handleSave = async () => {
-    // Validate required fields based on whether it's an edit or new creation
     let validationError = false;
     if (!isEditing && !newRule.designationId) {
       setError("Designation Type is required.");
@@ -300,98 +299,85 @@ const RulesSettings: React.FC = () => {
       newRule.allowedTravelHours === "" ||
       newRule.normalHours === ""
     ) {
-      setError(
-        "All numeric fields (Normal Hours, Break Time, Allowed Travel Hours) are required."
-      );
+      setError("All numeric fields (Normal Hours, Break Time, Allowed Travel Hours) are required.");
       validationError = true;
     }
-
     if (validationError) {
       return;
     }
 
-    // Validate numeric fields
-    const numericFields = [
-      "breakTime",
-      "allowedTravelHours",
-      "normalHours",
-    ] as const;
+    const numericFields = ["breakTime", "allowedTravelHours", "normalHours"] as const;
     for (const field of numericFields) {
       if (isNaN(Number.parseFloat(newRule[field]))) {
-        setError(
-          `Invalid number for ${field}. Please enter a valid numeric value.`
-        );
+        setError(`Invalid number for ${field}. Please enter a valid numeric value.`);
         return;
       }
     }
 
     if (!isEditing) {
-      // This check is now redundant because the dropdown is filtered,
-      // but keeping it as a fallback for robustness.
       const selectedDesignation = designationOptions.find(
         (option) => option.value === newRule.designationId
       );
       const selectedDesignationName = selectedDesignation?.label?.toLowerCase();
-
       const existingRuleByName = rules.find(
-        (rule) =>
-          rule.designation.name.toLowerCase() === selectedDesignationName
+        (rule) => rule.designation.name.toLowerCase() === selectedDesignationName
       );
-
       if (existingRuleByName) {
-        setError(
-          `A rule for designation "${selectedDesignation?.label}" already exists!`
-        );
+        setError(`A rule for designation "${selectedDesignation?.label}" already exists!`);
         return;
       }
     }
 
     try {
       setSubmitting(true);
-      setError(null); // Clear any previous errors before submission
+      setError(null);
+
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
 
       let payload: {
         breakTime: number;
         allowedTravelHours: number;
         normalHours: number;
-        designationId?: string; // designationId is optional for update
+        designationId?: string;
       };
 
       let response: Response;
 
       if (isEditing && currentRuleId) {
-        // For update, exclude designationId from the payload body
         payload = {
           breakTime: Number.parseFloat(newRule.breakTime),
           allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
           normalHours: Number.parseFloat(newRule.normalHours),
         };
-        console.log("Payload being sent for update:", payload); // Log the payload for debugging
 
-        response = await fetch(
-          `${API_BASE_URL}/rules/update/${currentRuleId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+        console.log("Payload being sent for update:", payload);
+
+        response = await fetch(`${API_BASE_URL}/rules/update/${currentRuleId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
       } else {
-        // For creation, include designationId in the payload body
         payload = {
           designationId: newRule.designationId,
           breakTime: Number.parseFloat(newRule.breakTime),
           allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
           normalHours: Number.parseFloat(newRule.normalHours),
         };
-        console.log("Payload being sent for creation:", payload); // Log the payload for debugging
+
+        console.log("Payload being sent for creation:", payload);
 
         response = await fetch(`${API_BASE_URL}/rules/create`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
           },
           body: JSON.stringify(payload),
         });
@@ -399,12 +385,10 @@ const RulesSettings: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || `Failed to save rule: ${response.statusText}`
-        );
+        throw new Error(errorData.message || `Failed to save rule: ${response.statusText}`);
       }
 
-      await fetchRules(); // Re-fetch rules to update the list and available designation options
+      await fetchRules();
       setShowPopup(false);
       setIsEditing(false);
       setCurrentRuleId(null);
@@ -423,27 +407,20 @@ const RulesSettings: React.FC = () => {
   };
 
   const handleEdit = (rule: Rule) => {
-    // Safely convert numbers to strings, treating null/undefined as empty strings
     setNewRule({
       designationId: rule.designation.id,
       breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
-      allowedTravelHours:
-        rule.allowedTravelHours != null
-          ? rule.allowedTravelHours.toString()
-          : "",
+      allowedTravelHours: rule.allowedTravelHours != null ? rule.allowedTravelHours.toString() : "",
       normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
     });
     setCurrentRuleId(rule.id);
     setIsEditing(true);
     setShowPopup(true);
-    setError(null); // Clear any existing errors when opening the edit popup
+    setError(null);
     console.log("New rule state after handleEdit:", {
       designationId: rule.designation.id,
       breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
-      allowedTravelHours:
-        rule.allowedTravelHours != null
-          ? rule.allowedTravelHours.toString()
-          : "",
+      allowedTravelHours: rule.allowedTravelHours != null ? rule.allowedTravelHours.toString() : "",
       normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
     });
   };
@@ -455,22 +432,29 @@ const RulesSettings: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!currentRuleId) return;
+
     try {
       setSubmitting(true);
       setError(null);
-      const response = await fetch(
-        `${API_BASE_URL}/rules/delete/${currentRuleId}`,
-        {
-          method: "DELETE",
+
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/rules/delete/${currentRuleId}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
         }
-      );
+      });
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || `Failed to delete rule: ${response.statusText}`
-        );
+        throw new Error(errorData.message || `Failed to delete rule: ${response.statusText}`);
       }
-      await fetchRules(); // Re-fetch rules to update the list and available designation options
+
+      await fetchRules();
       setShowDeleteConfirmation(false);
       setCurrentRuleId(null);
     } catch (err) {
@@ -481,7 +465,6 @@ const RulesSettings: React.FC = () => {
     }
   };
 
-  // Derive available options based on current rules using useMemo for optimization
   const availableDesignationOptions = useMemo(() => {
     console.log("Recalculating availableDesignationOptions...");
     console.log("Current rules for filtering:", rules);
@@ -489,26 +472,17 @@ const RulesSettings: React.FC = () => {
 
     if (isEditing) {
       console.log("Mode: Editing. Showing all active designation options.");
-      // When editing, show all active options (designationOptions are already filtered for active status)
       return designationOptions;
     }
 
-    // Create a Set of designation IDs that are currently used in rules for efficient lookup
-    const usedDesignationIds = new Set(
-      rules.map((rule) => rule.designation.id)
-    );
-
-    // Filter designationOptions to only include those not already used
-    // (designationOptions are already filtered for active status in fetchDesignationTypes)
+    const usedDesignationIds = new Set(rules.map((rule) => rule.designation.id));
     const filteredOptions = designationOptions.filter(
       (option: DesignationOption) => !usedDesignationIds.has(option.value)
     );
-    console.log(
-      "Mode: Adding new rule. Filtered active options:",
-      filteredOptions
-    );
+
+    console.log("Mode: Adding new rule. Filtered active options:", filteredOptions);
     return filteredOptions;
-  }, [isEditing, designationOptions, rules]); // Re-calculate only when these dependencies change
+  }, [isEditing, designationOptions, rules]);
 
   if (loading) {
     return (
@@ -533,8 +507,7 @@ const RulesSettings: React.FC = () => {
               Designation-wise Timing Rules
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Configure working hours, overtime rates, and travel policies for
-              each designation
+              Configure working hours, overtime rates, and travel policies for each designation
             </p>
           </div>
         </div>
@@ -563,9 +536,7 @@ const RulesSettings: React.FC = () => {
       <div className="space-y-4">
         {!Array.isArray(rules) || rules.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            {!Array.isArray(rules)
-              ? "Error loading rules. Please try again."
-              : "No rules found. Add your first rule to get started."}
+            {!Array.isArray(rules) ? "Error loading rules. Please try again." : "No rules found. Add your first rule to get started."}
           </div>
         ) : (
           rules.map((rule) => (
@@ -578,8 +549,7 @@ const RulesSettings: React.FC = () => {
                   {rule.designation.name}
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Standard: {rule.normalHours}h | Break: {rule.breakTime}h |
-                  Travel: {rule.allowedTravelHours}h
+                  Standard: {rule.normalHours}h | Break: {rule.breakTime}h | Travel: {rule.allowedTravelHours}h
                 </p>
               </div>
               <div className="flex justify-end items-start space-x-2">
@@ -602,7 +572,6 @@ const RulesSettings: React.FC = () => {
           ))
         )}
       </div>
-
       <CustomModal
         isOpen={showPopup}
         onClose={() => {
@@ -635,11 +604,9 @@ const RulesSettings: React.FC = () => {
               <CustomSelect
                 id="designation-select"
                 value={newRule.designationId}
-                onValueChange={(value) =>
-                  handleSelectChange("designationId", value)
-                }
+                onValueChange={(value) => handleSelectChange("designationId", value)}
                 placeholder="Select Designation"
-                options={availableDesignationOptions} // Use the derived options (filtered for active status)
+                options={availableDesignationOptions}
                 disabled={isEditing || submitting}
               />
               {isEditing && (
@@ -730,7 +697,6 @@ const RulesSettings: React.FC = () => {
           </div>
         </form>
       </CustomModal>
-
       <CustomModal
         isOpen={showDeleteConfirmation}
         onClose={() => setShowDeleteConfirmation(false)}
@@ -739,8 +705,7 @@ const RulesSettings: React.FC = () => {
       >
         <div className="p-6">
           <p className="mb-4 text-gray-600 dark:text-gray-300">
-            Are you sure you want to delete this rule? This action cannot be
-            undone.
+            Are you sure you want to delete this rule? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
             <button

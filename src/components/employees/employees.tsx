@@ -7,6 +7,7 @@ import EmployeeRow, { Employee } from "./EmployeeRow";
 import EmployeeProfileModal from "./EmployeeProfileModal";
 import AddEmployeeModal from "./AddEmployeeModalProps";
 import { toast } from "react-hot-toast";
+import { getSession } from "next-auth/react";
 
 interface EmployeeFormData {
   firstName: string;
@@ -62,7 +63,7 @@ const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [availableDesignations, setAvailableDesignations] = useState<string[]>([]);
-  const [availableJobTitles, setAvailableJobTitles] = useState<string[]>([]); // New state for job titles
+  const [availableJobTitles, setAvailableJobTitles] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
@@ -87,7 +88,16 @@ const EmployeesPage: React.FC = () => {
 
   const fetchEmployeeById = async (id: string): Promise<Employee | null> => {
     try {
-      const response = await fetch(`${cleanBaseUrl}/employees/${id}`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${cleanBaseUrl}/employees/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
       const result = await response.json();
       if (result.success && result.data) {
         const emp = result.data;
@@ -114,7 +124,7 @@ const EmployeesPage: React.FC = () => {
         toast.error("Failed to fetch employee details");
         return null;
       }
-    } catch {
+    } catch (error) {
       toast.error("Error fetching employee details");
       return null;
     }
@@ -122,14 +132,23 @@ const EmployeesPage: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${cleanBaseUrl}/projects/all`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${cleanBaseUrl}/projects/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setProjects(result.data);
       } else {
         setProjects([]);
       }
-    } catch {
+    } catch (error) {
       toast.error("Failed to fetch projects");
       setProjects([]);
     }
@@ -138,7 +157,16 @@ const EmployeesPage: React.FC = () => {
   const fetchEmployees = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${cleanBaseUrl}/employees/all`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${cleanBaseUrl}/employees/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         const enrichedEmployees = result.data.map((emp: RawEmployee): Employee => {
@@ -162,7 +190,7 @@ const EmployeesPage: React.FC = () => {
           };
         });
         setEmployees(enrichedEmployees);
-        
+
         // Extract designation type names (for designation types filter)
         const designationTypeNames = result.data
           .map((emp: RawEmployee) => emp.designationType?.name)
@@ -183,7 +211,7 @@ const EmployeesPage: React.FC = () => {
       } else {
         toast.error("Failed to fetch employees");
       }
-    } catch {
+    } catch (error) {
       toast.error("Error fetching employees");
     } finally {
       setIsLoading(false);
@@ -231,7 +259,7 @@ const EmployeesPage: React.FC = () => {
         setEditingEmployee(employee);
         setIsAddModalOpen(true);
       }
-    } catch {
+    } catch (error) {
       toast.error("Failed to load employee details for editing");
     } finally {
       setIsLoading(false);
@@ -245,22 +273,27 @@ const EmployeesPage: React.FC = () => {
   const performDelete = async (id: string) => {
     setIsDeleting(true);
     const minDelay = new Promise((resolve) => setTimeout(resolve, 1500));
-
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const deletePromise = fetch(`${cleanBaseUrl}/employees/delete/${id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
       });
-
       const [response] = await Promise.all([deletePromise, minDelay]);
       const result = await response.json();
-
       if (result.success) {
         toast.success("Employee deleted successfully!");
         setEmployees((prev) => prev.filter((emp) => emp.id !== id));
       } else {
         toast.error("Delete failed: " + result.message);
       }
-    } catch {
+    } catch (error) {
       toast.error("Error deleting employee.");
     } finally {
       setIsDeleting(false);
@@ -278,6 +311,11 @@ const EmployeesPage: React.FC = () => {
     console.log("Submitting employee data:", employeeData);
     setIsLoading(true);
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const commonData = {
         ...employeeData,
         specialization: employeeData.specialization || employeeData.designation,
@@ -286,31 +324,27 @@ const EmployeesPage: React.FC = () => {
         experience: employeeData.experience || "0 years",
         dateOfJoining: employeeData.dateOfJoining || new Date().toISOString().split("T")[0],
       };
-
       console.log("Prepared data for submission:", commonData);
-
       const isEdit = !!editingEmployee;
       const endpoint = isEdit
         ? `${cleanBaseUrl}/employees/update/${editingEmployee.id}`
         : `${cleanBaseUrl}/employees/create`;
       const method = isEdit ? "PUT" : "POST";
-
       console.log(`Submitting to endpoint: ${endpoint} with method: ${method}`);
 
       const response = await fetch(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
         body: JSON.stringify(commonData),
       });
-
       console.log("Response status:", response.status);
-
       const result = response.headers.get("content-type")?.includes("application/json")
         ? await response.json()
         : null;
-
       console.log("Response result:", result);
-
       if (response.ok && result?.success && result.data) {
         toast.success(`Employee ${isEdit ? "updated" : "added"} successfully!`);
         const newEmp = result.data;
@@ -320,8 +354,6 @@ const EmployeesPage: React.FC = () => {
           avatar: (newEmp.firstName[0] + newEmp.lastName[0]).toUpperCase(),
           avatarBg: generateAvatarBg(newEmp.id),
           project: newEmp.specialization || newEmp.designation,
-          // workHours: "160h",
-          // timeFrame: "This month",
           designation: newEmp.designation || "",
           designationType: typeof newEmp.designationType === 'object' ? newEmp.designationType?.name || "" : newEmp.designationType || "",
           phoneNumber: newEmp.phoneNumber || "+0000000000",
@@ -331,21 +363,16 @@ const EmployeesPage: React.FC = () => {
           dateOfJoining: newEmp.dateOfJoining || new Date().toISOString().split("T")[0],
           specialization: newEmp.specialization || newEmp.designation || "",
         };
-
         setEmployees((prev) => {
           const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);
           const updatedList = [enrichedEmp, ...filtered];
-
           // Update both designation types and job titles
           const uniqueDesignationTypes = [...new Set(updatedList.map((emp) => emp.designationType).filter((type): type is string => Boolean(type)))];
           setAvailableDesignations(uniqueDesignationTypes);
-
           const uniqueJobTitles = [...new Set(updatedList.map((emp) => emp.designation).filter((designation): designation is string => Boolean(designation)))];
           setAvailableJobTitles(uniqueJobTitles);
-
           return updatedList;
         });
-
         setIsAddModalOpen(false);
         setEditingEmployee(null);
       } else {
@@ -366,7 +393,7 @@ const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full min-h-screen  mx-auto px-2 py-2">
+    <div className="w-full h-full min-h-screen mx-auto px-2 py-2">
       <div className="px-4 sm:px-6 py-4">
         <EmployeeHeader onAdd={handleAddEmployee} />
         <div className="mt-3">
@@ -381,7 +408,7 @@ const EmployeesPage: React.FC = () => {
             setSelectedJobTitle={setSelectedJobTitle}
             projects={projects}
             availableDesignations={availableDesignations}
-            availableJobTitles={availableJobTitles} // Pass job titles separately
+            availableJobTitles={availableJobTitles}
             isLoadingProjects={isLoading}
             showSearchInput={true}
             showDesignationFilter={true}

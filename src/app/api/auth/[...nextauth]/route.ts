@@ -1,5 +1,5 @@
-import NextAuth from "next-auth/next"
-import CredentialsProvider from "next-auth/providers/credentials"
+import NextAuth from "next-auth/next";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const handler = NextAuth({
   providers: [
@@ -11,12 +11,10 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials) return null
-
+        if (!credentials) return null;
         const loginData = credentials.email
           ? { email: credentials.email, password: credentials.password }
-          : { phoneNumber: credentials.phoneNumber, password: credentials.password }
-
+          : { phoneNumber: credentials.phoneNumber, password: credentials.password };
         try {
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/signin`,
@@ -25,10 +23,8 @@ const handler = NextAuth({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(loginData),
             }
-          )
-
-          const data = await response.json()
-
+          );
+          const data = await response.json();
           if (response.ok && data.success) {
             return {
               id: data.data.id,
@@ -38,13 +34,13 @@ const handler = NextAuth({
               isActive: data.data.isActive,
               createdAt: data.data.createdAt,
               updatedAt: data.data.updatedAt,
-            }
+              token: data.data.token, // Store the JWT token
+            };
           }
-
-          return null
+          return null;
         } catch (error) {
-          console.error("Auth error:", error)
-          return null
+          console.error("Auth error:", error);
+          return null;
         }
       },
     }),
@@ -53,44 +49,32 @@ const handler = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt(params) {
-      const { token, user } = params
-      
+    async jwt({ token, user }) {
       if (user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(token as any).id = (user as any).id
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(token as any).phoneNumber = (user as any).phoneNumber
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(token as any).isActive = (user as any).isActive
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(token as any).createdAt = (user as any).createdAt
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(token as any).updatedAt = (user as any).updatedAt
+        token.id = user.id;
+        token.phoneNumber = user.phoneNumber;
+        token.isActive = user.isActive;
+        token.createdAt = user.createdAt;
+        token.updatedAt = user.updatedAt;
+        token.accessToken = user.token; // Attach the JWT token to the token object
       }
-      return token
+      return token;
     },
-    async session(params) {
-      const { session, token } = params
-      
+    async session({ session, token }) {
       if (session.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).id = (token as any).id
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).phoneNumber = (token as any).phoneNumber
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).isActive = (token as any).isActive
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).createdAt = (token as any).createdAt
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(session.user as any).updatedAt = (token as any).updatedAt
+        session.user.id = token.id;
+        session.user.phoneNumber = token.phoneNumber;
+        session.user.isActive = token.isActive;
+        session.user.createdAt = token.createdAt;
+        session.user.updatedAt = token.updatedAt;
+        session.accessToken = token.accessToken; // Attach the JWT token to the session
       }
-      return session
+      return session;
     },
   },
   session: {
     strategy: "jwt",
   },
-})
+});
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };

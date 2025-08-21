@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Calendar } from 'lucide-react';
+import { getSession } from 'next-auth/react';
 
 interface DateRange {
   startDate: string;
@@ -35,11 +36,17 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     const fetchProjects = async () => {
       try {
         setLoading(true);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': `Bearer ${session.accessToken}`,
           },
           mode: 'cors',
         });
@@ -49,15 +56,12 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         }
 
         const result = await response.json();
-
         if (result.success && result.data) {
           const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
             id: project.id,
             name: project.name,
           }));
-
           setProjects(fetchedProjects);
-
           if (!propSelectedProject && fetchedProjects.length > 0) {
             setSelectedProject(fetchedProjects[0].name);
             onProjectChange?.(fetchedProjects[0].name);
@@ -97,10 +101,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     if (!dateRange.startDate || !dateRange.endDate) {
       return 'Select a Date Range';
     }
-
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
-
     return `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString(
       'en-US',
       { month: 'short', day: '2-digit', year: 'numeric' }

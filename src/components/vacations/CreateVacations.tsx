@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X, ChevronDown } from "lucide-react";
 import { format, addDays } from "date-fns";
 import axios from "axios";
+import { getSession } from "next-auth/react";
 
 interface CreateVacationFormProps {
   open?: boolean;
@@ -111,13 +112,11 @@ const CustomSelect = ({
 }: CustomSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
-
   const handleToggle = () => setIsOpen(!isOpen);
   const handleSelect = (itemValue: string) => {
     onValueChange(itemValue);
     setIsOpen(false);
   };
-
   const handleClickOutside = (event: MouseEvent) => {
     if (
       selectRef.current &&
@@ -126,14 +125,12 @@ const CustomSelect = ({
       setIsOpen(false);
     }
   };
-
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption ? (
     <div className="flex items-center">
@@ -147,7 +144,6 @@ const CustomSelect = ({
   ) : (
     placeholder
   );
-
   return (
     <div className={`relative ${className}`} ref={selectRef}>
       <button
@@ -207,22 +203,38 @@ export default function CreateVacationForm({
     const fetchPeopleData = async () => {
       try {
         setLoading(true);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
         const [employeesRes, supervisorsRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`),
-          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`)
+          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`, {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/supervisors/all`, {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          })
         ]);
+
         const employeeOptions = employeesRes.data.data.map((emp: Employee) => ({
           value: emp.id,
           label: `${emp.firstName} ${emp.lastName}`,
           isSupervisor: false,
           originalData: emp
         }));
+
         const supervisorOptions = supervisorsRes.data.data.map((sup: Supervisor) => ({
           value: sup.id,
           label: sup.fullName,
           isSupervisor: true,
           originalData: sup
         }));
+
         setPeopleOptions([...employeeOptions, ...supervisorOptions]);
       } catch (error) {
         console.error('Error fetching people data:', error);
@@ -231,6 +243,7 @@ export default function CreateVacationForm({
         setLoading(false);
       }
     };
+
     if (isDialogOpen) {
       fetchPeopleData();
     }
@@ -264,19 +277,33 @@ export default function CreateVacationForm({
       setError('Please fill in all required fields');
       return;
     }
+
     setIsSubmitting(true);
     setError(null);
+
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const apiUrl = selectedPerson.isSupervisor
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/supervisor`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/create/${selectedPerson.originalData.id}/employee`;
+
       const requestBody = {
         leaveType,
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         reason
       };
-      const response = await axios.post(apiUrl, requestBody);
+
+      const response = await axios.post(apiUrl, requestBody, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        }
+      });
+
       console.log('Vacation created successfully:', response.data);
       closeDialog();
       onSuccess?.();
@@ -291,7 +318,7 @@ export default function CreateVacationForm({
     } finally {
       setIsSubmitting(false);
     }
-  };  
+  };
 
   const handleCancel = () => {
     closeDialog();

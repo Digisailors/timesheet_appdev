@@ -2,15 +2,21 @@
 import { useState, useEffect } from 'react';
 import Sidebar from "@/components/ui/sidebar";
 import Navbar from "@/components/ui/navbar";
-import { getSession } from "@/lib/api";
+import { getSession } from "next-auth/react";
 import { PageTitleProvider, usePageTitle } from "@/contexts/PageTitleContext";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
 }
 
+interface UserData {
+  name: string;
+  role: string;
+  initial: string;
+}
+
 function ProtectedLayoutContent({ children }: ProtectedLayoutProps) {
-  const [userData, setUserData] = useState({
+  const [userData, setUserData] = useState<UserData>({
     name: 'Loading...',
     role: 'Loading...',
     initial: 'L'
@@ -20,13 +26,14 @@ function ProtectedLayoutContent({ children }: ProtectedLayoutProps) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const data = await getSession();
-        
-        if (data.user) {
+        const session = await getSession();
+
+        if (session?.user) {
+          const name = session.user.name || 'User';
           setUserData({
-            name: data.user.name,
-            role: '',
-            initial: data.user.name.charAt(0).toUpperCase()
+            name: name,
+            role: '', // You can set this based on your needs
+            initial: name.charAt(0).toUpperCase()
           });
         }
       } catch (error) {
@@ -38,7 +45,6 @@ function ProtectedLayoutContent({ children }: ProtectedLayoutProps) {
         });
       }
     };
-
     fetchUserData();
   }, []);
 
@@ -46,7 +52,6 @@ function ProtectedLayoutContent({ children }: ProtectedLayoutProps) {
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
       {/* Fixed Sidebar */}
       <Sidebar />
-
       {/* Main Content Area */}
       <div className="ml-64 flex flex-col min-h-screen">
         {/* Fixed Navbar */}
@@ -58,7 +63,6 @@ function ProtectedLayoutContent({ children }: ProtectedLayoutProps) {
             userInitial={userData.initial}
           />
         </div>
-
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {children}

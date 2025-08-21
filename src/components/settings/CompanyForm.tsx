@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-
 import { FileText, Edit, X, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
-
-
 import toast from 'react-hot-toast';
-
+import { getSession } from 'next-auth/react';
 
 type CompanyData = {
   id?: string;
@@ -51,10 +48,9 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   const showToast = (message: string, type: 'success' | 'error') => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: Toast = { id, message, type };
-    
+
     setToasts(prev => [...prev, newToast]);
-    
-    // Auto remove toast after 5 seconds
+
     setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
     }, 5000);
@@ -67,10 +63,21 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   useEffect(() => {
     const fetchCompanyDetails = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/company/all`);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error("No access token found");
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/company/all`, {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          }
+        });
+
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
+
         const result = await response.json();
         if (result.data && result.data.length > 0) {
           const company = result.data[0];
@@ -88,8 +95,10 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         }
       } catch (error) {
         console.error('Error fetching company details:', error);
+        showToast('Failed to fetch company details. Please try again.', 'error');
       }
     };
+
     fetchCompanyDetails();
   }, []);
 
@@ -109,19 +118,16 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   };
 
   const validateForm = () => {
-    // Check if Tax ID is not empty
     if (formData.taxID.trim() === '') {
       showToast('Tax ID is required and cannot be empty.', 'error');
       return false;
     }
 
-    // Validate phone number (must be exactly 10 digits)
     if (formData.phoneNumber.length !== 10) {
       showToast('Phone number must be exactly 10 digits.', 'error');
       return false;
     }
 
-    // Validate email (must contain @ symbol)
     if (formData.email.trim() !== '' && !formData.email.includes('@')) {
       showToast('Please enter a valid email address with @ symbol.', 'error');
       return false;
@@ -134,29 +140,43 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     if (!validateForm()) {
       return;
     }
+
     setIsLoading(true);
+
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const url = companyExists
         ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/update/${formData.id}`
         : `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/create`;
+
       const method = companyExists ? 'PUT' : 'POST';
+
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify(formData),
       });
+
       if (!response.ok) {
         const errorResponse = await response.json();
         console.error('Error response:', errorResponse);
         throw new Error(errorResponse.message || 'Network response was not ok');
       }
+
       const result = await response.json();
       console.log('Success:', result);
+
       if (!companyExists) {
         setCompanyExists(true);
       }
+
       setIsEditing(false);
       toast.success('Details saved successfully', {
         style: {
@@ -164,8 +184,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           color: 'white',
         },
       });
-      
-      // Call the onSave prop
+
       await onSave(formData);
     } catch (error) {
       if (error instanceof Error) {
@@ -187,17 +206,30 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
 
   const handleDelete = async () => {
     if (!formData.id) return;
+
     setIsDeleting(true);
+
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/company/delete/${formData.id}`,
-        { method: 'DELETE' }
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          }
+        }
       );
+
       if (!response.ok) {
         const err = await response.json().catch(() => ({ message: 'Failed to delete company' }));
         throw new Error(err.message || 'Failed to delete company');
       }
-      // Reset form state on success
+
       setFormData({
         companyName: '',
         registrationNumber: '',
@@ -207,11 +239,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         website: '',
         taxID: ''
       });
+
       setCompanyExists(false);
       setIsEditing(false);
+
       toast.success('Company deleted successfully', {
         style: { background: 'blue', color: 'white' },
       });
+
       setShowDeleteConfirm(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error while deleting';
@@ -357,7 +392,6 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         </div>
       </div>
 
-      {/* Toast Container */}
       <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
@@ -388,7 +422,6 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         ))}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">

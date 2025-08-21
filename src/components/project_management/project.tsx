@@ -6,27 +6,12 @@ import SupervisorDialog from "@/components/supervisors/dialog";
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import type { Project } from "@/components/project_management/ProjectManagement";
 import type { ProjectFormData } from "@/components/project_management/ProjectDialog";
+import { getSession } from "next-auth/react";
 
 interface SupervisorData {
   emailAddress: string;
   fullName: string;
 }
-
-// interface RawProject {
-//   id: string;
-//   name: string;
-//   locations: string[] | null;
-//   description: string;
-//   startDate: string;
-//   endDate: string;
-//   budget: string;
-//   status: "active" | "completed" | "pending" | "cancelled";
-//   clientName: string | null;
-//   PoContractNumber: string | null;
-//   typesOfWork: string[] | null;
-//   createdAt: string;
-//   updatedAt: string;
-// }
 
 interface ProjectDetail {
   projectcode: string;
@@ -61,99 +46,121 @@ const ProjectsPage = () => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
- const fetchProjects = useCallback(async () => {
-  const sampleProjects: Project[] = [
-    {
-      id: "HBC-2024-001",
-      name: "Highway Bridge Construction",
-      code: "HBC-2024-001",
-      location: "North District, Highway 1",
-      employees: 32,
-      startDate: "2024-01-15",
-      status: "active",
-      workHours: 160,
-      otHours: 20,
-      lastUpdated: new Date().toISOString(),
-    },
-    {
-      id: "RCP-2023-005",
-      name: "Residential Complex Phase 1",
-      code: "RCP-2023-005",
-      location: "Suburban Area, Green Valley",
-      employees: 32,
-      startDate: "2024-01-15",
-      status: "completed",
-      workHours: 160,
-      otHours: 20,
-      lastUpdated: new Date().toISOString(),
-    },
-  ];
+  const fetchProjects = useCallback(async () => {
+    const sampleProjects: Project[] = [
+      {
+        id: "HBC-2024-001",
+        name: "Highway Bridge Construction",
+        code: "HBC-2024-001",
+        location: "North District, Highway 1",
+        employees: 32,
+        startDate: "2024-01-15",
+        status: "active",
+        workHours: 160,
+        otHours: 20,
+        lastUpdated: new Date().toISOString(),
+      },
+      {
+        id: "RCP-2023-005",
+        name: "Residential Complex Phase 1",
+        code: "RCP-2023-005",
+        location: "Suburban Area, Green Valley",
+        employees: 32,
+        startDate: "2024-01-15",
+        status: "completed",
+        workHours: 160,
+        otHours: 20,
+        lastUpdated: new Date().toISOString(),
+      },
+    ];
 
-  try {
-    const response = await fetch(`${cleanBaseUrl}/projects/all`);
-    if (!response.ok) throw new Error("Failed to fetch projects");
-    const result = await response.json();
-    if (result.success) {
-      const loadedProjects: Project[] = result.data.map((p: ApiProject) => {
-        // Get the first project detail for display purposes
-        const firstDetail = p.projectDetails && p.projectDetails.length > 0 ? p.projectDetails[0] : null;
-        
-        return {
-          id: p.id,
-          name: p.name,
-          code: firstDetail?.projectcode || p.id, // Use first project code or fallback to ID
-          // Convert project details to display format
-          location: firstDetail?.locations || 'No location specified',
-          startDate: p.startDate,
-          endDate: p.endDate,
-          budget: p.budget,
-          description: p.description,
-          status: p.status,
-          workHours: 160, // Default values since API doesn't provide these
-          otHours: 20,
-          lastUpdated: p.updatedAt || new Date().toISOString(),
-          employees: 0, // Default value since API doesn't provide this
-        };
+    try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${cleanBaseUrl}/projects/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
       });
-      setProjects(loadedProjects);
-    } else {
-      throw new Error(result.message || "No project data");
+
+      if (!response.ok) throw new Error("Failed to fetch projects");
+      const result = await response.json();
+
+      if (result.success) {
+        const loadedProjects: Project[] = result.data.map((p: ApiProject) => {
+          // Get the first project detail for display purposes
+          const firstDetail = p.projectDetails && p.projectDetails.length > 0 ? p.projectDetails[0] : null;
+
+          return {
+            id: p.id,
+            name: p.name,
+            code: firstDetail?.projectcode || p.id, // Use first project code or fallback to ID
+            // Convert project details to display format
+            location: firstDetail?.locations || 'No location specified',
+            startDate: p.startDate,
+            endDate: p.endDate,
+            budget: p.budget,
+            description: p.description,
+            status: p.status,
+            workHours: 160, // Default values since API doesn't provide these
+            otHours: 20,
+            lastUpdated: p.updatedAt || new Date().toISOString(),
+            employees: 0, // Default value since API doesn't provide this
+          };
+        });
+        setProjects(loadedProjects);
+      } else {
+        throw new Error(result.message || "No project data");
+      }
+    } catch (error) {
+      console.error("Fetch failed:", error);
+      toast.error("❌ Error loading project list");
+      setProjects(sampleProjects);
     }
-  } catch (error) {
-    console.error("Fetch failed:", error);
-    toast.error("❌ Error loading project list");
-    setProjects(sampleProjects);
-  }
-}, [cleanBaseUrl]);
+  }, [cleanBaseUrl]);
+
   const fetchProjectById = async (projectId: string): Promise<ProjectFormData | null> => {
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       setIsLoadingProject(true);
-      const response = await fetch(`${cleanBaseUrl}/projects/${projectId}`);
+      const response = await fetch(`${cleanBaseUrl}/projects/${projectId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+
       if (!response.ok) throw new Error("Failed to fetch project details");
-      
+
       const result = await response.json();
       if (result.success && result.data) {
         const projectData: ApiProject = result.data;
-                 // Convert projectDetails to the format expected by the form
-         const locations = projectData.projectDetails?.map(detail => detail.locations) || [''];
-         const typesOfWork = projectData.projectDetails?.map(detail => detail.typesOfWork) || [''];
-         const projectCodes = projectData.projectDetails?.map(detail => detail.projectcode) || [''];
-         const firstProjectCode = projectData.projectDetails?.[0]?.projectcode || projectData.id;
-         
-         return {
-           name: projectData.name,
-           code: firstProjectCode,
-           locations: locations,
-           typesOfWork: typesOfWork,
-           projectCodes: projectCodes,
-           description: projectData.description || '',
-           startDate: projectData.startDate,
-           endDate: projectData.endDate || '',
-           budget: projectData.budget || '',
-           status: projectData.status,
-           clientName: projectData.clientName || '',
-           PoContractNumber: projectData.PoContractNumber || '',
-         };
+        // Convert projectDetails to the format expected by the form
+        const locations = projectData.projectDetails?.map(detail => detail.locations) || [''];
+        const typesOfWork = projectData.projectDetails?.map(detail => detail.typesOfWork) || [''];
+        const projectCodes = projectData.projectDetails?.map(detail => detail.projectcode) || [''];
+        const firstProjectCode = projectData.projectDetails?.[0]?.projectcode || projectData.id;
+
+        return {
+          name: projectData.name,
+          code: firstProjectCode,
+          locations: locations,
+          typesOfWork: typesOfWork,
+          projectCodes: projectCodes,
+          description: projectData.description || '',
+          startDate: projectData.startDate,
+          endDate: projectData.endDate || '',
+          budget: projectData.budget || '',
+          status: projectData.status,
+          clientName: projectData.clientName || '',
+          PoContractNumber: projectData.PoContractNumber || '',
+        };
       } else {
         throw new Error(result.message || "Failed to fetch project details");
       }
@@ -215,12 +222,17 @@ const ProjectsPage = () => {
     }
 
     try {
-             // Transform formData to match the new API structure
-       const projectDetails = formData.locations.map((location, index) => ({
-         projectcode: formData.projectCodes?.[index] || formData.code || `PROJ-${Date.now()}-${index + 1}`,
-         locations: location,
-         typesOfWork: formData.typesOfWork[index] || ''
-       }));
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      // Transform formData to match the new API structure
+      const projectDetails = formData.locations.map((location, index) => ({
+        projectcode: formData.projectCodes?.[index] || formData.code || `PROJ-${Date.now()}-${index + 1}`,
+        locations: location,
+        typesOfWork: formData.typesOfWork[index] || ''
+      }));
 
       const apiFormData = {
         name: formData.name,
@@ -233,11 +245,14 @@ const ProjectsPage = () => {
         clientName: formData.clientName,
         PoContractNumber: formData.PoContractNumber,
       };
-      
+
       if (editingProject) {
         const response = await fetch(`${cleanBaseUrl}/projects/update/${editingProject.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
           body: JSON.stringify(apiFormData),
         });
 
@@ -264,20 +279,23 @@ const ProjectsPage = () => {
             lastUpdated: result.data.updatedAt || new Date().toISOString(),
             employees: 0,
           };
-          
+
           setProjects((prev) =>
             prev.map((proj) =>
               proj.id === editingProject.id ? updatedProject : proj
             )
           );
-          toast.success("✅ Project updated successfully");
+          toast.success("Project updated successfully");
         } else {
           throw new Error(result.message || "Failed to update project");
         }
       } else {
         const response = await fetch(`${cleanBaseUrl}/projects/create`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
           body: JSON.stringify(apiFormData),
         });
 
@@ -323,14 +341,23 @@ const ProjectsPage = () => {
 
   const handleSupervisorSubmit = async (data: SupervisorData, mode: "add" | "edit") => {
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const response = await fetch(
         `${cleanBaseUrl}/supervisors/${mode === "add" ? "create" : `update/${data.emailAddress}`}`,
         {
           method: mode === "add" ? "POST" : "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
           body: JSON.stringify(data),
         }
       );
+
       if (!response.ok) throw new Error("Failed to save supervisor");
       toast.success(`✅ Supervisor ${mode === "add" ? "created" : "updated"} successfully`);
     } catch (error) {
@@ -342,20 +369,20 @@ const ProjectsPage = () => {
   const getDialogProps = () => {
     if (isLoadingProject) {
       return {
-                 initialData: {
-           name: "Loading...",
-           code: "",
-           locations: [],
-           projectCodes: [],
-           description: "",
-           startDate: "",
-           status: "pending" as ProjectFormData['status'],
-           endDate: "",
-           budget: "",
-           clientName: "",
-           PoContractNumber: "",
-           typesOfWork: [],
-         },
+        initialData: {
+          name: "Loading...",
+          code: "",
+          locations: [],
+          projectCodes: [],
+          description: "",
+          startDate: "",
+          status: "pending" as ProjectFormData['status'],
+          endDate: "",
+          budget: "",
+          clientName: "",
+          PoContractNumber: "",
+          typesOfWork: [],
+        },
         title: "Loading Project Details...",
         submitLabel: undefined,
         isViewMode: true,
@@ -377,21 +404,22 @@ const ProjectsPage = () => {
         isViewMode: false,
       };
     }
+
     return {
-             initialData: {
-         name: "",
-         code: "",
-         locations: [],
-         projectCodes: [],
-         description: "",
-         startDate: "",
-         status: "pending" as ProjectFormData['status'],
-         endDate: "",
-         budget: "",
-         clientName: "",
-         PoContractNumber: "",
-         typesOfWork: [],
-       },
+      initialData: {
+        name: "",
+        code: "",
+        locations: [],
+        projectCodes: [],
+        description: "",
+        startDate: "",
+        status: "pending" as ProjectFormData['status'],
+        endDate: "",
+        budget: "",
+        clientName: "",
+        PoContractNumber: "",
+        typesOfWork: [],
+      },
       title: "Create New Project",
       submitLabel: "Create Project",
       isViewMode: false,
@@ -434,64 +462,70 @@ const ProjectsPage = () => {
           onSubmit={handleSupervisorSubmit}
           projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         />
-      {confirmDeleteProject && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Confirm Deletion</h2>
-      <p className="text-gray-700 dark:text-gray-300 mb-6">
-        Are you sure you want to delete <strong>&quot;{confirmDeleteProject.name}&quot;</strong>?
-      </p>
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={() => setConfirmDeleteProject(null)}
-          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={async () => {
-            const projectToDelete = confirmDeleteProject; // Store reference before clearing state
-            try {
-              console.log("Attempting to delete project:", projectToDelete.id);
-              console.log("Delete URL:", `${cleanBaseUrl}/projects/delete/${projectToDelete.id}`);
-              
-              const response = await fetch(`${cleanBaseUrl}/projects/delete/${projectToDelete.id}`, {
-                method: "DELETE",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              });
-              
-              console.log("Delete response status:", response.status);
-              
-              if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: "Failed to delete project" }));
-                console.error("Delete error response:", errorData);
-                throw new Error(errorData.message || `HTTP ${response.status}: Failed to delete project`);
-              }
-              
-              const result = await response.json().catch(() => ({ success: true }));
-              console.log("Delete response:", result);
-              
-              // Remove from local state using the stored reference
-              setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
-              toast.success("✅ Project deleted successfully");
-            } catch (err) {
-              console.error("Delete operation failed:", err);
-              const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-              toast.error(`❌ Failed to delete project: ${errorMessage}`);
-            } finally {
-              setConfirmDeleteProject(null);
-            }
-          }}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        {confirmDeleteProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Confirm Deletion</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-6">
+                Are you sure you want to delete <strong>&quot;{confirmDeleteProject.name}&quot;</strong>?
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setConfirmDeleteProject(null)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    const projectToDelete = confirmDeleteProject; // Store reference before clearing state
+                    try {
+                      const session = await getSession();
+                      if (!session?.accessToken) {
+                        throw new Error("No access token found");
+                      }
+
+                      console.log("Attempting to delete project:", projectToDelete.id);
+                      console.log("Delete URL:", `${cleanBaseUrl}/projects/delete/${projectToDelete.id}`);
+
+                      const response = await fetch(`${cleanBaseUrl}/projects/delete/${projectToDelete.id}`, {
+                        method: "DELETE",
+                        headers: {
+                          "Content-Type": "application/json",
+                          'Authorization': `Bearer ${session.accessToken}`,
+                        },
+                      });
+
+                      console.log("Delete response status:", response.status);
+
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: "Failed to delete project" }));
+                        console.error("Delete error response:", errorData);
+                        throw new Error(errorData.message || `HTTP ${response.status}: Failed to delete project`);
+                      }
+
+                      const result = await response.json().catch(() => ({ success: true }));
+                      console.log("Delete response:", result);
+
+                      // Remove from local state using the stored reference
+                      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
+                      toast.success("Project deleted successfully");
+                    } catch (err) {
+                      console.error("Delete operation failed:", err);
+                      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+                      toast.error(`❌ Failed to delete project: ${errorMessage}`);
+                    } finally {
+                      setConfirmDeleteProject(null);
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

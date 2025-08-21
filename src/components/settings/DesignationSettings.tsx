@@ -4,6 +4,7 @@ import { useState, useEffect, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Users2 } from "lucide-react";
+import { getSession } from 'next-auth/react';
 
 interface Designation {
   id?: string;
@@ -25,19 +26,31 @@ const DesignationSettings: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const fetchDesignations = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/designationTypes/all`);
+
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/designationTypes/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        }
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch designations: ${response.statusText}`);
       }
+
       const data = await response.json();
       let designationsArray: Designation[] = [];
+
       if (Array.isArray(data)) {
         designationsArray = data;
       } else if (data && Array.isArray(data.data)) {
@@ -50,6 +63,7 @@ const DesignationSettings: React.FC = () => {
           designationsArray = possibleArrays as Designation[];
         }
       }
+
       console.log("API Response:", data);
       console.log("Processed designations:", designationsArray);
       setDesignations(designationsArray);
@@ -80,6 +94,7 @@ const DesignationSettings: React.FC = () => {
       setError("Designation name is required");
       return;
     }
+
     if (!isEditing) {
       const existingDesignation = designations.find(
         (designation) => designation.name.toLowerCase() === newDesignation.name.toLowerCase().trim()
@@ -89,41 +104,55 @@ const DesignationSettings: React.FC = () => {
         return;
       }
     }
+
     try {
       setSubmitting(true);
       setError(null);
+
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       if (isEditing && currentDesignationIndex !== null) {
         const designationToUpdate = designations[currentDesignationIndex];
         const response = await fetch(`${API_BASE_URL}/designationTypes/update/${designationToUpdate.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
           },
           body: JSON.stringify({
             name: designationToUpdate.name,
             status: newDesignation.status,
           }),
         });
+
         if (!response.ok) {
           throw new Error(`Failed to update designation: ${response.statusText}`);
         }
+
         await fetchDesignations();
       } else {
         const response = await fetch(`${API_BASE_URL}/designationTypes/create`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
           },
           body: JSON.stringify({
             name: newDesignation.name.trim(),
             status: newDesignation.status,
           }),
         });
+
         if (!response.ok) {
           throw new Error(`Failed to create designation: ${response.statusText}`);
         }
+
         await fetchDesignations();
       }
+
       setShowPopup(false);
       setIsEditing(false);
       setCurrentDesignationIndex(null);
@@ -154,22 +183,33 @@ const DesignationSettings: React.FC = () => {
 
   const confirmDelete = async () => {
     if (currentDesignationIndex === null) return;
+
     try {
       setSubmitting(true);
       setError(null);
+
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const designationToDelete = designations[currentDesignationIndex];
       const response = await fetch(`${API_BASE_URL}/designationTypes/delete/${designationToDelete.id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        }
       });
+
       if (!response.ok) {
         throw new Error(`Failed to delete designation: ${response.statusText}`);
       }
+
       await fetchDesignations();
       setShowDeleteConfirmation(false);
       setCurrentDesignationIndex(null);
       setToastMessage("Designation deleted successfully!");
 
-      // Clear the toast message after 5 seconds
       setTimeout(() => {
         setToastMessage(null);
       }, 5000);
@@ -271,7 +311,6 @@ const DesignationSettings: React.FC = () => {
           ))
         )}
       </div>
-
       {/* Edit/Add Modal */}
       <Modal isOpen={showPopup} withBlur={true}>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
@@ -355,7 +394,6 @@ const DesignationSettings: React.FC = () => {
           </form>
         </div>
       </Modal>
-
       {/* Delete Confirmation Modal - No Blur */}
       <Modal isOpen={showDeleteConfirmation} withBlur={false}>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
@@ -385,14 +423,12 @@ const DesignationSettings: React.FC = () => {
           </div>
         </div>
       </Modal>
-
       {/* Toast Message */}
       {toastMessage && (
-  <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg">
-    {toastMessage}
-  </div>
-)}
-
+        <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 };

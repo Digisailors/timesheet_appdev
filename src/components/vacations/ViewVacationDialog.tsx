@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { X, Undo2 } from "lucide-react";
+import { getSession } from "next-auth/react";
 
 interface VacationDetailsProps {
   isOpen: boolean;
@@ -33,15 +34,23 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
 
   const handleReturn = async () => {
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/return/${data.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
         },
       });
+
       if (!response.ok) {
         throw new Error('Failed to trigger return');
       }
+
       const result = await response.json();
       console.log('Return successful:', result);
       onReturn();
@@ -103,7 +112,6 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </button>
           </div>
         </div>
-
         {/* Dialog Content */}
         <div className="p-6 text-sm text-gray-900 dark:text-gray-100">
           <div className="grid grid-cols-2 gap-y-6 gap-x-8">
@@ -150,7 +158,6 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
           </div>
         </div>
       </div>
-
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-6">

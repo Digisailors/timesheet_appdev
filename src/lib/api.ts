@@ -1,31 +1,15 @@
-import { getBaseUrl } from './env';
+import { getSession } from "next-auth/react";
 
-// Utility function for making API calls
-export const apiCall = async (endpoint: string, options?: RequestInit) => {
-  const baseUrl = getBaseUrl();
-  const url = `${baseUrl}${endpoint}`;
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('API call failed:', error);
-    throw error;
-  }
-};
-
-// Specific function for session API
-export const getSession = async () => {
-  return apiCall('/api/auth/session');
+export const fetchProtectedData = async (url: string, options?: RequestInit) => {
+  const session = await getSession();
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.accessToken}`,
+    },
+  });
+  const data = await response.json();
+  return data;
 };

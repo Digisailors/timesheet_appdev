@@ -22,6 +22,7 @@ import CreateVacationForm from "@/components/vacations/CreateVacations";
 import ViewVacationDialog from "./ViewVacationDialog";
 import EditVacationDialog from "./EditVacationDialog";
 import axios from "axios";
+import { getSession } from "next-auth/react";
 
 type IconType = LucideIcon;
 
@@ -97,7 +98,20 @@ export default function VacationManagement() {
 
   const fetchVacationData = async () => {
     try {
-      const response = await axios.get<ApiResponse>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await axios.get<ApiResponse>(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          }
+        }
+      );
+
       if (response.data.success) {
         const formattedData = response.data.data.map((item) => {
           const name = item.employee
@@ -131,10 +145,12 @@ export default function VacationManagement() {
             returnstatus: item.returnstatus,
           };
         });
+
         const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus)));
         const uniqueTypes = Array.from(new Set(response.data.data.map(item => item.leaveType)));
         setStatusOptions(uniqueStatuses);
         setTypeOptions(uniqueTypes);
+
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -146,12 +162,15 @@ export default function VacationManagement() {
             (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear)
           );
         });
+
         const uniqueEmployeesThisMonth = new Set<string>();
         thisMonthData.forEach((employee) => {
           uniqueEmployeesThisMonth.add(employee.name);
         });
+
         const paidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Paid").length;
         const unpaidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Unpaid").length;
+
         setSummaryData([
           {
             title: "Total Employees on vacation",
@@ -175,6 +194,7 @@ export default function VacationManagement() {
             iconColor: "#ef4444",
           },
         ]);
+
         setVacationData(formattedData);
       }
     } catch (error) {
@@ -309,7 +329,6 @@ export default function VacationManagement() {
                   className="pl-10 h-9 text-sm border border-gray-300 dark:bg-gray-800 text-white"
                 />
               </div>
-
               {/* Status Filter (native select) */}
               <div className="relative">
                 <select
@@ -328,7 +347,6 @@ export default function VacationManagement() {
                   <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
                 </div>
               </div>
-
               {/* Type Filter (native select) */}
               <div className="relative">
                 <select
@@ -347,7 +365,6 @@ export default function VacationManagement() {
                   <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
                 </div>
               </div>
-
               {/* Clear Filters Button */}
               <Button
                 variant="outline"
