@@ -4,7 +4,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 Create a `.env` file in the root directory with the following variables:
 
-````bash
+``bash
 
 # NextAuth Configuration
 
@@ -21,7 +21,7 @@ Generate a secure NEXTAUTH_SECRET using:
 
 ```bash
 openssl rand -base64 32
-````
+```
 
 ## Getting Started
 
