@@ -177,7 +177,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
       const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
       const isSupervisor = timesheet.type === "supervisor";
+      // Use designation instead of designationType for the badge
       const designationType = isSupervisor ? "Supervisor" : timesheet.employees?.[0]?.designation || "Unknown";
+
       return {
         id: timesheet.id,
         employee: employeeName,
@@ -217,7 +219,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           if (!session?.accessToken) {
             throw new Error("No access token found");
           }
-
           const response = await axios.get(
             `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
             {
@@ -241,7 +242,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/create`,
           timesheetData,
@@ -292,7 +292,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-
         await axios.put(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/update/${selectedTimesheetId}`,
           {
@@ -313,7 +312,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             }
           }
         );
-
         setData(prevData =>
           prevData.map(item =>
             item.id === selectedTimesheetId
@@ -385,6 +383,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     }, [handleViewClick, handleEditClick]);
 
     const actionColumn = getActionColumn();
+
     const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
 
     const table = useReactTable({
@@ -400,7 +399,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Timesheet");
         worksheet.columns = [
@@ -418,7 +416,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           { header: "Remarks", key: "remarks", width: 22 },
           { header: "Status", key: "status", width: 10 },
         ];
-
         const exportData = filteredData.map((row) => ({
           employee: row.employee,
           project: row.project,
@@ -434,7 +431,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           remarks: row.remarks,
           status: row.status,
         }));
-
         worksheet.addRows(exportData);
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -523,6 +519,11 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                         {cell.column.id === 'employee' ? (
                           <>
                             {row.original.employee}
+                            {!row.original.isSupervisor && row.original.designationType && (
+                              <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-2 py-1 rounded ml-2">
+                                {row.original.designationType}
+                              </span>
+                            )}
                             {row.original.isSupervisor && (
                               <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded ml-2">
                                 Supervisor
