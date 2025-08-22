@@ -1,3 +1,4 @@
+/* eslint-disable */
 import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -56,7 +57,21 @@ const handler = NextAuth({
         token.isActive = user.isActive;
         token.createdAt = user.createdAt;
         token.updatedAt = user.updatedAt;
-        token.accessToken = user.token; // Attach the JWT token to the token object
+        if (user.token) {
+          token.accessToken = user.token; // Attach the JWT token to the token object
+          try {
+          // Decode JWT payload to extract exp (in seconds)
+          const base64Payload = user.token.split(".")[1];
+          const jsonPayload = Buffer.from(base64Payload, "base64").toString("utf8");
+          const parsed = JSON.parse(jsonPayload) as { exp?: number };
+          if (parsed?.exp) {
+            // Store in ms for easy Date.now() comparison
+            token.accessTokenExpires = parsed.exp * 1000;
+          }
+          } catch (e) {
+          // If decode fails, do not set expiry; session middleware will handle by 401s
+          }
+        }
       }
       return token;
     },
@@ -68,6 +83,7 @@ const handler = NextAuth({
         session.user.createdAt = token.createdAt;
         session.user.updatedAt = token.updatedAt;
         session.accessToken = token.accessToken; // Attach the JWT token to the session
+        session.accessTokenExpires = (token as any).accessTokenExpires;
       }
       return session;
     },

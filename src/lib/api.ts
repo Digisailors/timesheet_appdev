@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 export const fetchProtectedData = async (url: string, options?: RequestInit) => {
   const session = await getSession();
@@ -10,6 +10,11 @@ export const fetchProtectedData = async (url: string, options?: RequestInit) => 
       Authorization: `Bearer ${session?.accessToken}`,
     },
   });
+  if (response.status === 401) {
+    // If backend says unauthorized, trigger logout
+    await signOut({ callbackUrl: "/login" });
+    return Promise.reject(new Error("Unauthorized"));
+  }
   const data = await response.json();
   return data;
 };
