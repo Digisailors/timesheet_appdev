@@ -107,6 +107,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     normalHours: "",
     otHours: "",
   });
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
   const [designationTypes, setDesignationTypes] = useState<DesignationType[]>([]);
@@ -234,11 +235,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       case "lastName":
         return !value.trim() ? "Please fill this field" : "";
       case "email":
-        if (!value.trim()) return "Please fill this field";
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value))
+        if (value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           return "Please enter a valid email address";
-        if (checkEmailExists(value)) return "This email already exists";
+        }
+        if (value.trim() && checkEmailExists(value)) {
+          return "This email already exists";
+        }
         return "";
       case "designation":
         return !value.trim() ? "Please fill this field" : "";
@@ -365,7 +367,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     const allFields = [
       "firstName",
       "lastName",
-      "email",
       "designation",
       "designationType",
       "phoneNumber",
@@ -503,7 +504,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email Address *
+                  Email Address
                 </label>
                 <input
                   type="email"
@@ -516,7 +517,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     "email",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
-                  required
                 />
                 {errors.email && touched.email && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
