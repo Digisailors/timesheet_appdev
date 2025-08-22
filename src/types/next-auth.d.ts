@@ -16,6 +16,7 @@ declare module "next-auth" {
   interface Session {
     user: User;
     accessToken?: string;
+    accessTokenExpires?: number; // epoch ms
   }
 }
 
@@ -29,5 +30,6 @@ declare module "next-auth/jwt" {
     createdAt?: string;
     updatedAt?: string;
     accessToken?: string;
+    accessTokenExpires?: number; // epoch ms
   }
 }
