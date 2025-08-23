@@ -12,13 +12,14 @@ interface TimesheetEntry {
 interface ProjectSummaryProps {
   timesheetData: TimesheetEntry[];
   selectedProject: string;
+  selectedLocation: string;
   dateRange: {
     startDate: string;
     endDate: string;
   };
 }
 
-const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selectedProject, dateRange }) => {
+const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selectedProject, selectedLocation, dateRange }) => {
   // Filter timesheet data based on the selected date range
   const filteredTimesheetData = timesheetData.filter(entry => {
     const entryDate = new Date(entry.timesheetDate);
@@ -44,7 +45,7 @@ const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selected
   return (
     <div className="bg-white dark:bg-gray-900 shadow-md rounded-xl mb-6 p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        {selectedProject} - Project Summary
+        {selectedProject} {selectedLocation !== 'All Locations' ? `- ${selectedLocation}` : ''} - Project Summary
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
         <StatCard title="Total Hours" value={formattedTotalHours} bgColor="bg-blue-50 dark:bg-blue-900" textColor="text-blue-600 dark:text-blue-300" />
