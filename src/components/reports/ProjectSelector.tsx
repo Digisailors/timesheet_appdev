@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Calendar } from 'lucide-react';
+import { ChevronDown, Calendar, FileText, Download } from 'lucide-react';
 import { getSession } from 'next-auth/react';
+import * as XLSX from 'xlsx';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import toast from 'react-hot-toast';
 
 interface DateRange {
   startDate: string;
@@ -12,22 +15,152 @@ interface Project {
   name: string;
 }
 
+interface Location {
+  id: string;
+  name: string;
+}
+
+interface Timesheet {
+  id: string;
+  timesheetDate: string;
+  onsiteSignIn: string;
+  onsiteSignOut: string;
+  normalHrs: string;
+  overtime: string;
+  totalDutyHrs: string;
+  location: string;
+  remarks: string;
+  totalTravelHrs: string;
+  project?: Project;
+}
+
 interface ProjectSelectorProps {
   selectedProject?: string;
   onProjectChange?: (project: string) => void;
+  selectedLocation?: string;
+  onLocationChange?: (location: string) => void;
   dateRange: DateRange;
   onDateRangeChange?: (dateRange: DateRange) => void;
+  timesheets?: Timesheet[]; // Optional prop with default value
 }
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    fontFamily: 'Helvetica',
+  },
+  title: {
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  table: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingVertical: 5,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    fontWeight: 'bold',
+    paddingVertical: 5,
+    backgroundColor: '#f0f0f0',
+  },
+  tableCell: {
+    padding: 5,
+    width: '50%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    fontSize: 10,
+  },
+  headerCell: {
+    padding: 5,
+    width: '50%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+});
+
+const ProjectReportDocument = ({
+  projectName,
+  location,
+  dateRange,
+  totalHours,
+  regularHours,
+  overtimeHours,
+  ratio,
+}: {
+  projectName: string;
+  location: string;
+  dateRange: string;
+  totalHours: string;
+  regularHours: string;
+  overtimeHours: string;
+  ratio: string;
+}) => (
+  <Document>
+    <Page style={styles.page} size="A4">
+      <Text style={styles.title}>Project Timesheet Report</Text>
+      
+      {/* Project Summary */}
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          <Text style={styles.headerCell}>Project Name</Text>
+          <Text style={styles.headerCell}>{projectName}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Site (Location)</Text>
+          <Text style={styles.tableCell}>{location}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Date Range</Text>
+          <Text style={styles.tableCell}>{dateRange}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Total Hours</Text>
+          <Text style={styles.tableCell}>{totalHours}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Regular Hours</Text>
+          <Text style={styles.tableCell}>{regularHours}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Overtime Hours</Text>
+          <Text style={styles.tableCell}>{overtimeHours}</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={styles.tableCell}>Regular/OT Ratio</Text>
+          <Text style={styles.tableCell}>{ratio}</Text>
+        </View>
+      </View>
+    </Page>
+  </Document>
+);
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   selectedProject: propSelectedProject,
   onProjectChange,
+  selectedLocation: propSelectedLocation,
+  onLocationChange,
   dateRange,
   onDateRangeChange,
+  timesheets = [], // Default to empty array
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>(propSelectedProject || '');
+  const [selectedLocation, setSelectedLocation] = useState<string>(propSelectedLocation || 'All Locations');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +173,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
           method: 'GET',
           headers: {
@@ -50,18 +182,21 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           },
           mode: 'cors',
         });
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
         if (result.success && result.data) {
           const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
             id: project.id,
             name: project.name,
           }));
+          const fetchedLocations = result.data.map((location: { id: string; name: string }) => ({
+            id: location.id,
+            name: location.name,
+          }));
           setProjects(fetchedProjects);
+          setLocations(fetchedLocations);
           if (!propSelectedProject && fetchedProjects.length > 0) {
             setSelectedProject(fetchedProjects[0].name);
             onProjectChange?.(fetchedProjects[0].name);
@@ -73,11 +208,11 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
         console.error('Error fetching projects:', err);
         setProjects([]);
+        setLocations([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProjects();
   }, [propSelectedProject, onProjectChange]);
 
@@ -85,6 +220,12 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     setSelectedProject(value);
     setIsDropdownOpen(false);
     onProjectChange?.(value);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setSelectedLocation(value);
+    setIsLocationDropdownOpen(false);
+    onLocationChange?.(value);
   };
 
   const handleStartDateChange = (value: string) => {
@@ -109,11 +250,140 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     )}`;
   };
 
+  const filteredTimesheets = timesheets.filter((timesheet) => {
+    const timesheetDate = new Date(timesheet.timesheetDate);
+    const isSameProject = selectedProject ? timesheet.project?.name === selectedProject : true;
+    const isSameLocation = selectedLocation !== 'All Locations' ? timesheet.location === selectedLocation : true;
+    const isInDateRange = dateRange.startDate && dateRange.endDate
+      ? timesheetDate >= new Date(dateRange.startDate) && timesheetDate <= new Date(dateRange.endDate)
+      : false;
+    return isSameProject && isSameLocation && isInDateRange;
+  });
+
+  const calculateTotalHours = () => {
+    let regular = 0;
+    let overtime = 0;
+    let total = 0;
+    filteredTimesheets.forEach((timesheet) => {
+      regular += parseFloat(timesheet.normalHrs || '0');
+      overtime += parseFloat(timesheet.overtime || '0');
+      total += parseFloat(timesheet.totalDutyHrs || '0');
+    });
+    
+    // Use totalDutyHrs for total calculation to match ProjectSummary
+    const ratio = total > 0 ? `${((regular / total) * 100).toFixed(0)}% / ${((overtime / total) * 100).toFixed(0)}%` : '0% / 0%';
+    return {
+      totalHours: total.toFixed(1),
+      regularHours: regular.toFixed(1),
+      overtimeHours: overtime.toFixed(1),
+      ratio,
+    };
+  };
+
+  const { totalHours, regularHours, overtimeHours, ratio } = calculateTotalHours();
+
+  const exportToExcel = () => {
+    if (filteredTimesheets.length === 0) {
+      toast('No data to export', {
+        style: {
+          borderRadius: '10px',
+          background: 'blue',
+          color: '#fff',
+        },
+      });
+      return;
+    }
+
+    // Create workbook with multiple sheets
+    const workbook = XLSX.utils.book_new();
+
+    // Sheet 1: Project Summary
+    const summaryData = [
+      {
+        'Project Name': selectedProject,
+        'Site (Location)': selectedLocation,
+        'Date Range': formatDateRange(),
+        'Total Hours': totalHours,
+        'Regular Hours': regularHours,
+        'Overtime Hours': overtimeHours,
+        'Regular/OT Ratio': ratio,
+      },
+    ];
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Project Summary");
+
+    // Sheet 2: Individual Timesheet Entries
+    const timesheetData = filteredTimesheets.map((timesheet) => ({
+      'Date': timesheet.timesheetDate,
+      'Location': timesheet.location,
+      'Check-In': timesheet.onsiteSignIn,
+      'Check-Out': timesheet.onsiteSignOut,
+      'Regular Hours': timesheet.normalHrs,
+      'Overtime Hours': timesheet.overtime,
+      'Travel Hours': timesheet.totalTravelHrs,
+      'Remarks': timesheet.remarks,
+    }));
+    const timesheetWorksheet = XLSX.utils.json_to_sheet(timesheetData);
+    XLSX.utils.book_append_sheet(workbook, timesheetWorksheet, "Timesheet Details");
+
+    // Sheet 3: Chart Data (Monthly breakdown)
+    interface MonthData {
+      month: string;
+      regular: number;
+      overtime: number;
+      total: number;
+    }
+
+    const monthsData = filteredTimesheets.reduce((acc: MonthData[], entry) => {
+      const month = new Date(entry.timesheetDate).toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' });
+      const existingMonth = acc.find((item) => item.month === month);
+      const normalHrs = parseFloat(entry.normalHrs || '0');
+      const overtimeHrs = parseFloat(entry.overtime || '0');
+      const totalHrs = parseFloat(entry.totalDutyHrs || '0');
+
+      if (existingMonth) {
+        existingMonth.regular += normalHrs;
+        existingMonth.overtime += overtimeHrs;
+        existingMonth.total += totalHrs;
+      } else {
+        acc.push({
+          month,
+          regular: normalHrs,
+          overtime: overtimeHrs,
+          total: totalHrs,
+        });
+      }
+
+      return acc;
+    }, [] as MonthData[]);
+
+    // Sort by month
+    monthsData.sort((a, b) => {
+      const [aMonth, aYear] = a.month.split('/');
+      const [bMonth, bYear] = b.month.split('/');
+      return new Date(parseInt(aYear || '0'), parseInt(aMonth || '0') - 1).getTime() - new Date(parseInt(bYear || '0'), parseInt(bMonth || '0') - 1).getTime();
+    });
+
+    const chartData = monthsData.map((data) => ({
+      'Month': data.month,
+      'Regular Hours': data.regular.toFixed(2),
+      'Overtime Hours': data.overtime.toFixed(2),
+      'Total Hours': data.total.toFixed(2),
+    }));
+    const chartWorksheet = XLSX.utils.json_to_sheet(chartData);
+    XLSX.utils.book_append_sheet(workbook, chartWorksheet, "Monthly Chart Data");
+
+    XLSX.writeFile(workbook, "Project_Report.xlsx");
+  };
+
+
+
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="px-6 py-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Select Project</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Project Dropdown */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
             <div className="relative">
@@ -142,6 +412,44 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               )}
             </div>
           </div>
+
+          {/* Location Dropdown */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+            <div className="relative">
+              <button
+                onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+                disabled={loading}
+                className="w-full px-4 py-2.5 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="text-gray-900 dark:text-gray-100 truncate">
+                  {loading ? 'Loading locations...' : error ? 'Error loading locations' : selectedLocation}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-gray-400 dark:text-gray-300 transition-transform ml-2 ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isLocationDropdownOpen && !loading && !error && (
+                <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <button
+                    onClick={() => handleLocationChange('All Locations')}
+                    className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700 first:rounded-t-md last:rounded-b-md transition-colors"
+                  >
+                    <span className="truncate text-gray-900 dark:text-gray-100">All Locations</span>
+                  </button>
+                  {locations.map((location) => (
+                    <button
+                      key={location.id}
+                      onClick={() => handleLocationChange(location.name)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700 first:rounded-t-md last:rounded-b-md transition-colors"
+                    >
+                      <span className="truncate text-gray-900 dark:text-gray-100">{location.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Date Range Picker */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
             <div className="relative">
@@ -189,6 +497,55 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               )}
             </div>
           </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-100 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FileText size={16} />
+            Export Excel
+          </button>
+          {filteredTimesheets.length > 0 ? (
+            <PDFDownloadLink
+              document={
+                <ProjectReportDocument
+                  projectName={selectedProject}
+                  location={selectedLocation}
+                  dateRange={formatDateRange()}
+                  totalHours={totalHours}
+                  regularHours={regularHours}
+                  overtimeHours={overtimeHours}
+                  ratio={ratio}
+                />
+              }
+              fileName="Project_Report.pdf"
+            >
+              {({ loading }) => (
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  disabled={loading}
+                >
+                  <Download size={16} />
+                  {loading ? 'Generating PDF...' : 'Export PDF'}
+                </button>
+              )}
+            </PDFDownloadLink>
+          ) : (
+            <button
+              onClick={() => toast('No data to export', {
+                style: {
+                  borderRadius: '10px',
+                  background: 'blue',
+                  color: '#fff',
+                },
+              })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download size={16} />
+              Export PDF
+            </button>
+          )}
         </div>
       </div>
     </div>

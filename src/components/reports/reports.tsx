@@ -7,6 +7,7 @@ import { getSession } from 'next-auth/react';
 const ReportsPage = () => {
   const [timesheetData, setTimesheetData] = useState([]);
   const [selectedProject, setSelectedProject] = useState('Select Project');
+  const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
 
   useEffect(() => {
@@ -18,14 +19,18 @@ const ReportsPage = () => {
             throw new Error("No access token found");
           }
 
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all?project=${selectedProject}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${session.accessToken}`,
-              }
+          let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all?project=${selectedProject}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+          
+          // Add location filter if a specific location is selected
+          if (selectedLocation !== 'All Locations') {
+            url += `&location=${encodeURIComponent(selectedLocation)}`;
+          }
+
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
             }
-          );
+          });
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,19 +45,23 @@ const ReportsPage = () => {
     };
 
     fetchTimesheetData();
-  }, [selectedProject, dateRange]);
+  }, [selectedProject, selectedLocation, dateRange]);
 
   return (
     <div className="flex-1 bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white">
       <ProjectSelector
         selectedProject={selectedProject}
         onProjectChange={setSelectedProject}
+        selectedLocation={selectedLocation}
+        onLocationChange={setSelectedLocation}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
+        timesheets={timesheetData}
       />
       <ProjectSummary
         timesheetData={timesheetData}
         selectedProject={selectedProject}
+        selectedLocation={selectedLocation}
         dateRange={dateRange}
       />
       <EmployeeReport />
