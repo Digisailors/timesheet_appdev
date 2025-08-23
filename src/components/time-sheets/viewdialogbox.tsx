@@ -27,7 +27,8 @@ interface Employee {
   regularTimeSalary: string;
   overTimeSalary: string;
   type: string;
-  designation: string; // <-- Add this line
+  designation: string;
+  designationType: string;
 }
 
 export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, timesheetId }) => {
@@ -56,7 +57,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         }
       );
       const data = response.data.data;
-
       const travelStartTime1 = new Date(`1970-01-01T${data.onsiteTravelStart}`).getTime();
       const travelEndTime1 = new Date(`1970-01-01T${data.onsiteTravelEnd}`).getTime();
       const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
@@ -66,7 +66,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-
       const breakStartTime = new Date(`1970-01-01T${data.onsiteBreakStart}`).getTime();
       const breakEndTime = new Date(`1970-01-01T${data.onsiteBreakEnd}`).getTime();
       const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
@@ -99,9 +98,9 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         regularTimeSalary: data.regularTimeSalary || "0",
         overTimeSalary: data.overTimeSalary || "0",
         type: data.type,
-        designation: data.employees?.[0]?.designation || "Unknown", // <-- Add this line
+        designation: data.employees?.[0]?.designation || "Unknown",
+        designationType: data.employees?.[0]?.designationType || "Unknown",
       };
-
       setEmployee(employeeData);
     } catch (error) {
       console.error("Error fetching timesheet details:", error);
@@ -144,24 +143,24 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
             </button>
           </div>
           <div className="flex items-center space-x-4 mb-4">
-  <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-    {employee.name.split(' ').map(n => n[0]).join('')}
-  </div>
-  <div>
-    <h3 className="font-bold flex items-center">
-      {employee.name}
-      {employee.type === "employee" && (
-        <span className={`ml-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-2 py-1 rounded`}>
-          {employee.designation}
-        </span>
-      )}
-    </h3>
-  </div>
-  <span className={`bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full`}>
-    {employee.type === "employee" ? "Employee" : "Supervisor"}
-  </span>
-</div>
-
+            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+              {employee.name.split(' ').map(n => n[0]).join('')}
+            </div>
+            <div>
+              <h3 className="font-bold flex items-center">
+                {employee.name}
+                {employee.type === "employee" && (
+                  <span className={`ml-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-2 py-1 rounded`}>
+                    {employee.designation}
+                  </span>
+                )}
+              </h3>
+            </div>
+            <span className={`bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full`}>
+              {employee.type === "employee" ? employee.designationType : "Supervisor"}
+            </span>
+          </div>
+          {/* Rest of your JSX remains unchanged */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Project</p>
