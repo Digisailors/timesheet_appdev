@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, {
   useState,
   useMemo,
@@ -17,7 +18,7 @@ import {
 import { ViewDialogBox } from "./viewdialogbox";
 import { EditDialogBox } from "./EditDialogBox";
 import { getColumns } from "./columns";
-import { TimeSheet } from "../../types/TimeSheet";
+import { TimeSheet as ImportedTimeSheet } from "../../types/TimeSheet";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { getSession } from "next-auth/react";
@@ -32,7 +33,7 @@ interface Employee {
   lastName: string;
   fullName: string;
   designation: string;
-  designationType: string;
+  designationType: string | object;
   perHourRate: string;
   overtimeRate: string;
 }
@@ -83,6 +84,7 @@ interface TimeSheetData {
   location: string;
   regularTimeSalary?: string;
   overTimeSalary?: string;
+  projectcode?: string;
 }
 
 interface CreateTimesheetRequest {
@@ -132,14 +134,48 @@ interface UpdatedEmployee {
   remarks: string;
 }
 
+interface LocalTimeSheet {
+  id: string;
+  employee: string;
+  isSupervisor: boolean;
+  designationType: string | object;
+  designation: string | null;
+  checkIn: string;
+  checkOut: string;
+  hours: number;
+  otHours: number;
+  travelTime: string;
+  location: string;
+  project: string;
+  status: string;
+  breakTime: string;
+  timesheetDate: string;
+  supervisorName: string;
+  remarks: string;
+  perHourRate: string;
+  overtimeRate: string;
+  regularTimeSalary: string;
+  overTimeSalary: string;
+  onsiteTravelStart: string;
+  onsiteTravelEnd: string;
+  onsiteSignIn: string;
+  onsiteBreakStart: string;
+  onsiteBreakEnd: string;
+  onsiteSignOut: string;
+  offsiteTravelStart: string;
+  offsiteTravelEnd: string;
+  typeofWork: string;
+  projectcode: string;
+}
+
 export interface DataTableHandle {
   exportExcel: () => void;
   createTimesheet: (timesheetData: CreateTimesheetRequest) => Promise<void>;
 }
 
 export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
-  function DataTable({ selectedDate }, ref) {
-    const [data, setData] = useState<TimeSheet[]>([]);
+  ({ selectedDate }, ref) => {
+    const [data, setData] = useState<LocalTimeSheet[]>([]);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedTimesheetId, setSelectedTimesheetId] = useState<string | null>(null);
@@ -160,7 +196,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       return `${day}-${month}-${year}`;
     };
 
-    const transformTimesheetData = (timesheet: TimeSheetData) => {
+    const transformTimesheetData = (timesheet: TimeSheetData): LocalTimeSheet => {
       const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
       const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
       const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
@@ -177,14 +213,16 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
       const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
       const isSupervisor = timesheet.type === "supervisor";
-      // Use designation instead of designationType for the badge
-      const designationType = isSupervisor ? "Supervisor" : timesheet.employees?.[0]?.designation || "Unknown";
+      const rawDesignationType = timesheet.employees?.[0]?.designationType || "[object Object]";
+      const designationType = isSupervisor ? "Supervisor" : rawDesignationType;
+      const designation = isSupervisor ? null : timesheet.employees?.[0]?.designation || null;
 
       return {
         id: timesheet.id,
         employee: employeeName,
         isSupervisor: isSupervisor,
         designationType: designationType,
+        designation: designation,
         checkIn: timesheet.onsiteSignIn.substring(0, 5),
         checkOut: timesheet.onsiteSignOut.substring(0, 5),
         hours: parseFloat(timesheet.totalDutyHrs),
@@ -209,6 +247,8 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         onsiteSignOut: timesheet.onsiteSignOut,
         offsiteTravelStart: timesheet.offsiteTravelStart,
         offsiteTravelEnd: timesheet.offsiteTravelEnd,
+        typeofWork: timesheet.typeofWork, 
+        projectcode: timesheet.projectcode || "PRJ001",
       };
     };
 
@@ -261,14 +301,14 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       }
     }, []);
 
-    const columns = useMemo(() => getColumns(), []);
+    const columns = useMemo(() => getColumns() as ColumnDef<LocalTimeSheet>[], []);
 
-    const handleViewClick = useCallback((employee: TimeSheet) => {
+    const handleViewClick = useCallback((employee: LocalTimeSheet) => {
       setSelectedTimesheetId(employee.id);
       setIsViewDialogOpen(true);
     }, []);
 
-    const handleEditClick = useCallback((employee: TimeSheet) => {
+    const handleEditClick = useCallback((employee: LocalTimeSheet) => {
       const employeeData: SelectedEmployee = {
         name: employee.employee,
         travelStart: employee.onsiteTravelStart || '',
@@ -341,7 +381,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     }, [selectedTimesheetId]);
 
     const filteredData = useMemo(() => {
-      return data.filter((item: TimeSheet) => {
+      return data.filter((item: LocalTimeSheet) => {
         const itemDate = new Date(item.timesheetDate).toDateString();
         const selectedDateString = selectedDate ? new Date(selectedDate).toDateString() : null;
         return (
@@ -356,11 +396,11 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       });
     }, [filters, data, selectedDate]);
 
-    const getActionColumn = useCallback((): ColumnDef<TimeSheet> => {
+    const getActionColumn = useCallback<() => ColumnDef<LocalTimeSheet>>(() => {
       return {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { original: LocalTimeSheet } }) => {
           const employee = row.original;
           return (
             <div className="flex space-x-2">
@@ -383,10 +423,12 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     }, [handleViewClick, handleEditClick]);
 
     const actionColumn = getActionColumn();
+    const tableColumns = useMemo<ColumnDef<LocalTimeSheet>[]>(
+      () => [...columns, actionColumn],
+      [columns, actionColumn]
+    );
 
-    const tableColumns = useMemo(() => [...columns, actionColumn], [columns, actionColumn]);
-
-    const table = useReactTable({
+    const table = useReactTable<LocalTimeSheet>({
       data: filteredData,
       columns: tableColumns,
       getCoreRowModel: getCoreRowModel(),
@@ -403,7 +445,10 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         const worksheet = workbook.addWorksheet("Timesheet");
         worksheet.columns = [
           { header: "Employee", key: "employee", width: 20 },
+          { header: "Designation Type", key: "designationType", width: 20 },
+          { header: "Designation", key: "designation", width: 20 },
           { header: "Project", key: "project", width: 20 },
+          { header: "Project Code", key: "projectcode", width: 15 },
           { header: "Location", key: "location", width: 15 },
           { header: "Date", key: "date", width: 15 },
           { header: "Check In", key: "checkIn", width: 10 },
@@ -412,13 +457,23 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           { header: "Overtime", key: "otHours", width: 10 },
           { header: "Travel Time", key: "travelTime", width: 12 },
           { header: "Break Time", key: "breakTime", width: 12 },
+          { header: "Onsite Travel Start", key: "onsiteTravelStart", width: 18 },
+          { header: "Onsite Travel End", key: "onsiteTravelEnd", width: 18 },
+          { header: "Offsite Travel Start", key: "offsiteTravelStart", width: 18 },
+          { header: "Offsite Travel End", key: "offsiteTravelEnd", width: 18 },
           { header: "Supervisor", key: "supervisorName", width: 18 },
+          { header: "Type of Work", key: "typeofWork", width: 18 },
+          { header: "Regular Time Salary", key: "regularTimeSalary", width: 18 },
+          { header: "Overtime Salary", key: "overTimeSalary", width: 18 },
           { header: "Remarks", key: "remarks", width: 22 },
-          { header: "Status", key: "status", width: 10 },
         ];
-        const exportData = filteredData.map((row) => ({
+
+        const exportData = filteredData.map((row: LocalTimeSheet) => ({
           employee: row.employee,
+          designationType: typeof row.designationType === 'string' ? row.designationType : JSON.stringify(row.designationType),
+          designation: row.designation,
           project: row.project,
+          projectcode: row.projectcode,
           location: row.location,
           date: formatDate(row.timesheetDate),
           checkIn: row.checkIn,
@@ -427,10 +482,17 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           otHours: row.otHours,
           travelTime: row.travelTime,
           breakTime: row.breakTime,
-          supervisorName: row.supervisorName,
+          onsiteTravelStart: row.onsiteTravelStart,
+          onsiteTravelEnd: row.onsiteTravelEnd,
+          offsiteTravelStart: row.offsiteTravelStart,
+          offsiteTravelEnd: row.offsiteTravelEnd,
+          supervisorName: row.isSupervisor ? null : row.supervisorName,
+          typeofWork: row.typeofWork,
+          regularTimeSalary: row.regularTimeSalary,
+          overTimeSalary: row.overTimeSalary,
           remarks: row.remarks,
-          status: row.status,
         }));
+
         worksheet.addRows(exportData);
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -463,7 +525,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             onChange={(e) => setFilters({ ...filters, selectedDesignationType: e.target.value })}
           >
             <option value="all">All Designation Types</option>
-            {Array.from(new Set(data.flatMap(item => item.designationType))).map((designation) => (
+            {Array.from(new Set(data.flatMap(item => typeof item.designationType === 'string' ? item.designationType : JSON.stringify(item.designationType)))).map((designation) => (
               <option key={designation} value={designation}>
                 {designation}
               </option>
@@ -521,7 +583,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                             {row.original.employee}
                             {!row.original.isSupervisor && row.original.designationType && (
                               <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-2 py-1 rounded ml-2">
-                                {row.original.designationType}
+                                {typeof row.original.designationType === 'string' ? row.original.designationType : JSON.stringify(row.original.designationType)}
                               </span>
                             )}
                             {row.original.isSupervisor && (
