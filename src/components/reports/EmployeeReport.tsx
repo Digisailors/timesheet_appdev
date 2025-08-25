@@ -7,10 +7,12 @@ import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-
 import toast from 'react-hot-toast';
 import { getSession } from 'next-auth/react';
 
-interface Employee {
+interface Person {
   id: string;
   firstName: string;
   lastName: string;
+  role: 'employee' | 'supervisor';
+  fullName?: string;
 }
 
 interface Project {
@@ -20,6 +22,7 @@ interface Project {
 
 interface Timesheet {
   id: string;
+  type: 'employee' | 'supervisor';
   timesheetDate: string;
   onsiteSignIn: string;
   onsiteSignOut: string;
@@ -35,7 +38,8 @@ interface Timesheet {
   supervisorName: string;
   typeofWork: string;
   projectcode: string;
-  employees?: Array<{ id: string }>;
+  employees?: Array<{ id: string; fullName: string }>;
+  supervisor?: { id: string; fullName: string };
   project?: Project;
 }
 
@@ -98,21 +102,21 @@ const styles = StyleSheet.create({
 const MyDocument = ({ data, selectedEmployees, employees }: {
   data: Timesheet[];
   selectedEmployees: string[];
-  employees: Employee[];
+  employees: Person[];
 }) => (
   <Document>
     <Page style={styles.page} size="A4">
       <Text style={styles.title}>Employee Timesheet Report</Text>
       <Text style={styles.employeeName}>
-        Employees: {selectedEmployees.map(id => {
-          const employee = employees.find(emp => emp.id === id);
-          return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
+        {selectedEmployees.map(id => {
+          const person = employees.find(emp => emp.id === id);
+          return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
         }).join(', ')}
       </Text>
       <View style={styles.table}>
         <View style={styles.tableHeader}>
           {[
-            'Employee', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
+            'Name', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
             'Onsite Travel Start', 'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End',
             'Supervisor', 'Work Type', 'Project Code'
           ].map((header) => (
@@ -122,15 +126,42 @@ const MyDocument = ({ data, selectedEmployees, employees }: {
         {data.map((timesheet, index) => {
           const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
           const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
-
-          if (associatedEmployees.length > 1) {
-            return associatedEmployees.map((empId, empIndex) => {
-              const employee = employees.find(emp => emp.id === empId);
-              const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
+          const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
+          if (associatedEmployees.length > 0 || isSupervisorSelected) {
+            if (associatedEmployees.length > 1) {
+              return associatedEmployees.map((empId, empIndex) => {
+                const person = employees.find(emp => emp.id === empId);
+                const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+                const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
+                return (
+                  <View key={`${index}-${empIndex}`} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{personName}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.timesheetDate}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.location}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignIn}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignOut}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.normalHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.overtime}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.totalTravelHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.remarks}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelStart}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelEnd}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelStart}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelEnd}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{supervisorName}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.typeofWork}</Text>
+                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.projectcode}</Text>
+                  </View>
+                );
+              });
+            } else {
+              const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
+              const person = employees.find(emp => emp.id === empId);
+              const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+              const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
               return (
-                <View key={`${index}-${empIndex}`} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{employeeName}</Text>
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{personName}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.timesheetDate}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.location}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignIn}</Text>
@@ -143,43 +174,21 @@ const MyDocument = ({ data, selectedEmployees, employees }: {
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelEnd}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelStart}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelEnd}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.supervisorName}</Text>
+                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{supervisorName}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.typeofWork}</Text>
                   <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.projectcode}</Text>
                 </View>
               );
-            });
-          } else {
-            const empId = associatedEmployees[0] || selectedEmployees[0];
-            const employee = employees.find(emp => emp.id === empId);
-            const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
-            return (
-              <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{employeeName}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.timesheetDate}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.location}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignIn}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignOut}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.normalHrs}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.overtime}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.totalTravelHrs}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.remarks}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelStart}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelEnd}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelStart}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelEnd}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.supervisorName}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.typeofWork}</Text>
-                <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.projectcode}</Text>
-              </View>
-            );
+            }
           }
-        }).flat()}
+          return null;
+        }).flat().filter(Boolean)}
       </View>
     </Page>
   </Document>
 );
+
+
 
 const EmployeeReport: React.FC = () => {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
@@ -190,7 +199,7 @@ const EmployeeReport: React.FC = () => {
   });
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Person[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -210,14 +219,16 @@ const EmployeeReport: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const session = await getSession();
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-        const response = await fetch(
+  
+        // Fetch employees
+        const employeesResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`,
           {
             headers: {
@@ -225,36 +236,17 @@ const EmployeeReport: React.FC = () => {
             }
           }
         );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success && result.data) {
-          const fetchedEmployees = result.data.map((employee: Employee) => ({
-            id: employee.id,
-            firstName: employee.firstName,
-            lastName: employee.lastName,
-          }));
-          setEmployees(fetchedEmployees);
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch employees');
-        console.error('Error fetching employees:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchTimesheets = async () => {
-      try {
-        setLoading(true);
-        const session = await getSession();
-        if (!session?.accessToken) {
-          throw new Error("No access token found");
-        }
-        const response = await fetch(
+        const employeesResult = await employeesResponse.json();
+        const fetchedEmployees = employeesResult.data.map((emp: any) => ({
+          id: emp.id,
+          firstName: emp.firstName || emp.fullName.split(' ')[0],
+          lastName: emp.lastName || emp.fullName.split(' ')[1] || '',
+          role: 'employee',
+          fullName: emp.fullName,
+        }));
+  
+        // Fetch timesheets to extract supervisors
+        const timesheetsResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
           {
             headers: {
@@ -262,40 +254,57 @@ const EmployeeReport: React.FC = () => {
             }
           }
         );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success && result.data) {
-          setTimesheets(result.data);
-          const uniqueProjects = Array.from(
-            new Map(
-              result.data
-                .filter((ts: Timesheet) => ts.project)
-                .map((ts: Timesheet) => [ts.project!.id, ts.project!])
-            ).values()
-          ) as Project[];
-          setProjects(uniqueProjects);
-        } else {
-          throw new Error('Invalid response format');
-        }
+        const timesheetsResult = await timesheetsResponse.json();
+        const uniqueSupervisors = Array.from(
+          new Map(
+            timesheetsResult.data
+              .filter((ts: any) => ts.supervisor)
+              .map((ts: any) => [
+                ts.supervisor.id,
+                {
+                  id: ts.supervisor.id,
+                  firstName: ts.supervisor.fullName.split(' ')[0],
+                  lastName: ts.supervisor.fullName.split(' ')[1] || '',
+                  role: 'supervisor',
+                  fullName: ts.supervisor.fullName,
+                }
+              ])
+          ).values()
+        );
+  
+        // Merge employees and supervisors
+        const people = [...fetchedEmployees, ...uniqueSupervisors];
+        setEmployees(people);
+  
+        // Set timesheets and projects
+        setTimesheets(timesheetsResult.data);
+        const uniqueProjects = Array.from(
+          new Map(
+            timesheetsResult.data
+              .filter((ts: any) => ts.project)
+              .map((ts: any) => [ts.project!.id, ts.project!] as [string, Project])
+          ).values()
+        ) as Project[];
+        setProjects(uniqueProjects);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch timesheets');
-        console.error('Error fetching timesheets:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchEmployees();
-    fetchTimesheets();
+  
+    fetchData();
   }, []);
+  
 
   const filteredTimesheets = timesheets.filter((timesheet) => {
     const timesheetDate = new Date(timesheet.timesheetDate);
-    const isSameEmployee = selectedEmployees.length === 0
-      ? true
-      : timesheet.employees && timesheet.employees.some(emp => selectedEmployees.includes(emp.id));
+    const isSamePerson =
+      selectedEmployees.length === 0
+        ? true
+        : timesheet.employees?.some((emp: any) => selectedEmployees.includes(emp.id)) ||
+          (timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id));
     const isSameProject = selectedProject
       ? timesheet.project && timesheet.project.id === selectedProject
       : true;
@@ -304,7 +313,7 @@ const EmployeeReport: React.FC = () => {
         ? timesheetDate >= new Date(dateRange.startDate) &&
           timesheetDate <= new Date(dateRange.endDate)
         : false;
-    return isSameEmployee && isSameProject && isInDateRange;
+    return isSamePerson && isSameProject && isInDateRange;
   });
 
   const calculateTotalHours = (filteredTimesheets: Timesheet[]) => {
@@ -331,18 +340,42 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
-
     const excelData = filteredTimesheets.map(timesheet => {
       const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
       const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
-
-      if (associatedEmployees.length > 1) {
-        return associatedEmployees.map(empId => {
-          const employee = employees.find(emp => emp.id === empId);
-          const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
+      const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
+      if (associatedEmployees.length > 0 || isSupervisorSelected) {
+        if (associatedEmployees.length > 1) {
+          return associatedEmployees.map(empId => {
+            const person = employees.find(emp => emp.id === empId);
+            const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+            const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
+            return {
+              Name: personName,
+              Date: timesheet.timesheetDate,
+              Location: timesheet.location,
+              'Check-In': timesheet.onsiteSignIn,
+              'Check-Out': timesheet.onsiteSignOut,
+              'Regular Hours': timesheet.normalHrs,
+              'OT Hours': timesheet.overtime,
+              'Travel Time': timesheet.totalTravelHrs,
+              Remarks: timesheet.remarks,
+              'Onsite Travel Start': timesheet.onsiteTravelStart,
+              'Onsite Travel End': timesheet.onsiteTravelEnd,
+              'Offsite Travel Start': timesheet.offsiteTravelStart,
+              'Offsite Travel End': timesheet.offsiteTravelEnd,
+              Supervisor: supervisorName,
+              'Work Type': timesheet.typeofWork,
+              'Project Code': timesheet.projectcode,
+            };
+          });
+        } else {
+          const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
+          const person = employees.find(emp => emp.id === empId);
+          const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+          const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
           return {
-            Employee: employeeName,
+            Name: personName,
             Date: timesheet.timesheetDate,
             Location: timesheet.location,
             'Check-In': timesheet.onsiteSignIn,
@@ -355,43 +388,20 @@ const EmployeeReport: React.FC = () => {
             'Onsite Travel End': timesheet.onsiteTravelEnd,
             'Offsite Travel Start': timesheet.offsiteTravelStart,
             'Offsite Travel End': timesheet.offsiteTravelEnd,
-            Supervisor: timesheet.supervisorName,
+            Supervisor: supervisorName,
             'Work Type': timesheet.typeofWork,
             'Project Code': timesheet.projectcode,
           };
-        });
-      } else {
-        const empId = associatedEmployees[0] || selectedEmployees[0];
-        const employee = employees.find(emp => emp.id === empId);
-        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
-        return {
-          Employee: employeeName,
-          Date: timesheet.timesheetDate,
-          Location: timesheet.location,
-          'Check-In': timesheet.onsiteSignIn,
-          'Check-Out': timesheet.onsiteSignOut,
-          'Regular Hours': timesheet.normalHrs,
-          'OT Hours': timesheet.overtime,
-          'Travel Time': timesheet.totalTravelHrs,
-          Remarks: timesheet.remarks,
-          'Onsite Travel Start': timesheet.onsiteTravelStart,
-          'Onsite Travel End': timesheet.onsiteTravelEnd,
-          'Offsite Travel Start': timesheet.offsiteTravelStart,
-          'Offsite Travel End': timesheet.offsiteTravelEnd,
-          Supervisor: timesheet.supervisorName,
-          'Work Type': timesheet.typeofWork,
-          'Project Code': timesheet.projectcode,
-        };
+        }
       }
-    }).flat();
-
+      return [];
+    }).flat().filter(Boolean);
+  
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");
   };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 text-gray-900 dark:text-gray-100">
       <div className="max-w-8xl mx-auto">
@@ -399,7 +409,7 @@ const EmployeeReport: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Employees</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Employees/Supervisors</label>
               <div className="relative employee-dropdown">
                 <button
                   type="button"
@@ -408,22 +418,22 @@ const EmployeeReport: React.FC = () => {
                   disabled={loading}
                 >
                   {selectedEmployees.length === 0 ? (
-                    <span className="text-gray-500">Select employees...</span>
+                    <span className="text-gray-500">Select employees/supervisors...</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
-                      {selectedEmployees.map((employeeId) => {
-                        const employee = employees.find(emp => emp.id === employeeId);
+                      {selectedEmployees.map((personId) => {
+                        const person = employees.find(emp => emp.id === personId);
                         return (
                           <span
-                            key={employeeId}
+                            key={personId}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           >
-                            {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown'}
+                            {person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown'}
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedEmployees(prev => prev.filter(id => id !== employeeId));
+                                setSelectedEmployees(prev => prev.filter(id => id !== personId));
                               }}
                               className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
                             >
@@ -439,7 +449,7 @@ const EmployeeReport: React.FC = () => {
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
                     <div className="p-2">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Employees</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Employees/Supervisors</span>
                         <button
                           type="button"
                           onClick={() => setSelectedEmployees([])}
@@ -448,26 +458,33 @@ const EmployeeReport: React.FC = () => {
                           Clear All
                         </button>
                       </div>
-                      {employees.map((employee) => (
+                      {employees.map((person) => (
                         <label
-                          key={employee.id}
-                          className="flex items-center px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          key={person.id}
+                          className="flex items-center justify-between px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedEmployees.includes(employee.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedEmployees(prev => [...prev, employee.id]);
-                              } else {
-                                setSelectedEmployees(prev => prev.filter(id => id !== employee.id));
-                              }
-                            }}
-                            className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <span className="text-sm text-gray-900 dark:text-gray-100">
-                            {employee.firstName} {employee.lastName}
-                          </span>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedEmployees.includes(person.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedEmployees(prev => [...prev, person.id]);
+                                } else {
+                                  setSelectedEmployees(prev => prev.filter(id => id !== person.id));
+                                }
+                              }}
+                              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-900 dark:text-gray-100">
+                              {person.fullName || `${person.firstName} ${person.lastName}`}
+                            </span>
+                          </div>
+                          {person.role === 'supervisor' && (
+                            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium leading-none text-white bg-blue-600 rounded-full">
+                              S
+                            </span>
+                          )}
                         </label>
                       ))}
                     </div>
@@ -548,10 +565,10 @@ const EmployeeReport: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">
               {selectedEmployees.length === 0
-                ? 'Select Employees'
+                ? 'Select Employees/Supervisors'
                 : selectedEmployees.map(id => {
-                    const employee = employees.find(emp => emp.id === id);
-                    return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
+                    const person = employees.find(emp => emp.id === id);
+                    return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
                   }).join(', ') + ' Report'
               }
             </h2>
@@ -620,7 +637,7 @@ const EmployeeReport: React.FC = () => {
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   {[
-                    'Employee', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
+                    'Name', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
                     'Onsite Travel Start', 'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End',
                     'Supervisor', 'Work Type', 'Project Code'
                   ].map((header) => (
@@ -636,22 +653,49 @@ const EmployeeReport: React.FC = () => {
               <tbody>
                 {selectedEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan={16} className="text-center py-4">Please select an employee to view data</td>
+                    <td colSpan={16} className="text-center py-4">Please select an employee/supervisor to view data</td>
                   </tr>
                 ) : (
                   filteredTimesheets.length > 0 ? (
                     filteredTimesheets.map((timesheet) => {
                       const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
                       const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
-
-                      if (associatedEmployees.length > 1) {
-                        return associatedEmployees.map((empId, empIndex) => {
-                          const employee = employees.find(emp => emp.id === empId);
-                          const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
+                      const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
+                      if (associatedEmployees.length > 0 || isSupervisorSelected) {
+                        if (associatedEmployees.length > 1) {
+                          return associatedEmployees.map((empId, empIndex) => {
+                            const person = employees.find(emp => emp.id === empId);
+                            const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+                            const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
+                            return (
+                              <tr key={`${timesheet.id}-${empIndex}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.timesheetDate}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{supervisorName}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
+                              </tr>
+                            );
+                          });
+                        } else {
+                          const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
+                          const person = employees.find(emp => emp.id === empId);
+                          const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
+                          const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
                           return (
-                            <tr key={`${timesheet.id}-${empIndex}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{employeeName}</td>
+                            <tr key={timesheet.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.timesheetDate}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
@@ -664,39 +708,15 @@ const EmployeeReport: React.FC = () => {
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.supervisorName}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{supervisorName}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
                             </tr>
                           );
-                        });
-                      } else {
-                        const empId = associatedEmployees[0] || selectedEmployees[0];
-                        const employee = employees.find(emp => emp.id === empId);
-                        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
-
-                        return (
-                          <tr key={timesheet.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{employeeName}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.timesheetDate}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.supervisorName}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
-                            <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
-                          </tr>
-                        );
+                        }
                       }
-                    }).flat()
+                      return null;
+                    }).flat().filter(Boolean)
                   ) : (
                     <tr>
                       <td colSpan={16} className="text-center py-4">No Data Found</td>
