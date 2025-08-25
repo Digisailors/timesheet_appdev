@@ -399,7 +399,7 @@ const SalaryReport: React.FC = () => {
       toast('Please select a date range and ensure there is data to export', {
         style: {
           borderRadius: '10px',
-          background: 'orange',
+          background: 'blue',
           color: '#fff',
         },
       });

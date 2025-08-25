@@ -63,7 +63,7 @@ const ReportsPage = () => {
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Reports Dashboard</h1>
+          {/* <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Reports Dashboard</h1> */}
           <div className="flex space-x-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;

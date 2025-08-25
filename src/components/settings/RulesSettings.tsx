@@ -159,7 +159,6 @@ interface Rule {
 
 interface RuleFormState {
   designationId: string;
-  breakTime: string;
   allowedTravelHours: string;
   normalHours: string;
 }
@@ -181,7 +180,6 @@ const RulesSettings: React.FC = () => {
   const [currentRuleId, setCurrentRuleId] = useState<string | null>(null);
   const [newRule, setNewRule] = useState<RuleFormState>({
     designationId: "",
-    breakTime: "",
     allowedTravelHours: "",
     normalHours: "",
   });
@@ -272,7 +270,7 @@ const RulesSettings: React.FC = () => {
     setError(null);
 
     if (
-      (name === "breakTime" || name === "allowedTravelHours" || name === "normalHours") &&
+      (name === "allowedTravelHours" || name === "normalHours") &&
       value !== "" &&
       !numericRegex.test(value)
     ) {
@@ -295,18 +293,17 @@ const RulesSettings: React.FC = () => {
       validationError = true;
     }
     if (
-      newRule.breakTime === "" ||
       newRule.allowedTravelHours === "" ||
       newRule.normalHours === ""
     ) {
-      setError("All numeric fields (Normal Hours, Break Time, Allowed Travel Hours) are required.");
+      setError("All numeric fields (Normal Hours, Allowed Travel Hours) are required.");
       validationError = true;
     }
     if (validationError) {
       return;
     }
 
-    const numericFields = ["breakTime", "allowedTravelHours", "normalHours"] as const;
+    const numericFields = ["allowedTravelHours", "normalHours"] as const;
     for (const field of numericFields) {
       if (isNaN(Number.parseFloat(newRule[field]))) {
         setError(`Invalid number for ${field}. Please enter a valid numeric value.`);
@@ -338,7 +335,6 @@ const RulesSettings: React.FC = () => {
       }
 
       let payload: {
-        breakTime: number;
         allowedTravelHours: number;
         normalHours: number;
         designationId?: string;
@@ -348,7 +344,6 @@ const RulesSettings: React.FC = () => {
 
       if (isEditing && currentRuleId) {
         payload = {
-          breakTime: Number.parseFloat(newRule.breakTime),
           allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
           normalHours: Number.parseFloat(newRule.normalHours),
         };
@@ -366,7 +361,6 @@ const RulesSettings: React.FC = () => {
       } else {
         payload = {
           designationId: newRule.designationId,
-          breakTime: Number.parseFloat(newRule.breakTime),
           allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
           normalHours: Number.parseFloat(newRule.normalHours),
         };
@@ -394,7 +388,6 @@ const RulesSettings: React.FC = () => {
       setCurrentRuleId(null);
       setNewRule({
         designationId: "",
-        breakTime: "",
         allowedTravelHours: "",
         normalHours: "",
       });
@@ -409,7 +402,6 @@ const RulesSettings: React.FC = () => {
   const handleEdit = (rule: Rule) => {
     setNewRule({
       designationId: rule.designation.id,
-      breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
       allowedTravelHours: rule.allowedTravelHours != null ? rule.allowedTravelHours.toString() : "",
       normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
     });
@@ -419,7 +411,6 @@ const RulesSettings: React.FC = () => {
     setError(null);
     console.log("New rule state after handleEdit:", {
       designationId: rule.designation.id,
-      breakTime: rule.breakTime != null ? rule.breakTime.toString() : "",
       allowedTravelHours: rule.allowedTravelHours != null ? rule.allowedTravelHours.toString() : "",
       normalHours: rule.normalHours != null ? rule.normalHours.toString() : "",
     });
@@ -517,7 +508,6 @@ const RulesSettings: React.FC = () => {
             setIsEditing(false);
             setNewRule({
               designationId: "",
-              breakTime: "",
               allowedTravelHours: "",
               normalHours: "",
             });
@@ -636,40 +626,22 @@ const RulesSettings: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <label
-                  htmlFor="break-time"
+                  htmlFor="allowed-travel-hours"
                   className="text-sm font-semibold text-gray-700 dark:text-gray-300"
                 >
-                  Break Time (h)
+                  Allowed Travel Hours (h)
                 </label>
                 <input
-                  id="break-time"
+                  id="allowed-travel-hours"
+                  placeholder="Enter Allowed Travel Hours"
                   type="text"
-                  placeholder="Enter Break Time"
-                  name="breakTime"
-                  value={newRule.breakTime}
+                  name="allowedTravelHours"
+                  value={newRule.allowedTravelHours}
                   onChange={handleInputChange}
                   disabled={submitting}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="allowed-travel-hours"
-                className="text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >
-                Allowed Travel Hours (h)
-              </label>
-              <input
-                id="allowed-travel-hours"
-                placeholder="Enter Allowed Travel Hours"
-                type="text"
-                name="allowedTravelHours"
-                value={newRule.allowedTravelHours}
-                onChange={handleInputChange}
-                disabled={submitting}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50"
-              />
             </div>
           </div>
           <div className="flex justify-end items-center gap-4 px-6 py-4 border-t border-gray-200 bg-gray-100 dark:bg-gray-900 dark:border-gray-700 mt-6">
