@@ -24,6 +24,7 @@ interface Employee {
   timeFrame: string;
   avatar: string;
   avatarBg: string;
+  eligibleLeaveDays?: string;
 }
 
 interface EmployeeFormData {
@@ -40,6 +41,7 @@ interface EmployeeFormData {
   workingHours: string;
   normalHours: string;
   otHours: string;
+  eligibleLeaveDays: string;
 }
 
 interface EmployeeAPIPayload {
@@ -55,6 +57,7 @@ interface EmployeeAPIPayload {
   specialization: string;
   perHourRate: number;
   overtimeRate: number;
+  eligibleLeaveDays: number;
 }
 
 interface AddEmployeeModalProps {
@@ -106,6 +109,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     workingHours: "",
     normalHours: "",
     otHours: "",
+    eligibleLeaveDays: "",
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -157,6 +161,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         normalHours:
           editingEmployee.perHourRate || editingEmployee.normalHours || "",
         otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "",
+        eligibleLeaveDays: editingEmployee.eligibleLeaveDays || "",
       });
     } else if (!editingEmployee && isOpen) {
       setFormData({
@@ -173,6 +178,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         workingHours: "",
         normalHours: "",
         otHours: "",
+        eligibleLeaveDays: "",
       });
     }
     setErrors({});
@@ -273,6 +279,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         if (isNaN(otHoursNum) || otHoursNum < 0)
           return "Please enter a valid number";
         return "";
+      case "eligibleLeaveDays":
+        if (!value.trim()) return "Please fill this field";
+        if (!/^\d+$/.test(value)) return "Please enter a valid number";
+        return "";
       default:
         return "";
     }
@@ -307,6 +317,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       }
       if (touched[name]) {
         const error = validateField(name, formattedValue);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+    } else if (name === "eligibleLeaveDays") {
+      const numericValue = value.replace(/\D/g, "");
+      setFormData((prev) => ({ ...prev, [name]: numericValue }));
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
+      if (touched[name]) {
+        const error = validateField(name, numericValue);
         setErrors((prev) => ({ ...prev, [name]: error }));
       }
     } else if (name === "designationType") {
@@ -376,6 +396,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       "specialization",
       "normalHours",
       "otHours",
+      "eligibleLeaveDays",
     ];
     allFields.forEach((field) => {
       const error = validateField(
@@ -408,6 +429,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       specialization: formData.specialization,
       perHourRate: parseFloat(formData.normalHours),
       overtimeRate: parseFloat(formData.otHours),
+      eligibleLeaveDays: parseInt(formData.eligibleLeaveDays, 10),
     };
     try {
       onSubmit(apiPayload);
@@ -704,13 +726,36 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
                   className={getFieldClassName(
                     "specialization",
-                    "w-175 px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
                   required
                 />
                 {errors.specialization && touched.specialization && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                     {errors.specialization}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Eligible Leave Days *
+                </label>
+                <input
+                  type="text"
+                  name="eligibleLeaveDays"
+                  value={formData.eligibleLeaveDays}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter eligible leave days (e.g., 25)"
+                  className={getFieldClassName(
+                    "eligibleLeaveDays",
+                    "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  )}
+                  required
+                />
+                {errors.eligibleLeaveDays && touched.eligibleLeaveDays && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    {errors.eligibleLeaveDays}
                   </p>
                 )}
               </div>
