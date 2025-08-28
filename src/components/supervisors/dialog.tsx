@@ -1,8 +1,10 @@
+/* eslint-disable */
 'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 
 interface SupervisorData {
+  id?: string;
   fullName: string;
   emailAddress: string;
   specialization?: string;
@@ -13,6 +15,9 @@ interface SupervisorData {
   password?: string;
   perHourRate?: string;
   overtimeRate?: string;
+  eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
   assignedProject?: string;
   assignedProjectId?: string;
 }
@@ -38,7 +43,10 @@ const defaultFormData: SupervisorData = {
   experience: '',
   password: '',
   perHourRate: '',
-  overtimeRate: ''
+  overtimeRate: '',
+  eligibleLeaveDays: '',
+  remainingLeaveDays: '',
+  unpaidLeaveDays: '',
 };
 
 export default function SupervisorDialog({
@@ -135,12 +143,9 @@ export default function SupervisorDialog({
         }
       }
     }
-
-    // Email is now optional
     if (formData.emailAddress?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
       newErrors.emailAddress = 'Invalid email format';
     }
-
     if (formData.specialization !== undefined && !formData.specialization.trim()) {
       newErrors.specialization = 'Specialization is required';
     }
@@ -168,6 +173,11 @@ export default function SupervisorDialog({
     } else if (formData.overtimeRate !== undefined && formData.overtimeRate.trim() && isNaN(Number(formData.overtimeRate))) {
       newErrors.overtimeRate = 'Please enter a valid overtime rate';
     }
+    if (formData.eligibleLeaveDays !== undefined && !formData.eligibleLeaveDays.trim()) {
+      newErrors.eligibleLeaveDays = 'Eligible leave days is required';
+    } else if (formData.eligibleLeaveDays !== undefined && formData.eligibleLeaveDays.trim() && isNaN(Number(formData.eligibleLeaveDays))) {
+      newErrors.eligibleLeaveDays = 'Please enter a valid number';
+    }
     if (mode === 'add') {
       if (!formData.password?.trim()) {
         newErrors.password = 'Password is required';
@@ -182,7 +192,7 @@ export default function SupervisorDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    const dataToSend: SupervisorData = {
+    const dataToSend: any = {
       fullName: formData.fullName,
       emailAddress: formData.emailAddress,
       specialization: formData.specialization,
@@ -191,9 +201,16 @@ export default function SupervisorDialog({
       dateOfJoining: formData.dateOfJoining,
       experience: formData.experience,
       password: formData.password,
-      perHourRate: formData.perHourRate,
-      overtimeRate: formData.overtimeRate,
+      perHourRate: formData.perHourRate ? Number(formData.perHourRate) : undefined,
+      overtimeRate: formData.overtimeRate ? Number(formData.overtimeRate) : undefined,
+      eligibleLeaveDays: formData.eligibleLeaveDays ? Number(formData.eligibleLeaveDays) : undefined,
+      assignedProjectId: formData.assignedProjectId,
     };
+    Object.keys(dataToSend).forEach(key => {
+      if (dataToSend[key] === undefined || dataToSend[key] === '') {
+        delete dataToSend[key];
+      }
+    });
     onSubmit?.(dataToSend, mode);
     onClose?.();
   };
@@ -215,17 +232,14 @@ export default function SupervisorDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-semibold">{mode === 'add' ? 'Add New Supervisor' : 'Edit Supervisor'}</h2>
           <button onClick={handleCancel} className="text-gray-500 hover:text-red-500">
             <X size={24} />
           </button>
         </div>
-        {/* Form */}
         <div className="overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name & Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">
@@ -254,17 +268,21 @@ export default function SupervisorDialog({
                 {errors.emailAddress && <p className="text-red-500 text-sm">{errors.emailAddress}</p>}
               </div>
             </div>
-            {/* Specialization & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Specialization"
-                name="specialization"
-                value={formData.specialization || ''}
-                error={errors.specialization}
-                onChange={handleInputChange}
-                placeholder="Enter specialization"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Specialization <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="specialization"
+                  value={formData.specialization || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter specialization"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.specialization && <p className="text-red-500 text-sm">{errors.specialization}</p>}
+              </div>
               <div>
                 <label className="text-sm font-medium">Phone Number</label>
                 <input
@@ -279,7 +297,6 @@ export default function SupervisorDialog({
                 {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
               </div>
             </div>
-            {/* Per Hour Rate & Overtime Rate */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Per Hour Rate</label>
@@ -306,7 +323,44 @@ export default function SupervisorDialog({
                 {errors.overtimeRate && <p className="text-red-500 text-sm">{errors.overtimeRate}</p>}
               </div>
             </div>
-            {/* Password (only in add mode) */}
+            <div>
+              <label className="text-sm font-medium">
+                Eligible Leave Days <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="eligibleLeaveDays"
+                value={formData.eligibleLeaveDays || ''}
+                onChange={handleInputChange}
+                placeholder="Enter eligible leave days"
+                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+              />
+              {errors.eligibleLeaveDays && <p className="text-red-500 text-sm">{errors.eligibleLeaveDays}</p>}
+            </div>
+            {mode === 'edit' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Remaining Leave Days</label>
+                  <input
+                    type="text"
+                    name="remainingLeaveDays"
+                    value={formData.remainingLeaveDays || ''}
+                    readOnly
+                    className="w-full mt-1 p-2 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Unpaid Leave Days</label>
+                  <input
+                    type="text"
+                    name="unpaidLeaveDays"
+                    value={formData.unpaidLeaveDays || ''}
+                    readOnly
+                    className="w-full mt-1 p-2 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            )}
             {mode === 'add' && (
               <div>
                 <label className="text-sm font-medium">
@@ -332,7 +386,6 @@ export default function SupervisorDialog({
                 {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
               </div>
             )}
-            {/* Address */}
             <div>
               <label className="text-sm font-medium">Address</label>
               <textarea
@@ -345,30 +398,36 @@ export default function SupervisorDialog({
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             </div>
-            {/* Date of Joining & Experience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Date of Joining"
-                name="dateOfJoining"
-                type="date"
-                value={formData.dateOfJoining || ''}
-                error={errors.dateOfJoining}
-                onChange={handleInputChange}
-                placeholder=""
-                onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
-                required
-              />
-              <FormInput
-                label="Experience"
-                name="experience"
-                value={formData.experience || ''}
-                error={errors.experience}
-                onChange={handleInputChange}
-                placeholder="Enter experience (e.g., 5 years)"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Date of Joining <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="dateOfJoining"
+                  value={formData.dateOfJoining || ''}
+                  onChange={handleInputChange}
+                  onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.dateOfJoining && <p className="text-red-500 text-sm">{errors.dateOfJoining}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Experience <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="experience"
+                  value={formData.experience || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter experience (e.g., 5 years)"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.experience && <p className="text-red-500 text-sm">{errors.experience}</p>}
+              </div>
             </div>
-            {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
@@ -390,41 +449,3 @@ export default function SupervisorDialog({
     </div>
   );
 }
-
-const FormInput = ({
-  label,
-  name,
-  type = 'text',
-  value,
-  error,
-  onChange,
-  placeholder,
-  required = false,
-  onClick,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  value: string;
-  error?: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  required?: boolean;
-  onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
-}) => (
-  <div>
-    <label className="text-sm font-medium">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      onClick={onClick}
-      className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-    />
-    {error && <p className="text-red-500 text-sm">{error}</p>}
-  </div>
-);

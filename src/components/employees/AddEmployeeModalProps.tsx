@@ -25,6 +25,8 @@ interface Employee {
   avatar: string;
   avatarBg: string;
   eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
 }
 
 interface EmployeeFormData {
@@ -42,6 +44,8 @@ interface EmployeeFormData {
   normalHours: string;
   otHours: string;
   eligibleLeaveDays: string;
+  remainingLeaveDays: string;
+  unpaidLeaveDays: string;
 }
 
 interface EmployeeAPIPayload {
@@ -110,6 +114,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     normalHours: "",
     otHours: "",
     eligibleLeaveDays: "",
+    remainingLeaveDays: "",
+    unpaidLeaveDays: "",
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -162,6 +168,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           editingEmployee.perHourRate || editingEmployee.normalHours || "",
         otHours: editingEmployee.overtimeRate || editingEmployee.otHours || "",
         eligibleLeaveDays: editingEmployee.eligibleLeaveDays || "",
+        remainingLeaveDays: editingEmployee.remainingLeaveDays ?? "",
+        unpaidLeaveDays: editingEmployee.unpaidLeaveDays ?? "",
       });
     } else if (!editingEmployee && isOpen) {
       setFormData({
@@ -179,6 +187,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         normalHours: "",
         otHours: "",
         eligibleLeaveDays: "",
+        remainingLeaveDays: "",
+        unpaidLeaveDays: "",
       });
     }
     setErrors({});
@@ -759,6 +769,37 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   </p>
                 )}
               </div>
+
+              {/* Conditionally render these fields only when editing */}
+              {editingEmployee && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Remaining Leave Days
+                    </label>
+                    <input
+                      type="text"
+                      name="remainingLeaveDays"
+                      value={formData.remainingLeaveDays ?? ""}
+                      readOnly
+                      className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Unpaid Leave Days
+                    </label>
+                    <input
+                      type="text"
+                      name="unpaidLeaveDays"
+                      value={formData.unpaidLeaveDays ?? ""}
+                      readOnly
+                      className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md cursor-not-allowed"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Address *

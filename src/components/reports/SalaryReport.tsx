@@ -555,16 +555,17 @@ const SalaryReport: React.FC = () => {
                   <span>{formatDateRange()}</span>
                 </button>
                 {showDatePickers && (
-                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800    border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          value={dateRange.startDate}
-                          onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                        />
+                         <input
+                            type="date"
+                            value={dateRange.startDate}
+                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                          />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
@@ -572,6 +573,7 @@ const SalaryReport: React.FC = () => {
                           type="date"
                           value={dateRange.endDate}
                           onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                          onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                         />
                       </div>
