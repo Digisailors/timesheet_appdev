@@ -29,6 +29,9 @@ const SystemSettings: React.FC = () => {
   const [editingHolidayId, setEditingHolidayId] = useState<string | null>(null);
   const [selectedFridays, setSelectedFridays] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingHolidayId, setDeletingHolidayId] = useState<string | null>(null);
+  const [deletingHolidayInfo, setDeletingHolidayInfo] = useState<Holiday | null>(null);
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088/api";
@@ -48,17 +51,20 @@ const SystemSettings: React.FC = () => {
     "December",
   ];
 
+  // Updated to only have 2 options
   const holidayTypes = [
     { value: "Weekly Holiday", label: "Weekly Holiday" },
-    { value: "Religious Holiday", label: "Religious Holiday" },
-    { value: "Public Holiday", label: "Public Holiday" },
+    { value: "Government Holiday", label: "Government Holiday" },
   ];
 
-  // Helper function to get holiday color
+  // Helper function to get holiday color - updated for new types
   const getHolidayColor = (holidayType: string) => {
     switch (holidayType) {
       case "Weekly Holiday":
         return "bg-green-500";
+      case "Government Holiday":
+        return "bg-blue-500";
+      // Keep old types for backward compatibility
       case "Religious Holiday":
         return "bg-purple-500";
       case "Public Holiday":
@@ -68,11 +74,14 @@ const SystemSettings: React.FC = () => {
     }
   };
 
-  // Helper function to get holiday badge text
+  // Helper function to get holiday badge text - updated for new types
   const getHolidayBadgeText = (holidayType: string) => {
     switch (holidayType) {
       case "Weekly Holiday":
         return "Weekly";
+      case "Government Holiday":
+        return "Govt";
+      // Keep old types for backward compatibility
       case "Religious Holiday":
         return "Religious";
       case "Public Holiday":
@@ -216,7 +225,7 @@ const SystemSettings: React.FC = () => {
                 )}`}
                 title={`${
                   holidayTypes.find((t) => t.value === holiday.holidayType)
-                    ?.label
+                    ?.label || holiday.holidayType
                 }: ${holiday.description || "No description"}`}
               >
                 {getHolidayBadgeText(holiday.holidayType)}
@@ -229,14 +238,14 @@ const SystemSettings: React.FC = () => {
             )}
           </div>
           {dayHolidays.length > 0 && (
-            <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
+            <div className="absolute top-1 right-1">
               <div className="flex gap-1">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     if (dayHolidays[0]) handleEditHoliday(dayHolidays[0]);
                   }}
-                  className="p-1 bg-white dark:bg-gray-700 rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="p-1 bg-white dark:bg-gray-700 rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   title="Edit Holiday"
                 >
                   <Edit className="w-3 h-3 text-gray-600 dark:text-gray-300" />
@@ -244,9 +253,13 @@ const SystemSettings: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (dayHolidays[0]) handleDeleteHoliday(dayHolidays[0].id);
+                    if (dayHolidays[0]) {
+                      setDeletingHolidayId(dayHolidays[0].id);
+                      setDeletingHolidayInfo(dayHolidays[0]);
+                      setShowDeleteModal(true);
+                    }
                   }}
-                  className="p-1 bg-white dark:bg-gray-700 rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="p-1 bg-white dark:bg-gray-700 rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   title="Delete Holiday"
                 >
                   <Trash2 className="w-3 h-3 text-red-500" />
@@ -305,7 +318,7 @@ const SystemSettings: React.FC = () => {
     return days;
   };
 
-  // Generate weekly holidays
+  // Enhanced generate weekly holidays function
   const generateWeeklyHolidays = async () => {
     try {
       setIsSubmitting(true);
@@ -313,21 +326,46 @@ const SystemSettings: React.FC = () => {
       if (!session?.accessToken) {
         throw new Error("No access token found");
       }
-      const response = await fetch(
-        `${API_BASE_URL}/calendar/generate-weekly-holidays/${currentYear}/${String(
-          currentMonth + 1
-        ).padStart(2, "0")}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-            "Content-Type": "application/json",
-          },
+
+      // Get all Fridays in the current month
+      const fridaysInMonth = getFridaysInMonth(currentMonth, currentYear);
+      
+      // Create weekly holidays for all Fridays (including previously deleted ones)
+      const holidayPromises = fridaysInMonth.map(async (fridayDate) => {
+        // Check if this Friday already has a Weekly Holiday
+        const existingWeeklyHoliday = holidays.find(
+          (h) => h.date === fridayDate && h.holidayType === "Weekly Holiday"
+        );
+        
+        if (!existingWeeklyHoliday) {
+          // Create a new weekly holiday for this Friday
+          const payload = {
+            holidayType: "Weekly Holiday",
+            date: fridayDate,
+            description: description.trim() || "Weekly Holiday - Friday",
+          };
+          
+          return fetch(`${API_BASE_URL}/calendar/create`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+            body: JSON.stringify(payload),
+          });
         }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to generate weekly holidays");
+        return null;
+      });
+
+      // Wait for all requests to complete
+      const responses = await Promise.all(holidayPromises);
+      
+      // Check if any requests failed
+      const failedRequests = responses.filter(response => response && !response.ok);
+      if (failedRequests.length > 0) {
+        throw new Error(`Failed to create ${failedRequests.length} weekly holiday(s)`);
       }
+
       toast.success("Weekly holidays generated successfully!", {
         style: { background: "green", color: "white" },
       });
@@ -408,11 +446,7 @@ const SystemSettings: React.FC = () => {
       toast.error("Please select a date and holiday type");
       return;
     }
-    if (
-      (holidayType === "Religious Holiday" ||
-        holidayType === "Public Holiday") &&
-      selectedDate
-    ) {
+    if (holidayType === "Government Holiday" && selectedDate) {
       const selectedDateObj = new Date(selectedDate);
       const isFriday = selectedDateObj.getDay() === 5;
       if (isFriday) {
@@ -444,15 +478,15 @@ const SystemSettings: React.FC = () => {
   };
 
   // Handle delete holiday
-  const handleDeleteHoliday = async (holidayId: string) => {
-    if (!confirm("Are you sure you want to delete this holiday?")) return;
+  const handleDeleteHoliday = async () => {
+    if (!deletingHolidayId) return;
     try {
       const session = await getSession();
       if (!session?.accessToken) {
         throw new Error("No access token found");
       }
       const response = await fetch(
-        `${API_BASE_URL}/calendar/delete/${holidayId}`,
+        `${API_BASE_URL}/calendar/delete/${deletingHolidayId}`,
         {
           method: "DELETE",
           headers: {
@@ -467,6 +501,10 @@ const SystemSettings: React.FC = () => {
         style: { background: "red", color: "white" },
       });
       await fetchHolidays();
+      // Reset delete modal state
+      setShowDeleteModal(false);
+      setDeletingHolidayId(null);
+      setDeletingHolidayInfo(null);
     } catch (error) {
       console.error("Error deleting holiday:", error);
       toast.error(
@@ -485,6 +523,9 @@ const SystemSettings: React.FC = () => {
     setSelectedFridays([]);
     setShowModal(false);
     setShowConfirmModal(false);
+    setShowDeleteModal(false);
+    setDeletingHolidayId(null);
+    setDeletingHolidayInfo(null);
   };
 
   // Navigate month
@@ -630,7 +671,7 @@ const SystemSettings: React.FC = () => {
           {/* Calendar Days */}
           {renderMainCalendar()}
         </div>
-        {/* Legend */}
+        {/* Legend - Updated for new holiday types */}
         <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded"></div>
@@ -639,15 +680,9 @@ const SystemSettings: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-500 rounded"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Religious Holiday
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500 rounded"></div>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Public Holiday
+              Government Holiday
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -775,7 +810,7 @@ const SystemSettings: React.FC = () => {
                     </h4>
                     <p className="text-sm text-green-700 dark:text-green-300">
                       This will automatically generate weekly holidays for all
-                      Fridays in {months[currentMonth]} {currentYear}.
+                      Fridays in {months[currentMonth]} {currentYear}, including any previously deleted Friday holidays.
                     </p>
                   </div>
                 </div>
@@ -829,7 +864,7 @@ const SystemSettings: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Friday Confirmation Modal */}
+      {/* Friday Confirmation Modal - Updated for Government Holiday */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
@@ -886,6 +921,76 @@ const SystemSettings: React.FC = () => {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
                   {isSubmitting ? "Saving..." : "Yes, Proceed"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Holiday Confirmation Modal */}
+      {showDeleteModal && deletingHolidayInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Delete Holiday
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+              <div className="mb-6">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mb-3">
+                    Are you sure you want to delete this holiday?
+                  </p>
+                  <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {new Date(deletingHolidayInfo.date + "T00:00:00").toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                    <p>
+                      <strong>Type:</strong> {deletingHolidayInfo.holidayType}
+                    </p>
+                    {deletingHolidayInfo.description && (
+                      <p>
+                        <strong>Description:</strong> {deletingHolidayInfo.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingHolidayId(null);
+                    setDeletingHolidayInfo(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteHoliday}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition flex items-center gap-2 font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Holiday
                 </button>
               </div>
             </div>
