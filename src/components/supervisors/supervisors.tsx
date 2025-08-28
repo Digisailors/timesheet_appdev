@@ -21,6 +21,9 @@ interface Supervisor {
   experience?: string;
   perHourRate?: string;
   overtimeRate?: string;
+  eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
 }
 
 interface SupervisorData {
@@ -36,6 +39,9 @@ interface SupervisorData {
   password?: string;
   perHourRate?: string;
   overtimeRate?: string;
+  eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
 }
 
 interface Project {
@@ -44,7 +50,6 @@ interface Project {
   code: string;
 }
 
-// Define proper API response types
 interface SupervisorApiResponse {
   id: string;
   fullName: string;
@@ -57,6 +62,9 @@ interface SupervisorApiResponse {
   password?: string;
   perHourRate?: string;
   overtimeRate?: string;
+  eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
   assignedProject?: {
     id: string;
     name: string;
@@ -82,19 +90,16 @@ export default function SupervisorPage() {
   const [supervisorToDelete, setSupervisorToDelete] = useState<Supervisor | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  // Effect to handle body scroll lock when view dialog is open
   useEffect(() => {
     if (showViewDialog) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-    // Cleanup function to reset scroll when component unmounts
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -106,13 +111,11 @@ export default function SupervisorPage() {
       if (!session?.accessToken) {
         throw new Error('No access token found');
       }
-
       const response = await fetch(`${baseUrl}/supervisors/all`, {
         headers: {
           'Authorization': `Bearer ${session.accessToken}`,
         },
       });
-
       if (!response.ok) throw new Error('Failed to fetch supervisors');
       const result = await response.json();
       if (result.success) {
@@ -139,7 +142,10 @@ export default function SupervisorPage() {
           address: s.address || '',
           experience: s.experience || '',
           perHourRate: s.perHourRate || '',
-          overtimeRate: s.overtimeRate || ''
+          overtimeRate: s.overtimeRate || '',
+          eligibleLeaveDays: s.eligibleLeaveDays || '',
+          remainingLeaveDays: s.remainingLeaveDays || '',
+          unpaidLeaveDays: s.unpaidLeaveDays || '',
         }));
         setSupervisorList(loadedSupervisors);
       } else {
@@ -157,13 +163,11 @@ export default function SupervisorPage() {
       if (!session?.accessToken) {
         throw new Error('No access token found');
       }
-
       const response = await fetch(`${baseUrl}/projects/all`, {
         headers: {
           'Authorization': `Bearer ${session.accessToken}`,
         },
       });
-
       if (!response.ok) throw new Error('Failed to fetch projects');
       const result = await response.json();
       if (result.success) {
@@ -197,13 +201,11 @@ export default function SupervisorPage() {
     return matchesSearch && matchesProject;
   });
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentSupervisors = filteredSupervisors.slice(startIndex, endIndex);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedProject]);
@@ -212,11 +214,9 @@ export default function SupervisorPage() {
     setCurrentPage(page);
   };
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
@@ -244,7 +244,6 @@ export default function SupervisorPage() {
         pageNumbers.push(totalPages);
       }
     }
-
     return pageNumbers;
   };
 
@@ -260,7 +259,10 @@ export default function SupervisorPage() {
     assignedProjectId: supervisor.assignedProjectId,
     password: supervisor.password,
     perHourRate: supervisor.perHourRate ?? '',
-    overtimeRate: supervisor.overtimeRate ?? ''
+    overtimeRate: supervisor.overtimeRate ?? '',
+    eligibleLeaveDays: supervisor.eligibleLeaveDays ?? '',
+    remainingLeaveDays: supervisor.remainingLeaveDays ?? '',
+    unpaidLeaveDays: supervisor.unpaidLeaveDays ?? '',
   });
 
   const handleAction = async (action: string, supervisor: Supervisor) => {
@@ -269,14 +271,12 @@ export default function SupervisorPage() {
       if (!session?.accessToken) {
         throw new Error('No access token found');
       }
-
       if (action === 'view') {
         const response = await fetch(`${baseUrl}/supervisors/${supervisor.id}`, {
           headers: {
             'Authorization': `Bearer ${session.accessToken}`,
           },
         });
-
         if (!response.ok) throw new Error('Failed to fetch supervisor details');
         const result = await response.json();
         if (result.success) {
@@ -304,7 +304,10 @@ export default function SupervisorPage() {
             address: data.address || '',
             experience: data.experience || '',
             perHourRate: data.perHourRate || '',
-            overtimeRate: data.overtimeRate || ''
+            overtimeRate: data.overtimeRate || '',
+            eligibleLeaveDays: data.eligibleLeaveDays || '',
+            remainingLeaveDays: data.remainingLeaveDays || '',
+            unpaidLeaveDays: data.unpaidLeaveDays || '',
           };
           setSelectedSupervisor(fullSupervisor);
           setShowViewDialog(true);
@@ -317,7 +320,6 @@ export default function SupervisorPage() {
             'Authorization': `Bearer ${session.accessToken}`,
           },
         });
-
         if (!response.ok) throw new Error('Failed to fetch supervisor details');
         const result = await response.json();
         if (result.success) {
@@ -345,7 +347,10 @@ export default function SupervisorPage() {
             address: data.address || '',
             experience: data.experience || '',
             perHourRate: data.perHourRate || '',
-            overtimeRate: data.overtimeRate || ''
+            overtimeRate: data.overtimeRate || '',
+            eligibleLeaveDays: data.eligibleLeaveDays || '',
+            remainingLeaveDays: data.remainingLeaveDays || '',
+            unpaidLeaveDays: data.unpaidLeaveDays || '',
           };
           setSelectedSupervisor(fullSupervisor);
           setSelectedProjectId(fullSupervisor.assignedProjectId || null);
@@ -390,8 +395,6 @@ export default function SupervisorPage() {
         if (!session?.accessToken) {
           throw new Error('No access token found');
         }
-
-        // Add minimum delay to ensure loading state is visible
         const [response] = await Promise.all([
           fetch(`${baseUrl}/supervisors/delete/${supervisorToDelete.id}`, {
             method: 'DELETE',
@@ -400,9 +403,8 @@ export default function SupervisorPage() {
               'Authorization': `Bearer ${session.accessToken}`,
             },
           }),
-          new Promise(resolve => setTimeout(resolve, 1500)) // 1.5 second minimum delay
+          new Promise(resolve => setTimeout(resolve, 1500))
         ]);
-
         const result = await response.json();
         if (result.success) {
           setSupervisorList(prev => prev.filter(s => s.id !== supervisorToDelete.id));
@@ -432,12 +434,11 @@ export default function SupervisorPage() {
       if (!session?.accessToken) {
         throw new Error('No access token found');
       }
-
       const payload = {
         fullName: formData.fullName,
         emailAddress: formData.emailAddress,
-        phoneNumber: formData.phoneNumber,
         specialization: formData.specialization,
+        phoneNumber: formData.phoneNumber,
         address: formData.address,
         dateOfJoining: formData.dateOfJoining,
         experience: formData.experience,
@@ -445,15 +446,10 @@ export default function SupervisorPage() {
         assignedProjectId: formData.assignedProjectId,
         perHourRate: formData.perHourRate ? parseFloat(formData.perHourRate) : undefined,
         overtimeRate: formData.overtimeRate ? parseFloat(formData.overtimeRate) : undefined,
+        eligibleLeaveDays: formData.eligibleLeaveDays ? parseInt(formData.eligibleLeaveDays, 10) : undefined,
       };
-
-      const url =
-        mode === 'add'
-          ? `${baseUrl}/supervisors/create`
-          : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
-
+      const url = mode === 'add' ? `${baseUrl}/supervisors/create` : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
       const method = mode === 'add' ? 'POST' : 'PUT';
-
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -462,12 +458,10 @@ export default function SupervisorPage() {
         },
         body: JSON.stringify(payload),
       });
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
-
       const result = await response.json();
       if (result.success) {
         if (mode === 'add') {
@@ -486,7 +480,8 @@ export default function SupervisorPage() {
             address: formData.address || '',
             experience: formData.experience || '',
             perHourRate: formData.perHourRate || '',
-            overtimeRate: formData.overtimeRate || ''
+            overtimeRate: formData.overtimeRate || '',
+            eligibleLeaveDays: formData.eligibleLeaveDays || '',
           };
           setSupervisorList(prev => [...prev, newSupervisor]);
           toast.success('Supervisor added successfully!');
@@ -504,11 +499,10 @@ export default function SupervisorPage() {
             address: formData.address || '',
             experience: formData.experience || '',
             perHourRate: formData.perHourRate || '',
-            overtimeRate: formData.overtimeRate || ''
+            overtimeRate: formData.overtimeRate || '',
+            eligibleLeaveDays: formData.eligibleLeaveDays || '',
           };
-          setSupervisorList(prev =>
-            prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s))
-          );
+          setSupervisorList(prev => prev.map(s => (s.id === selectedSupervisor.id ? updatedSupervisor : s)));
           toast.success('Supervisor updated successfully!');
         }
         closeDialog();
@@ -533,9 +527,7 @@ export default function SupervisorPage() {
           },
         }}
       />
-
       <div className="px-6 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -549,7 +541,6 @@ export default function SupervisorPage() {
             <span>Add supervisor</span>
           </button>
         </div>
-        {/* Search + Project Filter */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between space-x-4">
             <div className="relative flex-1">
@@ -562,21 +553,9 @@ export default function SupervisorPage() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            {/* <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option>All Projects</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.name}>{project.name}</option>
-              ))}
-            </select> */}
           </div>
         </div>
-        {/* Main Content Card */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          {/* Supervisors List Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium">
               Supervisors ({filteredSupervisors.length})
@@ -587,7 +566,6 @@ export default function SupervisorPage() {
               )}
             </h3>
           </div>
-          {/* Supervisors List */}
           <div className="p-4">
             <div className="space-y-4 mb-6">
               {currentSupervisors.map((supervisor) => (
@@ -647,7 +625,6 @@ export default function SupervisorPage() {
                 <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
               </div>
             )}
-            {/* Pagination Controls - Now shows by default */}
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 {filteredSupervisors.length > 0 ? (
@@ -656,9 +633,7 @@ export default function SupervisorPage() {
                   <>Showing 0 results</>
                 )}
               </div>
-
               <div className="flex items-center space-x-2">
-                {/* Previous Button */}
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1 || totalPages === 0}
@@ -666,7 +641,6 @@ export default function SupervisorPage() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                {/* Page Numbers */}
                 {totalPages > 0 ? (
                   getPageNumbers().map((pageNum, index) => (
                     <button
@@ -692,7 +666,6 @@ export default function SupervisorPage() {
                     1
                   </button>
                 )}
-                {/* Next Button */}
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages || totalPages === 0}
@@ -705,25 +678,19 @@ export default function SupervisorPage() {
           </div>
         </div>
       </div>
-      {/* Supervisor Add/Edit Dialog */}
       <SupervisorDialog
         isOpen={showDialog}
         onClose={closeDialog}
         mode={dialogMode}
-        initialData={
-          selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined
-        }
+        initialData={selectedSupervisor ? supervisorToFormData(selectedSupervisor) : undefined}
         onSubmit={(data) => handleFormSubmit(data, dialogMode)}
         projects={projects}
         selectedProjectId={selectedProjectId}
         setSelectedProjectId={setSelectedProjectId}
       />
-
-      {/* View Supervisor Details Dialog */}
       {showViewDialog && selectedSupervisor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-hidden">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Profile Content */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-xl font-semibold">Supervisor Profile</h3>
               <button onClick={closeViewDialog} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
@@ -731,14 +698,12 @@ export default function SupervisorPage() {
               </button>
             </div>
             <div className="p-6 space-y-6">
-              {/* Profile details */}
               <div className="flex items-center space-x-4 mb-8">
                 <div className={`w-14 h-14 rounded-full ${selectedSupervisor.backgroundColor} flex items-center justify-center text-white text-lg font-semibold`}>
                   {selectedSupervisor.initials}
                 </div>
                 <div>
                   <h4 className="text-xl font-semibold">{selectedSupervisor.name}</h4>
-                  {/* <p className="text-gray-500 dark:text-gray-300 text-sm">SUP-{selectedSupervisor.id.slice(-3).padStart(3, '0')}</p> */}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-8">
@@ -746,18 +711,18 @@ export default function SupervisorPage() {
                 <div><p className="text-sm text-gray-500 mb-2">Experience</p><p>{selectedSupervisor.experience || 'N/A'}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Phone Number</p><p>{selectedSupervisor.phoneNumber}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Email ID</p><p className="text-blue-600">{selectedSupervisor.email}</p></div>
-
                 <div><p className="text-sm text-gray-500 mb-2">Specialization</p><p>{selectedSupervisor.department}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Per Hour Rate</p><p>${selectedSupervisor.perHourRate || 'N/A'}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Overtime Rate</p><p>${selectedSupervisor.overtimeRate || 'N/A'}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Eligible Leave Days</p><p>{selectedSupervisor.eligibleLeaveDays || 'N/A'}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Remaining Leave Days</p><p>{selectedSupervisor.remainingLeaveDays || 'N/A'}</p></div>
+                <div><p className="text-sm text-gray-500 mb-2">Unpaid Leave Days</p><p>{selectedSupervisor.unpaidLeaveDays || 'N/A'}</p></div>
                 <div><p className="text-sm text-gray-500 mb-2">Address</p><p>{selectedSupervisor.address || 'N/A'}</p></div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Delete Confirmation Modal */}
       {confirmDelete && supervisorToDelete && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">

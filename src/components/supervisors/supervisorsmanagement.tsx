@@ -15,6 +15,7 @@ export interface Supervisor {
   experience: string;
   assignedProject: string;
   password: string;
+  eligibleLeaveDays?: string;
 }
 
 interface Project {
@@ -32,7 +33,6 @@ const SupervisorList = () => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
-  // Fetch supervisors
   useEffect(() => {
     const fetchSupervisors = async () => {
       try {
@@ -40,16 +40,13 @@ const SupervisorList = () => {
         if (!session?.accessToken) {
           throw new Error('No access token found');
         }
-
         const response = await fetch(`${cleanBaseUrl}/api/supervisors/all`, {
           headers: {
             'Authorization': `Bearer ${session.accessToken}`,
           },
         });
-
         if (!response.ok) throw new Error('Failed to fetch supervisors');
         const result = await response.json();
-
         if (result.success && result.data) {
           setSupervisors(result.data);
         } else {
@@ -62,7 +59,6 @@ const SupervisorList = () => {
     fetchSupervisors();
   }, [cleanBaseUrl]);
 
-  // Fetch project options
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -70,16 +66,13 @@ const SupervisorList = () => {
         if (!session?.accessToken) {
           throw new Error('No access token found');
         }
-
         const response = await fetch(`${cleanBaseUrl}/api/projects/all`, {
           headers: {
             'Authorization': `Bearer ${session.accessToken}`,
           },
         });
-
         if (!response.ok) throw new Error('Failed to fetch projects');
         const result = await response.json();
-
         if (result.success && result.data) {
           setProjectOptions([
             { id: 'all', name: 'All Projects' },
@@ -98,7 +91,6 @@ const SupervisorList = () => {
     fetchProjects();
   }, [cleanBaseUrl]);
 
-  // Filter supervisors by search term and selected project
   const filteredSupervisors = supervisors.filter(supervisor =>
     (
       supervisor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,7 +111,6 @@ const SupervisorList = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="px-6 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -133,10 +124,8 @@ const SupervisorList = () => {
             <span>Add Supervisor</span>
           </button>
         </div>
-        {/* Search and Filter Controls */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between space-x-4">
-            {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300 w-4 h-4" />
               <input
@@ -147,8 +136,6 @@ const SupervisorList = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-
-            {/* Project Filter */}
             <div className="flex items-center space-x-2">
               <label className="font-medium text-sm">Filter by Project:</label>
               <select
@@ -165,11 +152,9 @@ const SupervisorList = () => {
             </div>
           </div>
         </div>
-        {/* Results Count */}
         <div className="mb-4">
           <h3 className="text-lg font-medium">Supervisors ({filteredSupervisors.length})</h3>
         </div>
-        {/* Supervisor Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -226,8 +211,6 @@ const SupervisorList = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Empty State */}
           {filteredSupervisors.length === 0 && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
@@ -241,7 +224,6 @@ const SupervisorList = () => {
             </div>
           )}
         </div>
-        {/* Dialog for viewing/editing supervisor details */}
         <SupervisorDialog
           isOpen={isDialogOpen}
           onClose={() => {
@@ -257,7 +239,8 @@ const SupervisorList = () => {
             address: selectedSupervisor.address,
             dateOfJoining: selectedSupervisor.dateOfJoining,
             experience: selectedSupervisor.experience,
-            password: selectedSupervisor.password
+            password: selectedSupervisor.password,
+            eligibleLeaveDays: selectedSupervisor.eligibleLeaveDays,
           } : undefined}
           onSubmit={async (data, mode) => {
             console.log('Form submitted:', data, mode);
@@ -266,18 +249,24 @@ const SupervisorList = () => {
               if (!session?.accessToken) {
                 throw new Error('No access token found');
               }
-
               const payload = {
-                ...data,
-                assignedProject: data.assignedProjectId
+                fullName: data.fullName,
+                emailAddress: data.emailAddress,
+                specialization: data.specialization,
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+                dateOfJoining: data.dateOfJoining,
+                experience: data.experience,
+                password: data.password,
+                assignedProjectId: data.assignedProjectId,
+                perHourRate: data.perHourRate ? parseFloat(data.perHourRate) : undefined,
+                overtimeRate: data.overtimeRate ? parseFloat(data.overtimeRate) : undefined,
+                eligibleLeaveDays: data.eligibleLeaveDays ? parseInt(data.eligibleLeaveDays, 10) : undefined,
               };
-
               const url = mode === 'add'
                 ? `${cleanBaseUrl}/api/supervisors/create`
                 : `${cleanBaseUrl}/api/supervisors/update/${selectedSupervisor?.id}`;
-
               const method = mode === 'add' ? 'POST' : 'PUT';
-
               const response = await fetch(url, {
                 method,
                 headers: {
@@ -286,15 +275,12 @@ const SupervisorList = () => {
                 },
                 body: JSON.stringify(payload),
               });
-
               if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
               }
-
               const result = await response.json();
               if (result.success) {
-                // Refresh the supervisor list after successful operation
                 const fetchUpdatedSupervisors = async () => {
                   const res = await fetch(`${cleanBaseUrl}/api/supervisors/all`, {
                     headers: {
@@ -309,7 +295,6 @@ const SupervisorList = () => {
                   }
                 };
                 await fetchUpdatedSupervisors();
-
                 setIsDialogOpen(false);
                 setSelectedSupervisor(null);
               } else {
