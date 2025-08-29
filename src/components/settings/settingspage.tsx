@@ -71,7 +71,7 @@ const SettingsPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
+        <div className="flex-1 p-6">
           <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
           {renderActiveTab()}
         </div>

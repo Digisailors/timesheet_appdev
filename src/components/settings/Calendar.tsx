@@ -693,10 +693,10 @@ const SystemSettings: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Add/Edit Holiday Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+             {/* Add/Edit Holiday Modal */}
+       {showModal && (
+         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {isEditing ? "Edit Holiday" : "Add Holiday"}
@@ -864,10 +864,10 @@ const SystemSettings: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Friday Confirmation Modal - Updated for Government Holiday */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
+             {/* Friday Confirmation Modal - Updated for Government Holiday */}
+       {showConfirmModal && (
+         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
@@ -927,10 +927,10 @@ const SystemSettings: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Delete Holiday Confirmation Modal */}
-      {showDeleteModal && deletingHolidayInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
+             {/* Delete Holiday Confirmation Modal */}
+       {showDeleteModal && deletingHolidayInfo && (
+         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 border border-gray-200 dark:border-gray-700">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">

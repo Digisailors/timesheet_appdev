@@ -23,6 +23,7 @@ import ViewVacationDialog from "./ViewVacationDialog";
 import EditVacationDialog from "./EditVacationDialog";
 import axios from "axios";
 import { getSession } from "next-auth/react";
+import EditVacationForm from "./EditVacationDialog";
 
 type IconType = LucideIcon;
 
@@ -34,17 +35,18 @@ interface VacationEntry {
   role: string;
   location: string;
   startDate: string;
-  endDate: string;
+  endDate: string | null;
   status: "Paid" | "Unpaid";
   appliedDate: string;
   eligibleDays: string;
   remainingDays: string;
-  reason: string;
+  reason: string | null;
   vacationFrom: string;
   vacationTo: string;
   project: string;
   specialization: string;
-  returnstatus: string;
+  returnstatus: string | null;
+  return?: string | null;
 }
 
 interface ApiResponse {
@@ -54,24 +56,64 @@ interface ApiResponse {
     id: string;
     leaveType: string;
     startDate: string;
-    endDate: string;
+    endDate: string | null;
+    reason: string | null;
     status: string;
-    eligibleDays: number;
-    remainingDays: number;
-    reason: string;
-    returnstatus: string;
+    createdAt: string;
+    updatedAt: string;
+    paidLeaveDays: string;
+    unpaidLeaveDays: string;
+    type: string;
+    returnstatus?: string;
+    return?: string;
     employee?: {
+      id: string;
       firstName: string;
       lastName: string;
-      designation?: string;
+      designation: string;
+      designationType: {
+        designationTypeId: string;
+        name: string;
+      };
+      phoneNumber: string;
+      email: string;
+      address: string;
+      experience: string;
+      dateOfJoining: string;
       specialization: string;
+      createdAt: string;
+      updatedAt: string;
+      perHourRate: string;
+      overtimeRate: string;
+      eligibleLeaveDays: string;
+      remainingLeaveDays: string;
+      unpaidLeaveDays: string;
     };
     supervisor?: {
+      id: string;
       fullName: string;
       designation?: string;
       specialization: string;
+      phoneNumber: string;
+      emailAddress: string;
+      address: string;
+      dateOfJoining: string;
+      experience: string;
+      createdAt: string;
+      updatedAt: string;
+      perHourRate: string;
+      overtimeRate: string;
+      eligibleLeaveDays: string;
+      remainingLeaveDays: string;
+      unpaidLeaveDays: string;
     };
   }>;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 interface SummaryData {
@@ -102,7 +144,6 @@ export default function VacationManagement() {
       if (!session?.accessToken) {
         throw new Error("No access token found");
       }
-
       const response = await axios.get<ApiResponse>(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/all`,
         {
@@ -111,7 +152,6 @@ export default function VacationManagement() {
           }
         }
       );
-
       if (response.data.success) {
         const formattedData = response.data.data.map((item) => {
           const name = item.employee
@@ -124,30 +164,42 @@ export default function VacationManagement() {
             : item.supervisor
             ? item.supervisor.specialization
             : "Unknown";
+          const role = item.employee
+            ? item.employee.designation || "Unknown"
+            : item.supervisor
+            ? item.supervisor.designation || "Unknown"
+            : "Unknown";
+          const status = item.status.replace(" Vacation", "") as "Paid" | "Unpaid";
+          const endDate = item.endDate;
+          const eligibleDays = parseInt(item.employee?.eligibleLeaveDays || item.supervisor?.eligibleLeaveDays || "0", 10);
+          const remainingDays = parseInt(item.employee?.remainingLeaveDays || item.supervisor?.remainingLeaveDays || "0", 10);
+
           return {
             id: item.id,
             name,
             leaveType: item.leaveType,
-            duration: `${calculateDuration(item.startDate, item.endDate)}`,
-            role: item.employee ? item.employee.designation || "Unknown" : item.supervisor ? item.supervisor.designation || "Unknown" : "Unknown",
+            duration: `${calculateDuration(item.startDate, endDate || item.startDate)}`,
+            role,
             location,
             startDate: item.startDate,
-            endDate: item.endDate,
-            status: item.status.replace(" Vacation", "") as "Paid" | "Unpaid",
-            appliedDate: new Date().toISOString().split('T')[0],
-            eligibleDays: item.eligibleDays.toString(),
-            remainingDays: item.remainingDays.toString(),
-            reason: item.reason || "No reason provided",
+            endDate,
+            status,
+            appliedDate: new Date(item.createdAt).toISOString().split('T')[0],
+            eligibleDays: eligibleDays.toString(),
+            remainingDays: remainingDays.toString(),
+            reason: item.reason,
             vacationFrom: item.startDate,
-            vacationTo: item.endDate,
-            project: item.employee ? item.employee.designation || "Unknown" : "Unknown",
+            vacationTo: endDate || item.startDate,
+            project: role,
             specialization: location,
-            returnstatus: item.returnstatus,
+            returnstatus: item.returnstatus || null,
+            return: item.return || null,
           };
         });
 
-        const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus)));
+        const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus || "Not Returned")));
         const uniqueTypes = Array.from(new Set(response.data.data.map(item => item.leaveType)));
+
         setStatusOptions(uniqueStatuses);
         setTypeOptions(uniqueTypes);
 
@@ -156,7 +208,7 @@ export default function VacationManagement() {
         const currentYear = now.getFullYear();
         const thisMonthData = formattedData.filter((employee) => {
           const startDate = new Date(employee.startDate);
-          const endDate = new Date(employee.endDate);
+          const endDate = employee.endDate ? new Date(employee.endDate) : startDate;
           return (
             (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) ||
             (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear)
@@ -210,7 +262,7 @@ export default function VacationManagement() {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const timeDiff = end.getTime() - start.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+    return Math.ceil(timeDiff / (1000 * 3600 * 24)) || 1;
   };
 
   const filteredData = vacationData.filter((employee) => {
@@ -219,7 +271,7 @@ export default function VacationManagement() {
       employee.leaveType.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" ||
-      employee.returnstatus.toLowerCase() === statusFilter.toLowerCase();
+      (employee.returnstatus && employee.returnstatus.toLowerCase() === statusFilter.toLowerCase());
     const matchesType =
       typeFilter === "all" ||
       employee.leaveType.toLowerCase() === typeFilter.toLowerCase();
@@ -319,7 +371,6 @@ export default function VacationManagement() {
         <Card>
           <CardContent className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -329,7 +380,6 @@ export default function VacationManagement() {
                   className="pl-10 h-9 text-sm border border-gray-300 dark:bg-gray-800 text-white"
                 />
               </div>
-              {/* Status Filter (native select) */}
               <div className="relative">
                 <select
                   value={statusFilter}
@@ -347,7 +397,6 @@ export default function VacationManagement() {
                   <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
                 </div>
               </div>
-              {/* Type Filter (native select) */}
               <div className="relative">
                 <select
                   value={typeFilter}
@@ -365,7 +414,6 @@ export default function VacationManagement() {
                   <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-300" />
                 </div>
               </div>
-              {/* Clear Filters Button */}
               <Button
                 variant="outline"
                 onClick={clearFilters}
@@ -421,7 +469,7 @@ export default function VacationManagement() {
                               <span className="font-bold">
                                 {employee.startDate}
                               </span>
-                              <span>to: {employee.endDate}</span>
+                              <span>to: {employee.endDate || "--/--/----"}</span>
                             </div>
                             <div className="flex flex-col items-center gap-3">
                               <Badge
@@ -434,14 +482,18 @@ export default function VacationManagement() {
                               >
                                 {employee.status} Vacation
                               </Badge>
-                              {employee.returnstatus && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-blue-700 border-blue-500 text-white dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600"
-                                >
-                                  {employee.returnstatus === "Returned" ? "R" : "NR"}
-                                </Badge>
-                              )}
+                                                             {employee.return && (
+                                 <Badge
+                                   variant="outline"
+                                   className={`text-xs ${
+                                     employee.return === "Returned" 
+                                       ? "bg-green-100 text-green-800 border-green-500 dark:bg-green-900 dark:text-green-200 dark:border-green-600"
+                                       : "bg-yellow-100 text-yellow-800 border-yellow-500 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-600"
+                                   }`}
+                                 >
+                                   {employee.return}
+                                 </Badge>
+                               )}
                             </div>
                             <div className="flex flex-col items-center gap-2">
                               <Button
@@ -493,21 +545,48 @@ export default function VacationManagement() {
               setIsDialogOpen(false);
               setSelectedVacation(null);
             }}
-            data={selectedVacation}
+            data={{
+              ...selectedVacation,
+              reason: selectedVacation.reason || "",
+              returnstatus: selectedVacation.returnstatus || "Not Return",
+              return: selectedVacation.return || "Not Return",
+              endDate: selectedVacation.endDate || ""
+            }}
             onReturn={fetchVacationData}
           />
         )}
-        {selectedVacationForEdit && (
-          <EditVacationDialog
-            isOpen={showEditForm}
-            onClose={() => {
-              setShowEditForm(false);
-              setSelectedVacationForEdit(null);
-            }}
-            onEditSuccess={fetchVacationData}
-            data={selectedVacationForEdit}
-          />
-        )}
+       {selectedVacationForEdit && (
+  <EditVacationForm
+    open={showEditForm}
+    onOpenChange={(open) => {
+      setShowEditForm(open);
+      if (!open) setSelectedVacationForEdit(null);
+    }}
+    onSuccess={() => {
+      fetchVacationData();
+      setShowEditForm(false);
+      setSelectedVacationForEdit(null);
+    }}
+         initialData={{
+       id: selectedVacationForEdit.id,
+       name: selectedVacationForEdit.name,
+       leaveType: selectedVacationForEdit.leaveType,
+       startDate: selectedVacationForEdit.startDate,
+       endDate: selectedVacationForEdit.endDate,
+       reason: selectedVacationForEdit.reason || "",
+       appliedDate: selectedVacationForEdit.appliedDate,
+       vacationFrom: selectedVacationForEdit.vacationFrom,
+       vacationTo: selectedVacationForEdit.vacationTo,
+       duration: selectedVacationForEdit.duration,
+       eligibleDays: selectedVacationForEdit.eligibleDays,
+       remainingDays: selectedVacationForEdit.remainingDays,
+       status: selectedVacationForEdit.status,
+       project: selectedVacationForEdit.project,
+       specialization: selectedVacationForEdit.specialization,
+       returnstatus: selectedVacationForEdit.returnstatus,
+     }}
+  />
+)}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ const TimeSheetPage = () => {
   const [showDialog, setShowDialog] = useState(false);
 
   const dataTableRef = useRef<DataTableHandle>(null);
-
+  console.log(dataTableRef)
   const handleExport = () => {
     setShowDialog(true);
   };

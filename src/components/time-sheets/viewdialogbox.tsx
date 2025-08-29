@@ -57,18 +57,29 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         }
       );
       const data = response.data.data;
-      const travelStartTime1 = new Date(`1970-01-01T${data.onsiteTravelStart}`).getTime();
-      const travelEndTime1 = new Date(`1970-01-01T${data.onsiteTravelEnd}`).getTime();
-      const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-      const travelStartTime2 = new Date(`1970-01-01T${data.offsiteTravelStart}`).getTime();
-      const travelEndTime2 = new Date(`1970-01-01T${data.offsiteTravelEnd}`).getTime();
-      const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+      
+      // Helper function to extract time from ISO timestamp
+      const extractTimeFromISO = (isoString: string) => {
+        const date = new Date(isoString);
+        return date.toTimeString().substring(0, 5); // Returns HH:MM format
+      };
+      
+      // Helper function to calculate time difference in hours
+      const calculateTimeDifference = (startISO: string, endISO: string) => {
+        const startTime = new Date(startISO).getTime();
+        const endTime = new Date(endISO).getTime();
+        return (endTime - startTime) / (1000 * 60 * 60);
+      };
+      
+      // Calculate travel times
+      const travelTimeInHours1 = calculateTimeDifference(data.onsiteTravelStart, data.onsiteTravelEnd);
+      const travelTimeInHours2 = calculateTimeDifference(data.offsiteTravelStart, data.offsiteTravelEnd);
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-      const breakStartTime = new Date(`1970-01-01T${data.onsiteBreakStart}`).getTime();
-      const breakEndTime = new Date(`1970-01-01T${data.onsiteBreakEnd}`).getTime();
-      const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+      
+      // Calculate break time
+      const breakTimeInHours = calculateTimeDifference(data.onsiteBreakStart, data.onsiteBreakEnd);
       const breakMinutes = (breakTimeInHours % 1) * 60;
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
 
@@ -85,8 +96,8 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         project: data.project.name,
         location: data.location,
         date: formatDate(data.timesheetDate),
-        checkIn: data.onsiteSignIn.substring(0, 5),
-        checkOut: data.onsiteSignOut.substring(0, 5),
+        checkIn: extractTimeFromISO(data.onsiteSignIn),
+        checkOut: extractTimeFromISO(data.onsiteSignOut),
         totalHours: data.totalDutyHrs,
         overtime: data.overtime,
         travelTime: travelTime,
@@ -99,7 +110,7 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         overTimeSalary: data.overTimeSalary || "0",
         type: data.type,
         designation: data.employees?.[0]?.designation || "Unknown",
-        designationType: data.employees?.[0]?.designationType || "Unknown",
+        designationType: typeof data.employees?.[0]?.designationType === 'object' ? data.employees?.[0]?.designationType?.name || "Unknown" : data.employees?.[0]?.designationType || "Unknown",
       };
       setEmployee(employeeData);
     } catch (error) {
