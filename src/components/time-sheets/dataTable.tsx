@@ -33,7 +33,7 @@ interface Employee {
   lastName: string;
   fullName: string;
   designation: string;
-  designationType: string | object;
+  designationType: string | { name: string };
   perHourRate: string;
   overtimeRate: string;
 }
@@ -138,7 +138,7 @@ interface LocalTimeSheet {
   id: string;
   employee: string;
   isSupervisor: boolean;
-  designationType: string | object;
+  designationType: string;
   designation: string | null;
   checkIn: string;
   checkOut: string;
@@ -197,24 +197,36 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
     };
 
     const transformTimesheetData = (timesheet: TimeSheetData): LocalTimeSheet => {
-      const travelStartTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelStart}`).getTime();
-      const travelEndTime1 = new Date(`1970-01-01T${timesheet.onsiteTravelEnd}`).getTime();
-      const travelTimeInHours1 = (travelEndTime1 - travelStartTime1) / (1000 * 60 * 60);
-      const travelStartTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelStart}`).getTime();
-      const travelEndTime2 = new Date(`1970-01-01T${timesheet.offsiteTravelEnd}`).getTime();
-      const travelTimeInHours2 = (travelEndTime2 - travelStartTime2) / (1000 * 60 * 60);
+      console.log(timesheet)
+      // Helper function to extract time from ISO timestamp
+      const extractTimeFromISO = (isoString: string) => {
+        const date = new Date(isoString);
+        return date.toTimeString().substring(0, 5); // Returns HH:MM format
+      };
+      
+      // Helper function to calculate time difference in hours
+      const calculateTimeDifference = (startISO: string, endISO: string) => {
+        const startTime = new Date(startISO).getTime();
+        const endTime = new Date(endISO).getTime();
+        return (endTime - startTime) / (1000 * 60 * 60);
+      };
+      
+      // Calculate travel times
+      const travelTimeInHours1 = calculateTimeDifference(timesheet.onsiteTravelStart, timesheet.onsiteTravelEnd);
+      const travelTimeInHours2 = calculateTimeDifference(timesheet.offsiteTravelStart, timesheet.offsiteTravelEnd);
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-      const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-      const breakStartTime = new Date(`1970-01-01T${timesheet.onsiteBreakStart}`).getTime();
-      const breakEndTime = new Date(`1970-01-01T${timesheet.onsiteBreakEnd}`).getTime();
-      const breakTimeInHours = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+      // const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
+      const travelTime = timesheet.totalTravelHrs;
+      console.log(travelTime)
+      // Calculate break time
+      const breakTimeInHours = calculateTimeDifference(timesheet.onsiteBreakStart, timesheet.onsiteBreakEnd);
       const breakMinutes = (breakTimeInHours % 1) * 60;
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
       const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
       const isSupervisor = timesheet.type === "supervisor";
       const rawDesignationType = timesheet.employees?.[0]?.designationType || "[object Object]";
-      const designationType = isSupervisor ? "Supervisor" : rawDesignationType;
+      const designationType = isSupervisor ? "Supervisor" : (typeof rawDesignationType === 'object' ? rawDesignationType?.name || "Unknown" : rawDesignationType);
       const designation = isSupervisor ? null : timesheet.employees?.[0]?.designation || null;
 
       return {
@@ -223,8 +235,8 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         isSupervisor: isSupervisor,
         designationType: designationType,
         designation: designation,
-        checkIn: timesheet.onsiteSignIn.substring(0, 5),
-        checkOut: timesheet.onsiteSignOut.substring(0, 5),
+        checkIn: timesheet.onsiteSignIn,
+        checkOut: timesheet.onsiteSignOut,
         hours: parseFloat(timesheet.totalDutyHrs),
         otHours: parseFloat(timesheet.overtime),
         travelTime: travelTime,
@@ -267,7 +279,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               }
             }
           );
+          
           const timesheets = response.data.data.map(transformTimesheetData);
+          console.log(timesheets)
           setData(timesheets);
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -470,7 +484,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
 
         const exportData = filteredData.map((row: LocalTimeSheet) => ({
           employee: row.employee,
-          designationType: typeof row.designationType === 'string' ? row.designationType : JSON.stringify(row.designationType),
+          designationType: row.designationType,
           designation: row.designation,
           project: row.project,
           projectcode: row.projectcode,
@@ -525,7 +539,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
             onChange={(e) => setFilters({ ...filters, selectedDesignationType: e.target.value })}
           >
             <option value="all">All Designation Types</option>
-            {Array.from(new Set(data.flatMap(item => typeof item.designationType === 'string' ? item.designationType : JSON.stringify(item.designationType)))).map((designation) => (
+            {Array.from(new Set(data.map(item => item.designationType))).map((designation) => (
               <option key={designation} value={designation}>
                 {designation}
               </option>
@@ -583,7 +597,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
                             {row.original.employee}
                             {!row.original.isSupervisor && row.original.designationType && (
                               <span className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-medium px-2 py-1 rounded ml-2">
-                                {typeof row.original.designationType === 'string' ? row.original.designationType : JSON.stringify(row.original.designationType)}
+                                {row.original.designationType}
                               </span>
                             )}
                             {row.original.isSupervisor && (

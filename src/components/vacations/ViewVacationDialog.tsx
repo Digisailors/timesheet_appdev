@@ -24,6 +24,7 @@ interface VacationDetailsProps {
     startDate: string;
     endDate: string;
     returnstatus: string;
+    return?: string;
   };
 }
 
@@ -87,7 +88,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </div>
           </div>
           <div className="flex gap-2">
-          <button
+          {/* <button
             onClick={data.returnstatus === "Not Return" ? handleConfirmReturn : undefined}
             disabled={data.returnstatus === "Returned"}
             className={`p-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-full transition-colors flex items-center ${
@@ -102,7 +103,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             <span className="ml-1 text-xs text-white">
               {data.returnstatus === "Returned" ? "Returned" : "Return"}
             </span>
-          </button>
+          </button> */}
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -121,7 +122,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </div>
             <div>
               <p className="text-gray-400 dark:text-gray-500">Vacation Date</p>
-              <p>{data.startDate} to {data.endDate}</p>
+              <p>{data.startDate} to {data.endDate || "--/--/----"}</p>
             </div>
             <div>
               <p className="text-gray-400 dark:text-gray-500">Duration</p>
@@ -146,16 +147,26 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
               </span>
             </div>
             <div>
+              <p className="text-gray-400 dark:text-gray-500">Return Status</p>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                data.return === "Returned" 
+                  ? "bg-green-200 text-green-900" 
+                  : "bg-yellow-200 text-yellow-900"
+              }`}>
+                {data.return || "Not Return"}
+              </span>
+            </div>
+            <div>
               <p className="text-gray-400 dark:text-gray-500">Specialization</p>
               <p>{data.specialization}</p>
             </div>
           </div>
-          <div className="mt-6">
-            <p className="text-gray-400 dark:text-gray-500 mb-2">Reason for Leave</p>
-            <div className="border border-gray-300 dark:border-gray-700 p-3 rounded bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
-              {data.reason || "Please provide details about your leave request..."}
-            </div>
-          </div>
+                     <div className="mt-6">
+             <p className="text-gray-400 dark:text-gray-500 mb-2">Reason for Leave</p>
+             <div className="border border-gray-300 dark:border-gray-700 p-3 rounded bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
+               {data.reason || "No reason provided"}
+             </div>
+           </div>
         </div>
       </div>
       {/* Confirmation Dialog */}

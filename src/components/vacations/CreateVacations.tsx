@@ -74,6 +74,7 @@ interface CustomSelectProps {
   placeholder: string;
   options: SelectOption[];
   className?: string;
+  showSearch?: boolean;
 }
 
 const CustomModal = ({
@@ -109,28 +110,56 @@ const CustomSelect = ({
   placeholder,
   options,
   className,
+  showSearch = false,
 }: CustomSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const selectRef = useRef<HTMLDivElement>(null);
-  const handleToggle = () => setIsOpen(!isOpen);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen && showSearch) {
+      setSearchTerm("");
+      // Focus search input when opening
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  };
+  
   const handleSelect = (itemValue: string) => {
     onValueChange(itemValue);
     setIsOpen(false);
+    setSearchTerm("");
   };
+  
   const handleClickOutside = (event: MouseEvent) => {
     if (
       selectRef.current &&
       !selectRef.current.contains(event.target as Node)
     ) {
       setIsOpen(false);
+      if (showSearch) {
+        setSearchTerm("");
+      }
     }
   };
+  
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  
+  // Filter options based on search term
+  const filteredOptions = showSearch 
+    ? options.filter((option) =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : options;
+  
   const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption ? (
     <div className="flex items-center">
@@ -144,6 +173,7 @@ const CustomSelect = ({
   ) : (
     placeholder
   );
+  
   return (
     <div className={`relative ${className}`} ref={selectRef}>
       <button
@@ -155,26 +185,48 @@ const CustomSelect = ({
         <span>{selectedLabel}</span>
         <ChevronDown className="h-4 w-4 opacity-50" />
       </button>
-      {isOpen && (
-        <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-          {options.map((option) => (
-            <div
-              key={option.value}
-              onClick={() => handleSelect(option.value)}
-              className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-sm py-1.5 pl-3 pr-2 text-sm outline-none hover:bg-gray-100 hover:text-gray-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-50 ${
-                option.value === value ? "font-semibold" : ""
-              }`}
-            >
-              <span>{option.label}</span>
-              {"isSupervisor" in option && option.isSupervisor && (
-                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-                  S
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+             {isOpen && (
+         <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+           {/* Search Input - Only show if showSearch is true */}
+           {showSearch && (
+             <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+               <input
+                 ref={searchInputRef}
+                 type="text"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 placeholder="Search employees..."
+                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+               />
+             </div>
+           )}
+           {/* Options List */}
+           <div className="max-h-60 overflow-y-auto scrollbar-hide">
+             {filteredOptions.length > 0 ? (
+               filteredOptions.map((option) => (
+                 <div
+                   key={option.value}
+                   onClick={() => handleSelect(option.value)}
+                   className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-sm py-1.5 pl-3 pr-2 text-sm outline-none hover:bg-gray-100 hover:text-gray-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-50 ${
+                     option.value === value ? "font-semibold" : ""
+                   }`}
+                 >
+                   <span>{option.label}</span>
+                   {"isSupervisor" in option && option.isSupervisor && (
+                     <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+                       S
+                     </span>
+                   )}
+                 </div>
+               ))
+             ) : (
+               <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                 {showSearch ? "No employees found" : "No options available"}
+               </div>
+             )}
+           </div>
+         </div>
+       )}
     </div>
   );
 };
@@ -185,10 +237,11 @@ export default function CreateVacationForm({
   onSuccess,
 }: CreateVacationFormProps) {
   const [internalOpen, setInternalOpen] = useState(open);
+  const today = new Date();
   const tomorrow = addDays(new Date(), 1);
   const dayAfterTomorrow = addDays(new Date(), 2);
-  const [startDate, setStartDate] = useState<Date>(tomorrow);
-  const [endDate, setEndDate] = useState<Date>(dayAfterTomorrow);
+  const [startDate, setStartDate] = useState<Date>(today);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [employee, setEmployee] = useState("");
   const [leaveType, setLeaveType] = useState("");
   const [reason, setReason] = useState("");
@@ -249,12 +302,6 @@ export default function CreateVacationForm({
     }
   }, [isDialogOpen]);
 
-  useEffect(() => {
-    if (startDate) {
-      const newEndDate = addDays(startDate, 1);
-      setEndDate(newEndDate);
-    }
-  }, [startDate]);
 
   const closeDialog = () => {
     onOpenChange?.(false);
@@ -264,6 +311,7 @@ export default function CreateVacationForm({
     setLeaveType("");
     setReason("");
     setSelectedPerson(null);
+    setEndDate(null);
   };
 
   const handleEmployeeSelect = (value: string) => {
@@ -273,7 +321,7 @@ export default function CreateVacationForm({
   };
 
   const handleSubmit = async () => {
-    if (!employee || !leaveType || !startDate || !endDate || !selectedPerson) {
+    if (!employee || !leaveType || !startDate || !selectedPerson) {
       setError('Please fill in all required fields');
       return;
     }
@@ -294,7 +342,7 @@ export default function CreateVacationForm({
       const requestBody = {
         leaveType,
         startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
+        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : null,
         reason
       };
 
@@ -332,9 +380,11 @@ export default function CreateVacationForm({
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const date = e.target.value ? new Date(e.target.value) : undefined;
-    if (date && startDate && date > startDate) {
+    const date = e.target.value ? new Date(e.target.value) : null;
+    if (date && startDate && date >= startDate) {
       setEndDate(date);
+    } else if (!e.target.value) {
+      setEndDate(null);
     }
   };
 
@@ -378,13 +428,14 @@ export default function CreateVacationForm({
             {loading ? (
               <div className="h-10 w-full rounded-md border border-gray-300 bg-gray-100 animate-pulse dark:border-gray-600 dark:bg-gray-700"></div>
             ) : (
-              <CustomSelect
-                id="employee-select"
-                value={employee}
-                onValueChange={handleEmployeeSelect}
-                placeholder="Select person"
-                options={peopleOptions}
-              />
+                             <CustomSelect
+                 id="employee-select"
+                 value={employee}
+                 onValueChange={handleEmployeeSelect}
+                 placeholder="Select person"
+                 options={peopleOptions}
+                 showSearch={true}
+               />
             )}
           </div>
           <div className="space-y-2">
@@ -427,12 +478,21 @@ export default function CreateVacationForm({
             >
               End Date
             </label>
-            <input
+                        <input
               id="end-date"
               type="date"
               value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
-              onChange={handleEndDateChange}
-              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                             onChange={(e) => {
+                 const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
+                 const startDateNormalized = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                 if (date && startDate && date >= startDateNormalized) {
+                   setEndDate(date);
+                 } else if (!e.target.value) {
+                   setEndDate(null);
+                 }
+               }}
+               onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+               min={startDate ? format(startDate, "yyyy-MM-dd") : undefined}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             />
           </div>
