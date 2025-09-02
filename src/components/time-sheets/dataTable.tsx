@@ -457,57 +457,59 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         }
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Timesheet");
+    
         worksheet.columns = [
           { header: "Employee", key: "employee", width: 20 },
-          { header: "Designation Type", key: "designationType", width: 20 },
-          { header: "Designation", key: "designation", width: 20 },
+          { header: "Date", key: "date", width: 15 },
           { header: "Project", key: "project", width: 20 },
           { header: "Project Code", key: "projectcode", width: 15 },
           { header: "Location", key: "location", width: 15 },
-          { header: "Date", key: "date", width: 15 },
+          { header: "Onsite Travel Start", key: "onsiteTravelStart", width: 18 },
+          { header: "Onsite Travel End", key: "onsiteTravelEnd", width: 18 },
           { header: "Check In", key: "checkIn", width: 10 },
+          { header: "Break Time", key: "breakTime", width: 12 },
           { header: "Check Out", key: "checkOut", width: 10 },
+          { header: "Offsite Travel Start", key: "offsiteTravelStart", width: 18 },
+          { header: "Offsite Travel End", key: "offsiteTravelEnd", width: 18 },
+          { header: "Type of Work", key: "typeofWork", width: 18 },
           { header: "Total Hours", key: "hours", width: 12 },
           { header: "Overtime", key: "otHours", width: 10 },
           { header: "Travel Time", key: "travelTime", width: 12 },
-          { header: "Break Time", key: "breakTime", width: 12 },
-          { header: "Onsite Travel Start", key: "onsiteTravelStart", width: 18 },
-          { header: "Onsite Travel End", key: "onsiteTravelEnd", width: 18 },
-          { header: "Offsite Travel Start", key: "offsiteTravelStart", width: 18 },
-          { header: "Offsite Travel End", key: "offsiteTravelEnd", width: 18 },
-          { header: "Supervisor", key: "supervisorName", width: 18 },
-          { header: "Type of Work", key: "typeofWork", width: 18 },
           { header: "Regular Time Salary", key: "regularTimeSalary", width: 18 },
           { header: "Overtime Salary", key: "overTimeSalary", width: 18 },
           { header: "Remarks", key: "remarks", width: 22 },
+          { header: "Supervisor", key: "supervisorName", width: 18 },
+          { header: "Designation Type", key: "designationType", width: 20 },
+          { header: "Designation", key: "designation", width: 20 },
         ];
-
+    
         const exportData = filteredData.map((row: LocalTimeSheet) => ({
           employee: row.employee,
-          designationType: row.designationType,
-          designation: row.designation,
+          date: formatDate(row.timesheetDate),
           project: row.project,
           projectcode: row.projectcode,
           location: row.location,
-          date: formatDate(row.timesheetDate),
+          onsiteTravelStart: row.onsiteTravelStart,
+          onsiteTravelEnd: row.onsiteTravelEnd,
           checkIn: row.checkIn,
+          breakTime: row.breakTime,
           checkOut: row.checkOut,
+          offsiteTravelStart: row.offsiteTravelStart,
+          offsiteTravelEnd: row.offsiteTravelEnd,
+          typeofWork: row.typeofWork,
           hours: row.hours,
           otHours: row.otHours,
           travelTime: row.travelTime,
-          breakTime: row.breakTime,
-          onsiteTravelStart: row.onsiteTravelStart,
-          onsiteTravelEnd: row.onsiteTravelEnd,
-          offsiteTravelStart: row.offsiteTravelStart,
-          offsiteTravelEnd: row.offsiteTravelEnd,
-          supervisorName: row.isSupervisor ? null : row.supervisorName,
-          typeofWork: row.typeofWork,
           regularTimeSalary: row.regularTimeSalary,
           overTimeSalary: row.overTimeSalary,
           remarks: row.remarks,
+          supervisorName: row.isSupervisor ? null : row.supervisorName,
+          designationType: row.designationType,
+          designation: row.designation,
         }));
-
+    
         worksheet.addRows(exportData);
+    
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -518,6 +520,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         console.error("Error exporting Excel:", error);
       }
     }, [filteredData, selectedDate]);
+    
 
     useImperativeHandle(ref, () => ({
       exportExcel,

@@ -48,135 +48,168 @@ interface DateRange {
   endDate: string;
 }
 
+interface MyDocumentProps {
+  data: Timesheet[];
+  selectedEmployees: string[];
+  employees: Person[];
+}
+
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
-    fontFamily: 'Helvetica',
+    padding: 5,
+    fontFamily: 'Courier', // Use monospace font
+    fontSize: 6,
+    flexDirection: 'column',
   },
   title: {
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: 8,
+    marginBottom: 3,
     textAlign: 'center',
     fontWeight: 'bold',
   },
   employeeName: {
-    fontSize: 10,
-    marginBottom: 8,
+    fontSize: 7,
+    marginBottom: 3,
     textAlign: 'center',
   },
   table: {
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 3,
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
   },
   tableRow: {
     flexDirection: 'row',
+    borderStyle: 'solid',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
-    paddingVertical: 3,
+    alignItems: 'flex-start',
+    minHeight: 12,
   },
   tableHeader: {
     flexDirection: 'row',
+    borderStyle: 'solid',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
     fontWeight: 'bold',
-    paddingVertical: 3,
+    paddingVertical: 1,
     backgroundColor: '#f0f0f0',
+    alignItems: 'flex-start',
+    minHeight: 12,
   },
   tableCell: {
-    padding: 2,
-    width: '6.25%',
+    padding: 1,
+    borderStyle: 'solid',
     borderRightWidth: 1,
     borderRightColor: '#000',
-    fontSize: 8,
+    fontSize: 6,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 'auto',
+    wordWrap: 'break-word',
+    textAlign: 'left',
   },
   headerCell: {
-    padding: 2,
-    width: '6.25%',
+    padding: 1,
+    borderStyle: 'solid',
     borderRightWidth: 1,
     borderRightColor: '#000',
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'bold',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 'auto',
+    wordWrap: 'break-word',
+    textAlign: 'left',
   },
 });
 
-const MyDocument = ({ data, selectedEmployees, employees }: {
-  data: Timesheet[];
-  selectedEmployees: string[];
-  employees: Person[];
-}) => (
+
+const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees }) => (
   <Document>
-    <Page style={styles.page} size="A4">
+    <Page style={styles.page} size="A4" orientation="landscape">
       <Text style={styles.title}>Employee Timesheet Report</Text>
       <Text style={styles.employeeName}>
-        {selectedEmployees.map(id => {
-          const person = employees.find(emp => emp.id === id);
+        {selectedEmployees.map((id: string) => {
+          const person = employees.find((emp: Person) => emp.id === id);
           return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
         }).join(', ')}
       </Text>
       <View style={styles.table}>
         <View style={styles.tableHeader}>
-          {[
-            'Name', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
-            'Onsite Travel Start', 'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End',
-            'Supervisor', 'Work Type', 'Project Code'
-          ].map((header) => (
-            <Text key={header} style={[styles.headerCell, { width: '6.25%' }]}>{header}</Text>
-          ))}
+          <Text style={[styles.headerCell, { width: '5%' }]}>Date</Text>
+          <Text style={[styles.headerCell, { width: '10%' }]}>Name</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Location</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>Project Code</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Work Type</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Onsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>Check-In</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>Check-Out</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Onsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Offsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Offsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>Regular Hours</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>OT Hours</Text>
+          <Text style={[styles.headerCell, { width: '5%' }]}>Travel Time</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Supervisor</Text>
+          <Text style={[styles.headerCell, { width: '9%' }]}>Remarks</Text>
         </View>
-        {data.map((timesheet, index) => {
-          const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
-          const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
+        {data.map((timesheet: Timesheet, index: number) => {
+          const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
+          const associatedEmployees = selectedEmployees.filter((empId: string) => timesheetEmployeeIds.includes(empId));
           const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
           if (associatedEmployees.length > 0 || isSupervisorSelected) {
             if (associatedEmployees.length > 1) {
-              return associatedEmployees.map((empId, empIndex) => {
-                const person = employees.find(emp => emp.id === empId);
+              return associatedEmployees.map((empId: string, empIndex: number) => {
+                const person = employees.find((emp: Person) => emp.id === empId);
                 const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
                 const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
                 return (
                   <View key={`${index}-${empIndex}`} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{personName}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.timesheetDate}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.location}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignIn}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignOut}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.normalHrs}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.overtime}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.totalTravelHrs}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.remarks}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelStart}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelEnd}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelStart}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelEnd}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{supervisorName}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.typeofWork}</Text>
-                    <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.projectcode}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.timesheetDate}</Text>
+                    <Text style={[styles.tableCell, { width: '10%' }]}>{personName}</Text>
+                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
+                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelStart}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignIn}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignOut}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelEnd}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelStart}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelEnd}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
+                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
+                    <Text style={[styles.tableCell, { width: '9%' }]}>{timesheet.remarks}</Text>
                   </View>
                 );
               });
             } else {
               const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
-              const person = employees.find(emp => emp.id === empId);
+              const person = employees.find((emp: Person) => emp.id === empId);
               const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
               const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
               return (
                 <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{personName}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.timesheetDate}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.location}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignIn}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteSignOut}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.normalHrs}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.overtime}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.totalTravelHrs}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.remarks}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelStart}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.onsiteTravelEnd}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelStart}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.offsiteTravelEnd}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{supervisorName}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.typeofWork}</Text>
-                  <Text style={[styles.tableCell, { width: '6.25%' }]}>{timesheet.projectcode}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.timesheetDate}</Text>
+                  <Text style={[styles.tableCell, { width: '10%' }]}>{personName}</Text>
+                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
+                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelStart}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignIn}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignOut}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelEnd}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelStart}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelEnd}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
+                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
+                  <Text style={[styles.tableCell, { width: '9%' }]}>{timesheet.remarks}</Text>
                 </View>
               );
             }
@@ -187,8 +220,6 @@ const MyDocument = ({ data, selectedEmployees, employees }: {
     </Page>
   </Document>
 );
-
-
 
 const EmployeeReport: React.FC = () => {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
@@ -226,7 +257,7 @@ const EmployeeReport: React.FC = () => {
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-  
+
         // Fetch employees
         const employeesResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`,
@@ -244,7 +275,7 @@ const EmployeeReport: React.FC = () => {
           role: 'employee',
           fullName: emp.fullName,
         }));
-  
+
         // Fetch timesheets to extract supervisors
         const timesheetsResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
@@ -271,11 +302,11 @@ const EmployeeReport: React.FC = () => {
               ])
           ).values()
         );
-  
+
         // Merge employees and supervisors
         const people = [...fetchedEmployees, ...uniqueSupervisors];
         setEmployees(people);
-  
+
         // Set timesheets and projects
         setTimesheets(timesheetsResult.data);
         const uniqueProjects = Array.from(
@@ -293,10 +324,9 @@ const EmployeeReport: React.FC = () => {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
   const filteredTimesheets = timesheets.filter((timesheet) => {
     const timesheetDate = new Date(timesheet.timesheetDate);
@@ -340,6 +370,7 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
+
     const excelData = filteredTimesheets.map(timesheet => {
       const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
       const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
@@ -351,22 +382,22 @@ const EmployeeReport: React.FC = () => {
             const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
             const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
             return {
-              Name: personName,
               Date: timesheet.timesheetDate,
+              Name: personName,
               Location: timesheet.location,
+              'Project Code': timesheet.projectcode,
+              'Work Type': timesheet.typeofWork,
+              'Onsite Travel Start': timesheet.onsiteTravelStart,
               'Check-In': timesheet.onsiteSignIn,
               'Check-Out': timesheet.onsiteSignOut,
-              'Regular Hours': timesheet.normalHrs,
-              'OT Hours': timesheet.overtime,
-              'Travel Time': timesheet.totalTravelHrs,
-              Remarks: timesheet.remarks,
-              'Onsite Travel Start': timesheet.onsiteTravelStart,
               'Onsite Travel End': timesheet.onsiteTravelEnd,
               'Offsite Travel Start': timesheet.offsiteTravelStart,
               'Offsite Travel End': timesheet.offsiteTravelEnd,
+              'Regular Hours': timesheet.normalHrs,
+              'OT Hours': timesheet.overtime,
+              'Travel Time': timesheet.totalTravelHrs,
               Supervisor: supervisorName,
-              'Work Type': timesheet.typeofWork,
-              'Project Code': timesheet.projectcode,
+              Remarks: timesheet.remarks,
             };
           });
         } else {
@@ -375,33 +406,34 @@ const EmployeeReport: React.FC = () => {
           const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
           const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
           return {
-            Name: personName,
             Date: timesheet.timesheetDate,
+            Name: personName,
             Location: timesheet.location,
+            'Project Code': timesheet.projectcode,
+            'Work Type': timesheet.typeofWork,
+            'Onsite Travel Start': timesheet.onsiteTravelStart,
             'Check-In': timesheet.onsiteSignIn,
             'Check-Out': timesheet.onsiteSignOut,
-            'Regular Hours': timesheet.normalHrs,
-            'OT Hours': timesheet.overtime,
-            'Travel Time': timesheet.totalTravelHrs,
-            Remarks: timesheet.remarks,
-            'Onsite Travel Start': timesheet.onsiteTravelStart,
             'Onsite Travel End': timesheet.onsiteTravelEnd,
             'Offsite Travel Start': timesheet.offsiteTravelStart,
             'Offsite Travel End': timesheet.offsiteTravelEnd,
+            'Regular Hours': timesheet.normalHrs,
+            'OT Hours': timesheet.overtime,
+            'Travel Time': timesheet.totalTravelHrs,
             Supervisor: supervisorName,
-            'Work Type': timesheet.typeofWork,
-            'Project Code': timesheet.projectcode,
+            Remarks: timesheet.remarks,
           };
         }
       }
       return [];
     }).flat().filter(Boolean);
-  
+
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");
   };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 text-gray-900 dark:text-gray-100">
       <div className="max-w-8xl mx-auto">
@@ -637,9 +669,9 @@ const EmployeeReport: React.FC = () => {
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   {[
-                    'Name', 'Date', 'Location', 'Check-In', 'Check-Out', 'Regular Hours', 'OT Hours', 'Travel Time', 'Remarks',
-                    'Onsite Travel Start', 'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End',
-                    'Supervisor', 'Work Type', 'Project Code'
+                    'Date', 'Name', 'Location', 'Project Code', 'Work Type', 'Onsite Travel Start', 'Check-In', 'Check-Out',
+                    'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End', 'Regular Hours', 'OT Hours',
+                    'Travel Time', 'Supervisor', 'Remarks'
                   ].map((header) => (
                     <th
                       key={header}
@@ -669,22 +701,22 @@ const EmployeeReport: React.FC = () => {
                             const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
                             return (
                               <tr key={`${timesheet.id}-${empIndex}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.timesheetDate}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{supervisorName}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
                               </tr>
                             );
                           });
@@ -695,22 +727,22 @@ const EmployeeReport: React.FC = () => {
                           const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
                           return (
                             <tr key={timesheet.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.timesheetDate}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{personName}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{supervisorName}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.remarks}</td>
                             </tr>
                           );
                         }
