@@ -54,6 +54,19 @@ interface MyDocumentProps {
   employees: Person[];
 }
 
+// Utility function to format datetime strings for PDF
+const formatDateTimeForPDF = (isoString: string): string => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).replace(',', '');
+};
+
 const styles = StyleSheet.create({
   page: {
     padding: 5,
@@ -104,7 +117,7 @@ const styles = StyleSheet.create({
     borderStyle: 'solid',
     borderRightWidth: 1,
     borderRightColor: '#000',
-    fontSize: 6,
+    fontSize: 5,
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 'auto',
@@ -143,12 +156,12 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
           <Text style={[styles.headerCell, { width: '8%' }]}>Location</Text>
           <Text style={[styles.headerCell, { width: '5%' }]}>Project Code</Text>
           <Text style={[styles.headerCell, { width: '8%' }]}>Work Type</Text>
-          <Text style={[styles.headerCell, { width: '7%' }]}>Onsite Travel Start</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Check-In</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Check-Out</Text>
-          <Text style={[styles.headerCell, { width: '7%' }]}>Onsite Travel End</Text>
-          <Text style={[styles.headerCell, { width: '7%' }]}>Offsite Travel Start</Text>
-          <Text style={[styles.headerCell, { width: '7%' }]}>Offsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Onsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Check-In</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Check-Out</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Onsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Offsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Offsite Travel End</Text>
           <Text style={[styles.headerCell, { width: '5%' }]}>Regular Hours</Text>
           <Text style={[styles.headerCell, { width: '5%' }]}>OT Hours</Text>
           <Text style={[styles.headerCell, { width: '5%' }]}>Travel Time</Text>
@@ -172,12 +185,12 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
                     <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
                     <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
                     <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelStart}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignIn}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignOut}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelEnd}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelStart}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelEnd}</Text>
+                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
+                    <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
+                    <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
+                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
+                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
+                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
                     <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
                     <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
                     <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
@@ -198,12 +211,12 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
                   <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
                   <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
                   <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelStart}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignIn}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.onsiteSignOut}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.onsiteTravelEnd}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelStart}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.offsiteTravelEnd}</Text>
+                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
+                  <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
+                  <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
+                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
+                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
+                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
                   <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
                   <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
                   <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
@@ -395,12 +408,12 @@ const EmployeeReport: React.FC = () => {
               Location: timesheet.location,
               'Project Code': timesheet.projectcode,
               'Work Type': timesheet.typeofWork,
-              'Onsite Travel Start': timesheet.onsiteTravelStart,
-              'Check-In': timesheet.onsiteSignIn,
-              'Check-Out': timesheet.onsiteSignOut,
-              'Onsite Travel End': timesheet.onsiteTravelEnd,
-              'Offsite Travel Start': timesheet.offsiteTravelStart,
-              'Offsite Travel End': timesheet.offsiteTravelEnd,
+              'Onsite Travel Start': formatDateTimeForPDF(timesheet.onsiteTravelStart),
+              'Check-In': formatDateTimeForPDF(timesheet.onsiteSignIn),
+              'Check-Out': formatDateTimeForPDF(timesheet.onsiteSignOut),
+              'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
+              'Offsite Travel Start': formatDateTimeForPDF(timesheet.offsiteTravelStart),
+              'Offsite Travel End': formatDateTimeForPDF(timesheet.offsiteTravelEnd),
               'Regular Hours': timesheet.normalHrs,
               'OT Hours': timesheet.overtime,
               'Travel Time': timesheet.totalTravelHrs,
@@ -419,12 +432,12 @@ const EmployeeReport: React.FC = () => {
             Location: timesheet.location,
             'Project Code': timesheet.projectcode,
             'Work Type': timesheet.typeofWork,
-            'Onsite Travel Start': timesheet.onsiteTravelStart,
-            'Check-In': timesheet.onsiteSignIn,
-            'Check-Out': timesheet.onsiteSignOut,
-            'Onsite Travel End': timesheet.onsiteTravelEnd,
-            'Offsite Travel Start': timesheet.offsiteTravelStart,
-            'Offsite Travel End': timesheet.offsiteTravelEnd,
+            'Onsite Travel Start': formatDateTimeForPDF(timesheet.onsiteTravelStart),
+            'Check-In': formatDateTimeForPDF(timesheet.onsiteSignIn),
+            'Check-Out': formatDateTimeForPDF(timesheet.onsiteSignOut),
+            'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
+            'Offsite Travel Start': formatDateTimeForPDF(timesheet.offsiteTravelStart),
+            'Offsite Travel End': formatDateTimeForPDF(timesheet.offsiteTravelEnd),
             'Regular Hours': timesheet.normalHrs,
             'OT Hours': timesheet.overtime,
             'Travel Time': timesheet.totalTravelHrs,
@@ -762,12 +775,12 @@ const EmployeeReport: React.FC = () => {
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignIn)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignOut)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
@@ -788,12 +801,12 @@ const EmployeeReport: React.FC = () => {
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.location}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelStart}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignIn}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteSignOut}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.onsiteTravelEnd}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelStart}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.offsiteTravelEnd}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignIn)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignOut)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.overtime}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.totalTravelHrs}</td>
