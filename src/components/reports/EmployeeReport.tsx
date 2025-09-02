@@ -1,6 +1,6 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
-import { FileText, Download, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText, Download, Calendar, Search } from 'lucide-react';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
@@ -57,7 +57,7 @@ interface MyDocumentProps {
 const styles = StyleSheet.create({
   page: {
     padding: 5,
-    fontFamily: 'Courier', // Use monospace font
+    fontFamily: 'Courier',
     fontSize: 6,
     flexDirection: 'column',
   },
@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 });
-
 
 const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees }) => (
   <Document>
@@ -230,17 +229,23 @@ const EmployeeReport: React.FC = () => {
   });
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [employees, setEmployees] = useState<Person[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const employeeDropdownRef = useRef<HTMLDivElement>(null);
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('.employee-dropdown')) {
+      if (!target.closest('.employee-dropdown') && !target.closest('.project-dropdown')) {
         setShowEmployeeDropdown(false);
+        setShowProjectDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -257,7 +262,6 @@ const EmployeeReport: React.FC = () => {
         if (!session?.accessToken) {
           throw new Error("No access token found");
         }
-
         // Fetch employees
         const employeesResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/employees/all`,
@@ -275,7 +279,6 @@ const EmployeeReport: React.FC = () => {
           role: 'employee',
           fullName: emp.fullName,
         }));
-
         // Fetch timesheets to extract supervisors
         const timesheetsResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
@@ -302,11 +305,9 @@ const EmployeeReport: React.FC = () => {
               ])
           ).values()
         );
-
         // Merge employees and supervisors
         const people = [...fetchedEmployees, ...uniqueSupervisors];
         setEmployees(people);
-
         // Set timesheets and projects
         setTimesheets(timesheetsResult.data);
         const uniqueProjects = Array.from(
@@ -324,9 +325,17 @@ const EmployeeReport: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
+
+  const filteredEmployees = employees.filter((person) =>
+    person.fullName?.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+    `${person.firstName} ${person.lastName}`.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+  );
+
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(projectSearchTerm.toLowerCase())
+  );
 
   const filteredTimesheets = timesheets.filter((timesheet) => {
     const timesheetDate = new Date(timesheet.timesheetDate);
@@ -370,7 +379,6 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
-
     const excelData = filteredTimesheets.map(timesheet => {
       const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
       const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
@@ -427,7 +435,6 @@ const EmployeeReport: React.FC = () => {
       }
       return [];
     }).flat().filter(Boolean);
-
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
@@ -442,10 +449,13 @@ const EmployeeReport: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Employees/Supervisors</label>
-              <div className="relative employee-dropdown">
+              <div className="relative employee-dropdown" ref={employeeDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setShowEmployeeDropdown(!showEmployeeDropdown)}
+                  onClick={() => {
+                    setShowEmployeeDropdown(!showEmployeeDropdown);
+                    setEmployeeSearchTerm('');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-left"
                   disabled={loading}
                 >
@@ -490,7 +500,19 @@ const EmployeeReport: React.FC = () => {
                           Clear All
                         </button>
                       </div>
-                      {employees.map((person) => (
+                      <div className="mb-2">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={employeeSearchTerm}
+                            onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                          />
+                          <Search className="absolute right-2 top-1.5 h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      {filteredEmployees.map((person) => (
                         <label
                           key={person.id}
                           className="flex items-center justify-between px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
@@ -526,19 +548,53 @@ const EmployeeReport: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Project</label>
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                disabled={loading}
-              >
-                <option value="">All Projects</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative project-dropdown" ref={projectDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProjectDropdown(!showProjectDropdown);
+                    setProjectSearchTerm('');
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-left"
+                  disabled={loading}
+                >
+                  {selectedProject ? (
+                    projects.find(p => p.id === selectedProject)?.name
+                  ) : (
+                    <span className="text-gray-500">Select a project...</span>
+                  )}
+                </button>
+                {showProjectDropdown && !loading && (
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="p-2">
+                      <div className="mb-2">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={projectSearchTerm}
+                            onChange={(e) => setProjectSearchTerm(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                          />
+                          <Search className="absolute right-2 top-1.5 h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      {filteredProjects.map((project) => (
+                        <div
+                          key={project.id}
+                          onClick={() => {
+                            setSelectedProject(project.id);
+                            setShowProjectDropdown(false);
+                          }}
+                          className="px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                        >
+                          {project.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Date Range</label>
