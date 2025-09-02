@@ -1,6 +1,6 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
-import { FileText, Download, Calendar, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText, Download, Calendar, ChevronDown, Search } from 'lucide-react';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
@@ -140,7 +140,6 @@ const SalaryReportDocument = ({
       <Text style={styles.subtitle}>
         Project: {filters.project} | Location: {filters.location} | Period: {filters.dateRange}
       </Text>
-
       <View style={styles.table}>
         <View style={styles.tableHeader}>
           {[
@@ -192,6 +191,10 @@ const SalaryReport: React.FC = () => {
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const [locationSearchTerm, setLocationSearchTerm] = useState('');
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
 
   const DEFAULT_REGULAR_RATE = 25.00;
   const DEFAULT_OVERTIME_RATE = 37.50;
@@ -249,7 +252,6 @@ const SalaryReport: React.FC = () => {
         const timesheetsResult = await timesheetsResponse.json();
         if (timesheetsResult.success && timesheetsResult.data) {
           setTimesheets(timesheetsResult.data);
-
           const uniqueProjects = Array.from(
             new Map(
               timesheetsResult.data
@@ -273,11 +275,18 @@ const SalaryReport: React.FC = () => {
     fetchData();
   }, []);
 
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(projectSearchTerm.toLowerCase())
+  );
+
+  const filteredLocations = locations.filter((location) =>
+    location.toLowerCase().includes(locationSearchTerm.toLowerCase())
+  );
+
   const filteredTimesheets = timesheets.filter((timesheet) => {
     if (!dateRange.startDate || !dateRange.endDate) {
       return false;
     }
-
     const timesheetDate = new Date(timesheet.timesheetDate);
     const isSameProject = selectedProject
       ? timesheet.project && timesheet.project.name === selectedProject
@@ -405,9 +414,7 @@ const SalaryReport: React.FC = () => {
       });
       return;
     }
-
     const workbook = XLSX.utils.book_new();
-
     // Main salary data with project info
     const excelData = salaryData.map(item => ({
       'Project': item.project,
@@ -422,12 +429,11 @@ const SalaryReport: React.FC = () => {
       'Overtime Pay': Number(item.overtimePay || 0).toFixed(2),
       'Total Pay': Number(item.totalPay || 0).toFixed(2),
     }));
-
     // Add summary row to the main sheet
     excelData.push({
       'Project': 'Summary',
       'Employee Name': '',
-      'Role': 'employee', // Fixed: Set to a valid role
+      'Role': 'employee',
       'Location': '',
       'Regular Hours': '',
       'Overtime Hours': '',
@@ -437,10 +443,8 @@ const SalaryReport: React.FC = () => {
       'Overtime Pay': summary.totalOvertimePay.toFixed(2),
       'Total Pay': summary.grandTotal.toFixed(2),
     });
-
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     XLSX.utils.book_append_sheet(workbook, worksheet, "Salary Report");
-
     // Summary sheet (optional, you can keep or remove)
     const summaryData = [
       { 'Metric': 'Total Employees', 'Value': summary.totalEmployees },
@@ -450,7 +454,6 @@ const SalaryReport: React.FC = () => {
     ];
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Summary");
-
     XLSX.writeFile(workbook, "Salary_Report.xlsx");
   };
 
@@ -458,17 +461,19 @@ const SalaryReport: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 text-gray-900 dark:text-gray-100">
       <div className="max-w-8xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Salary Report</h1>
-
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Project Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Project</label>
-              <div className="relative dropdown-container">
+              <div className="relative dropdown-container" ref={projectDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setShowProjectDropdown(!showProjectDropdown)}
+                  onClick={() => {
+                    setShowProjectDropdown(!showProjectDropdown);
+                    setProjectSearchTerm('');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-left flex items-center justify-between"
                   disabled={loading}
                 >
@@ -477,6 +482,18 @@ const SalaryReport: React.FC = () => {
                 </button>
                 {showProjectDropdown && !loading && (
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search projects..."
+                          value={projectSearchTerm}
+                          onChange={(e) => setProjectSearchTerm(e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                        />
+                        <Search className="absolute right-2 top-1.5 h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
                     <button
                       onClick={() => {
                         setSelectedProject('');
@@ -486,7 +503,7 @@ const SalaryReport: React.FC = () => {
                     >
                       All Projects
                     </button>
-                    {projects.map((project) => (
+                    {filteredProjects.map((project) => (
                       <button
                         key={project.id}
                         onClick={() => {
@@ -505,10 +522,13 @@ const SalaryReport: React.FC = () => {
             {/* Location Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Location</label>
-              <div className="relative dropdown-container">
+              <div className="relative dropdown-container" ref={locationDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+                  onClick={() => {
+                    setShowLocationDropdown(!showLocationDropdown);
+                    setLocationSearchTerm('');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-left flex items-center justify-between"
                   disabled={loading}
                 >
@@ -517,6 +537,18 @@ const SalaryReport: React.FC = () => {
                 </button>
                 {showLocationDropdown && !loading && (
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search locations..."
+                          value={locationSearchTerm}
+                          onChange={(e) => setLocationSearchTerm(e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                        />
+                        <Search className="absolute right-2 top-1.5 h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
                     <button
                       onClick={() => {
                         setSelectedLocation('All Locations');
@@ -526,7 +558,7 @@ const SalaryReport: React.FC = () => {
                     >
                       All Locations
                     </button>
-                    {locations.map((location, index) => (
+                    {filteredLocations.map((location, index) => (
                       <button
                         key={index}
                         onClick={() => {
@@ -555,17 +587,17 @@ const SalaryReport: React.FC = () => {
                   <span>{formatDateRange()}</span>
                 </button>
                 {showDatePickers && (
-                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800    border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-4">
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
-                         <input
-                            type="date"
-                            value={dateRange.startDate}
-                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                          />
+                        <input
+                          type="date"
+                          value={dateRange.startDate}
+                          onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                          onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>

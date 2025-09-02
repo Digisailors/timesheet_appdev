@@ -539,7 +539,7 @@ const RulesSettings: React.FC = () => {
                   {rule.designation.name}
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Standard: {rule.normalHours}h | Break: {rule.breakTime}h | Travel: {rule.allowedTravelHours}h
+                  Standard: {rule.normalHours}h | Travel: {rule.allowedTravelHours}h
                 </p>
               </div>
               <div className="flex justify-end items-start space-x-2">

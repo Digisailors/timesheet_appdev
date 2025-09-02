@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Calendar, FileText, Download } from 'lucide-react';
 import { getSession } from 'next-auth/react';
 import * as XLSX from 'xlsx';
@@ -41,7 +41,7 @@ interface ProjectSelectorProps {
   onLocationChange?: (location: string) => void;
   dateRange: DateRange;
   onDateRangeChange?: (dateRange: DateRange) => void;
-  timesheets?: Timesheet[]; // Optional prop with default value
+  timesheets?: Timesheet[];
 }
 
 const styles = StyleSheet.create({
@@ -110,8 +110,6 @@ const ProjectReportDocument = ({
   <Document>
     <Page style={styles.page} size="A4">
       <Text style={styles.title}>Project Timesheet Report</Text>
-      
-      {/* Project Summary */}
       <View style={styles.table}>
         <View style={styles.tableHeader}>
           <Text style={styles.headerCell}>Project Name</Text>
@@ -153,7 +151,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   onLocationChange,
   dateRange,
   onDateRangeChange,
-  timesheets = [], // Default to empty array
+  timesheets = [],
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -164,6 +162,10 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const [locationSearchTerm, setLocationSearchTerm] = useState('');
+  const projectSearchInputRef = useRef<HTMLInputElement>(null);
+  const locationSearchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -171,14 +173,14 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         setLoading(true);
         const session = await getSession();
         if (!session?.accessToken) {
-          throw new Error("No access token found");
+          throw new Error('No access token found');
         }
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${session.accessToken}`,
+            Accept: 'application/json',
+            Authorization: `Bearer ${session.accessToken}`,
           },
           mode: 'cors',
         });
@@ -244,19 +246,22 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     }
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
-    return `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString(
-      'en-US',
-      { month: 'short', day: '2-digit', year: 'numeric' }
-    )}`;
+    return `${start.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    })} - ${end.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    })}`;
   };
 
   const filteredTimesheets = timesheets.filter((timesheet) => {
     const timesheetDate = new Date(timesheet.timesheetDate);
     const isSameProject = selectedProject ? timesheet.project?.name === selectedProject : true;
     const isSameLocation = selectedLocation !== 'All Locations' ? timesheet.location === selectedLocation : true;
-    const isInDateRange = dateRange.startDate && dateRange.endDate
-      ? timesheetDate >= new Date(dateRange.startDate) && timesheetDate <= new Date(dateRange.endDate)
-      : false;
+    const isInDateRange = dateRange.startDate && dateRange.endDate ? timesheetDate >= new Date(dateRange.startDate) && timesheetDate <= new Date(dateRange.endDate) : false;
     return isSameProject && isSameLocation && isInDateRange;
   });
 
@@ -269,8 +274,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       overtime += parseFloat(timesheet.overtime || '0');
       total += parseFloat(timesheet.totalDutyHrs || '0');
     });
-    
-    // Use totalDutyHrs for total calculation to match ProjectSummary
+
     const ratio = total > 0 ? `${((regular / total) * 100).toFixed(0)}% / ${((overtime / total) * 100).toFixed(0)}%` : '0% / 0%';
     return {
       totalHours: total.toFixed(1),
@@ -293,11 +297,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       });
       return;
     }
-
-    // Create workbook with multiple sheets
     const workbook = XLSX.utils.book_new();
-
-    // Sheet 1: Project Summary
     const summaryData = [
       {
         'Project Name': selectedProject,
@@ -310,37 +310,31 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
       },
     ];
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Project Summary");
-
-    // Sheet 2: Individual Timesheet Entries
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Project Summary');
     const timesheetData = filteredTimesheets.map((timesheet) => ({
-      'Date': timesheet.timesheetDate,
-      'Location': timesheet.location,
+      Date: timesheet.timesheetDate,
+      Location: timesheet.location,
       'Check-In': timesheet.onsiteSignIn,
       'Check-Out': timesheet.onsiteSignOut,
       'Regular Hours': timesheet.normalHrs,
       'Overtime Hours': timesheet.overtime,
       'Travel Hours': timesheet.totalTravelHrs,
-      'Remarks': timesheet.remarks,
+      Remarks: timesheet.remarks,
     }));
     const timesheetWorksheet = XLSX.utils.json_to_sheet(timesheetData);
-    XLSX.utils.book_append_sheet(workbook, timesheetWorksheet, "Timesheet Details");
-
-    // Sheet 3: Chart Data (Monthly breakdown)
+    XLSX.utils.book_append_sheet(workbook, timesheetWorksheet, 'Timesheet Details');
     interface MonthData {
       month: string;
       regular: number;
       overtime: number;
       total: number;
     }
-
     const monthsData = filteredTimesheets.reduce((acc: MonthData[], entry) => {
       const month = new Date(entry.timesheetDate).toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' });
       const existingMonth = acc.find((item) => item.month === month);
       const normalHrs = parseFloat(entry.normalHrs || '0');
       const overtimeHrs = parseFloat(entry.overtime || '0');
       const totalHrs = parseFloat(entry.totalDutyHrs || '0');
-
       if (existingMonth) {
         existingMonth.regular += normalHrs;
         existingMonth.overtime += overtimeHrs;
@@ -353,30 +347,46 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
           total: totalHrs,
         });
       }
-
       return acc;
     }, [] as MonthData[]);
-
-    // Sort by month
     monthsData.sort((a, b) => {
       const [aMonth, aYear] = a.month.split('/');
       const [bMonth, bYear] = b.month.split('/');
       return new Date(parseInt(aYear || '0'), parseInt(aMonth || '0') - 1).getTime() - new Date(parseInt(bYear || '0'), parseInt(bMonth || '0') - 1).getTime();
     });
-
     const chartData = monthsData.map((data) => ({
-      'Month': data.month,
+      Month: data.month,
       'Regular Hours': data.regular.toFixed(2),
       'Overtime Hours': data.overtime.toFixed(2),
       'Total Hours': data.total.toFixed(2),
     }));
     const chartWorksheet = XLSX.utils.json_to_sheet(chartData);
-    XLSX.utils.book_append_sheet(workbook, chartWorksheet, "Monthly Chart Data");
-
-    XLSX.writeFile(workbook, "Project_Report.xlsx");
+    XLSX.utils.book_append_sheet(workbook, chartWorksheet, 'Monthly Chart Data');
+    XLSX.writeFile(workbook, 'Project_Report.xlsx');
   };
 
+  const filteredProjects = projects.filter((project) => project.name.toLowerCase().includes(projectSearchTerm.toLowerCase()));
+  const filteredLocations = locations.filter((location) => location.name.toLowerCase().includes(locationSearchTerm.toLowerCase()));
 
+  const handleProjectDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen) {
+      setProjectSearchTerm('');
+      setTimeout(() => {
+        projectSearchInputRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const handleLocationDropdownToggle = () => {
+    setIsLocationDropdownOpen(!isLocationDropdownOpen);
+    if (!isLocationDropdownOpen) {
+      setLocationSearchTerm('');
+      setTimeout(() => {
+        locationSearchInputRef.current?.focus();
+      }, 100);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -388,7 +398,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
             <div className="relative">
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={handleProjectDropdownToggle}
                 disabled={loading}
                 className="w-full px-4 py-2.5 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -399,10 +409,23 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               </button>
               {isDropdownOpen && !loading && !error && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {projects.map((project) => (
+                  <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+                    <input
+                      ref={projectSearchInputRef}
+                      type="text"
+                      value={projectSearchTerm}
+                      onChange={(e) => setProjectSearchTerm(e.target.value)}
+                      placeholder="Search projects..."
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                    />
+                  </div>
+                  {filteredProjects.map((project) => (
                     <button
                       key={project.id}
-                      onClick={() => handleProjectChange(project.name)}
+                      onClick={() => {
+                        handleProjectChange(project.name);
+                        setProjectSearchTerm('');
+                      }}
                       className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700 first:rounded-t-md last:rounded-b-md transition-colors"
                     >
                       <span className="truncate text-gray-900 dark:text-gray-100">{project.name}</span>
@@ -418,7 +441,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
             <div className="relative">
               <button
-                onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+                onClick={handleLocationDropdownToggle}
                 disabled={loading}
                 className="w-full px-4 py-2.5 text-left bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -429,16 +452,32 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
               </button>
               {isLocationDropdownOpen && !loading && !error && (
                 <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+                    <input
+                      ref={locationSearchInputRef}
+                      type="text"
+                      value={locationSearchTerm}
+                      onChange={(e) => setLocationSearchTerm(e.target.value)}
+                      placeholder="Search locations..."
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400"
+                    />
+                  </div>
                   <button
-                    onClick={() => handleLocationChange('All Locations')}
+                    onClick={() => {
+                      handleLocationChange('All Locations');
+                      setLocationSearchTerm('');
+                    }}
                     className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700 first:rounded-t-md last:rounded-b-md transition-colors"
                   >
                     <span className="truncate text-gray-900 dark:text-gray-100">All Locations</span>
                   </button>
-                  {locations.map((location) => (
+                  {filteredLocations.map((location) => (
                     <button
                       key={location.id}
-                      onClick={() => handleLocationChange(location.name)}
+                      onClick={() => {
+                        handleLocationChange(location.name);
+                        setLocationSearchTerm('');
+                      }}
                       className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700 first:rounded-t-md last:rounded-b-md transition-colors"
                     >
                       <span className="truncate text-gray-900 dark:text-gray-100">{location.name}</span>
@@ -533,13 +572,15 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             </PDFDownloadLink>
           ) : (
             <button
-              onClick={() => toast('No data to export', {
-                style: {
-                  borderRadius: '10px',
-                  background: 'blue',
-                  color: '#fff',
-                },
-              })}
+              onClick={() =>
+                toast('No data to export', {
+                  style: {
+                    borderRadius: '10px',
+                    background: 'blue',
+                    color: '#fff',
+                  },
+                })
+              }
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               <Download size={16} />
