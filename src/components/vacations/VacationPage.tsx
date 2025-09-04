@@ -48,6 +48,8 @@ interface VacationEntry {
   specialization: string;
   returnstatus: string | null;
   return?: string | null;
+  paidLeaveDays: string;
+  unpaidLeaveDays: string;
 }
 
 interface ApiResponse {
@@ -174,7 +176,6 @@ export default function VacationManagement() {
           const endDate = item.endDate;
           const eligibleDays = parseInt(item.employee?.eligibleLeaveDays || item.supervisor?.eligibleLeaveDays || "0", 10);
           const remainingDays = parseInt(item.employee?.remainingLeaveDays || item.supervisor?.remainingLeaveDays || "0", 10);
-
           return {
             id: item.id,
             name,
@@ -195,15 +196,14 @@ export default function VacationManagement() {
             specialization: location,
             returnstatus: item.returnstatus || null,
             return: item.return || null,
+            paidLeaveDays: item.paidLeaveDays,
+            unpaidLeaveDays: item.unpaidLeaveDays,
           };
         });
-
         const uniqueStatuses = Array.from(new Set(response.data.data.map(item => item.returnstatus || "Not Returned")));
         const uniqueTypes = Array.from(new Set(response.data.data.map(item => item.leaveType)));
-
         setStatusOptions(uniqueStatuses);
         setTypeOptions(uniqueTypes);
-
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -215,15 +215,12 @@ export default function VacationManagement() {
             (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear)
           );
         });
-
         const uniqueEmployeesThisMonth = new Set<string>();
         thisMonthData.forEach((employee) => {
           uniqueEmployeesThisMonth.add(employee.name);
         });
-
         const paidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Paid").length;
         const unpaidVacationThisMonth = thisMonthData.filter(employee => employee.status === "Unpaid").length;
-
         setSummaryData([
           {
             title: "Total Employees on vacation",
@@ -247,7 +244,6 @@ export default function VacationManagement() {
             iconColor: "#ef4444",
           },
         ]);
-
         setVacationData(formattedData);
       }
     } catch (error) {
@@ -483,18 +479,18 @@ export default function VacationManagement() {
                               >
                                 {employee.status} Vacation
                               </Badge>
-                                                             {employee.return && (
-                                 <Badge
-                                   variant="outline"
-                                   className={`text-xs ${
-                                     employee.return === "Returned" 
-                                       ? "bg-green-100 text-green-800 border-green-500 dark:bg-green-900 dark:text-green-200 dark:border-green-600"
-                                       : "bg-yellow-100 text-yellow-800 border-yellow-500 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-600"
-                                   }`}
-                                 >
-                                   {employee.return}
-                                 </Badge>
-                               )}
+                              {employee.return && (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${
+                                    employee.return === "Returned"
+                                      ? "bg-green-100 text-green-800 border-green-500 dark:bg-green-900 dark:text-green-200 dark:border-green-600"
+                                      : "bg-yellow-100 text-yellow-800 border-yellow-500 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-600"
+                                  }`}
+                                >
+                                  {employee.return}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex flex-col items-center gap-2">
                               <Button
@@ -546,48 +542,50 @@ export default function VacationManagement() {
               setIsDialogOpen(false);
               setSelectedVacation(null);
             }}
+            onReturn={fetchVacationData}
             data={{
               ...selectedVacation,
               reason: selectedVacation.reason || "",
               returnstatus: selectedVacation.returnstatus || "Not Return",
               return: selectedVacation.return || "Not Return",
-              endDate: selectedVacation.endDate || ""
+              endDate: selectedVacation.endDate || "",
+              paidLeaveDays: selectedVacation.paidLeaveDays || "0",
+              unpaidLeaveDays: selectedVacation.unpaidLeaveDays || "0",
             }}
-            onReturn={fetchVacationData}
           />
         )}
-       {selectedVacationForEdit && (
-  <EditVacationForm
-    open={showEditForm}
-    onOpenChange={(open) => {
-      setShowEditForm(open);
-      if (!open) setSelectedVacationForEdit(null);
-    }}
-    onSuccess={() => {
-      fetchVacationData();
-      setShowEditForm(false);
-      setSelectedVacationForEdit(null);
-    }}
-         initialData={{
-       id: selectedVacationForEdit.id,
-       name: selectedVacationForEdit.name,
-       leaveType: selectedVacationForEdit.leaveType,
-       startDate: selectedVacationForEdit.startDate,
-       endDate: selectedVacationForEdit.endDate,
-       reason: selectedVacationForEdit.reason || "",
-       appliedDate: selectedVacationForEdit.appliedDate,
-       vacationFrom: selectedVacationForEdit.vacationFrom,
-       vacationTo: selectedVacationForEdit.vacationTo,
-       duration: selectedVacationForEdit.duration,
-       eligibleDays: selectedVacationForEdit.eligibleDays,
-       remainingDays: selectedVacationForEdit.remainingDays,
-       status: selectedVacationForEdit.status,
-       project: selectedVacationForEdit.project,
-       specialization: selectedVacationForEdit.specialization,
-       returnstatus: selectedVacationForEdit.returnstatus,
-     }}
-  />
-)}
+        {selectedVacationForEdit && (
+          <EditVacationForm
+            open={showEditForm}
+            onOpenChange={(open) => {
+              setShowEditForm(open);
+              if (!open) setSelectedVacationForEdit(null);
+            }}
+            onSuccess={() => {
+              fetchVacationData();
+              setShowEditForm(false);
+              setSelectedVacationForEdit(null);
+            }}
+            initialData={{
+              id: selectedVacationForEdit.id,
+              name: selectedVacationForEdit.name,
+              leaveType: selectedVacationForEdit.leaveType,
+              startDate: selectedVacationForEdit.startDate,
+              endDate: selectedVacationForEdit.endDate,
+              reason: selectedVacationForEdit.reason || "",
+              appliedDate: selectedVacationForEdit.appliedDate,
+              vacationFrom: selectedVacationForEdit.vacationFrom,
+              vacationTo: selectedVacationForEdit.vacationTo,
+              duration: selectedVacationForEdit.duration,
+              eligibleDays: selectedVacationForEdit.eligibleDays,
+              remainingDays: selectedVacationForEdit.remainingDays,
+              status: selectedVacationForEdit.status,
+              project: selectedVacationForEdit.project,
+              specialization: selectedVacationForEdit.specialization,
+              returnstatus: selectedVacationForEdit.returnstatus,
+            }}
+          />
+        )}
       </div>
     </div>
   );

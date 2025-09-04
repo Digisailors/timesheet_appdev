@@ -26,6 +26,8 @@ interface VacationDetailsProps {
     endDate: string;
     returnstatus: string;
     return?: string;
+    paidLeaveDays: string;
+    unpaidLeaveDays: string;
   };
 }
 
@@ -40,7 +42,6 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
       if (!session?.accessToken) {
         throw new Error("No access token found");
       }
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vacations/return/${data.id}`, {
         method: 'PUT',
         headers: {
@@ -48,11 +49,9 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
           'Authorization': `Bearer ${session.accessToken}`,
         },
       });
-
       if (!response.ok) {
         throw new Error('Failed to trigger return');
       }
-
       const result = await response.json();
       console.log('Return successful:', result);
       onReturn();
@@ -89,22 +88,6 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </div>
           </div>
           <div className="flex gap-2">
-          {/* <button
-            onClick={data.returnstatus === "Not Return" ? handleConfirmReturn : undefined}
-            disabled={data.returnstatus === "Returned"}
-            className={`p-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-full transition-colors flex items-center ${
-              data.returnstatus === "Returned" ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            title={data.returnstatus === "Returned" ? "Returned" : "Return"}
-          >
-            <Undo2
-              size={20}
-              className="text-white"
-            />
-            <span className="ml-1 text-xs text-white">
-              {data.returnstatus === "Returned" ? "Returned" : "Return"}
-            </span>
-          </button> */}
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -114,6 +97,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             </button>
           </div>
         </div>
+
         {/* Dialog Content */}
         <div className="p-6 text-sm text-gray-900 dark:text-gray-100">
           <div className="grid grid-cols-2 gap-y-6 gap-x-8">
@@ -126,16 +110,12 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
               <p>{data.startDate} to {data.endDate || "--/--/----"}</p>
             </div>
             <div>
-              <p className="text-gray-400 dark:text-gray-500">Duration</p>
-              <p>{data.duration} days</p>
+              <p className="text-gray-400 dark:text-gray-500">Paid Leave Days</p>
+              <p>{data.paidLeaveDays}</p>
             </div>
             <div>
-              <p className="text-gray-400 dark:text-gray-500">Remaining Days</p>
-              <p>{data.remainingDays}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 dark:text-gray-500">Eligible Days</p>
-              <p>{data.eligibleDays}</p>
+              <p className="text-gray-400 dark:text-gray-500">Unpaid Leave Days</p>
+              <p>{data.unpaidLeaveDays}</p>
             </div>
             <div>
               <p className="text-gray-400 dark:text-gray-500">Leave Type</p>
@@ -150,8 +130,8 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
             <div>
               <p className="text-gray-400 dark:text-gray-500">Return Status</p>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                data.return === "Returned" 
-                  ? "bg-green-200 text-green-900" 
+                data.return === "Returned"
+                  ? "bg-green-200 text-green-900"
                   : "bg-yellow-200 text-yellow-900"
               }`}>
                 {data.return || "Not Return"}
@@ -162,14 +142,15 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
               <p>{data.specialization}</p>
             </div>
           </div>
-                     <div className="mt-6">
-             <p className="text-gray-400 dark:text-gray-500 mb-2">Reason for Leave</p>
-             <div className="border border-gray-300 dark:border-gray-700 p-3 rounded bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
-               {data.reason || "No reason provided"}
-             </div>
-           </div>
+          <div className="mt-6">
+            <p className="text-gray-400 dark:text-gray-500 mb-2">Reason for Leave</p>
+            <div className="border border-gray-300 dark:border-gray-700 p-3 rounded bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
+              {data.reason || "No reason provided"}
+            </div>
+          </div>
         </div>
       </div>
+
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-6">
