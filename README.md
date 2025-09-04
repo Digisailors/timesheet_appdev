@@ -1,6 +1,6 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Environment Setup
+##  Environment Setup
 
 Create a `.env` file in the root directory with the following variables:
 
