@@ -21,10 +21,40 @@ interface EditDialogBoxProps {
 }
 
 export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, employee, onSave }) => {
-  const [editedEmployee, setEditedEmployee] = useState<UpdatedEmployee>(employee);
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
+
+  const [editedEmployee, setEditedEmployee] = useState<UpdatedEmployee>({
+    ...employee,
+    travelStart: formatDateTime(employee.travelStart),
+    travelEnd: formatDateTime(employee.travelEnd),
+    signIn: formatDateTime(employee.signIn),
+    breakStart: formatDateTime(employee.breakStart),
+    breakEnd: formatDateTime(employee.breakEnd),
+    signOut: formatDateTime(employee.signOut),
+    offsiteTravelStart: formatDateTime(employee.offsiteTravelStart),
+    offsiteTravelEnd: formatDateTime(employee.offsiteTravelEnd),
+  });
 
   React.useEffect(() => {
-    setEditedEmployee(employee);
+    setEditedEmployee({
+      ...employee,
+      travelStart: formatDateTime(employee.travelStart),
+      travelEnd: formatDateTime(employee.travelEnd),
+      signIn: formatDateTime(employee.signIn),
+      breakStart: formatDateTime(employee.breakStart),
+      breakEnd: formatDateTime(employee.breakEnd),
+      signOut: formatDateTime(employee.signOut),
+      offsiteTravelStart: formatDateTime(employee.offsiteTravelStart),
+      offsiteTravelEnd: formatDateTime(employee.offsiteTravelEnd),
+    });
   }, [employee]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,14 +202,14 @@ const App = () => {
   const [employee] = useState({
     id: '', // Make sure to set an appropriate ID
     name: 'John Doe',
-    travelStart: '06:00',
-    travelEnd: '08:00',
-    signIn: '08:00',
-    breakStart: '12:00',
-    breakEnd: '13:00',
-    signOut: '20:00',
-    offsiteTravelStart: '20:00',
-    offsiteTravelEnd: '21:30',
+    travelStart: '2025-09-03T15:30:00.000Z',
+    travelEnd: '2025-09-03T16:30:00.000Z',
+    signIn: '2025-09-03T16:30:00.000Z',
+    breakStart: '2025-09-03T20:30:00.000Z',
+    breakEnd: '2025-09-03T21:30:00.000Z',
+    signOut: '2025-09-04T00:30:00.000Z',
+    offsiteTravelStart: '2025-09-04T00:30:00.000Z',
+    offsiteTravelEnd: '2025-09-04T01:30:00.000Z',
     remarks: 'Normal day',
   });
 
@@ -204,18 +234,18 @@ const App = () => {
           status: 'draft',
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-  
+
       const result = await response.json();
       console.log('Success:', result);
     } catch (error) {
       console.error('Error:', error);
     }
   };
-  
+
   return (
     <div>
       <button onClick={() => setIsDialogOpen(true)}>Open Dialog</button>

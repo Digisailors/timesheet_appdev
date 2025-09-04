@@ -196,33 +196,41 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       return `${day}-${month}-${year}`;
     };
 
+    const formatDateTime = (isoString: string) => {
+      const date = new Date(isoString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${month}/${day} ${hours}:${minutes}`;
+    };
+
     const transformTimesheetData = (timesheet: TimeSheetData): LocalTimeSheet => {
-      console.log(timesheet)
       // Helper function to extract time from ISO timestamp
       const extractTimeFromISO = (isoString: string) => {
         const date = new Date(isoString);
-        return date.toTimeString().substring(0, 5); // Returns HH:MM format
+        return date.toTimeString().substring(0, 5);
       };
-      
+
       // Helper function to calculate time difference in hours
       const calculateTimeDifference = (startISO: string, endISO: string) => {
         const startTime = new Date(startISO).getTime();
         const endTime = new Date(endISO).getTime();
         return (endTime - startTime) / (1000 * 60 * 60);
       };
-      
+
       // Calculate travel times
       const travelTimeInHours1 = calculateTimeDifference(timesheet.onsiteTravelStart, timesheet.onsiteTravelEnd);
       const travelTimeInHours2 = calculateTimeDifference(timesheet.offsiteTravelStart, timesheet.offsiteTravelEnd);
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
-      // const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
       const travelTime = timesheet.totalTravelHrs;
-      console.log(travelTime)
+
       // Calculate break time
       const breakTimeInHours = calculateTimeDifference(timesheet.onsiteBreakStart, timesheet.onsiteBreakEnd);
       const breakMinutes = (breakTimeInHours % 1) * 60;
       const breakTime = `${Math.floor(breakTimeInHours)}:${Math.floor(breakMinutes).toString().padStart(2, "0")}`;
+
       const employeeName = timesheet.employees?.[0]?.fullName || timesheet.supervisor?.fullName || "Unknown";
       const isSupervisor = timesheet.type === "supervisor";
       const rawDesignationType = timesheet.employees?.[0]?.designationType || "[object Object]";
@@ -235,8 +243,8 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         isSupervisor: isSupervisor,
         designationType: designationType,
         designation: designation,
-        checkIn: timesheet.onsiteSignIn,
-        checkOut: timesheet.onsiteSignOut,
+        checkIn: formatDateTime(timesheet.onsiteSignIn),
+        checkOut: formatDateTime(timesheet.onsiteSignOut),
         hours: parseFloat(timesheet.totalDutyHrs),
         otHours: parseFloat(timesheet.overtime),
         travelTime: travelTime,
@@ -259,7 +267,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         onsiteSignOut: timesheet.onsiteSignOut,
         offsiteTravelStart: timesheet.offsiteTravelStart,
         offsiteTravelEnd: timesheet.offsiteTravelEnd,
-        typeofWork: timesheet.typeofWork, 
+        typeofWork: timesheet.typeofWork,
         projectcode: timesheet.projectcode || "PRJ001",
       };
     };
@@ -279,9 +287,8 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               }
             }
           );
-          
+
           const timesheets = response.data.data.map(transformTimesheetData);
-          console.log(timesheets)
           setData(timesheets);
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -457,7 +464,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         }
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Timesheet");
-    
+
         worksheet.columns = [
           { header: "Employee", key: "employee", width: 20 },
           { header: "Date", key: "date", width: 15 },
@@ -482,7 +489,7 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           { header: "Designation Type", key: "designationType", width: 20 },
           { header: "Designation", key: "designation", width: 20 },
         ];
-    
+
         const exportData = filteredData.map((row: LocalTimeSheet) => ({
           employee: row.employee,
           date: formatDate(row.timesheetDate),
@@ -507,9 +514,9 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
           designationType: row.designationType,
           designation: row.designation,
         }));
-    
+
         worksheet.addRows(exportData);
-    
+
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -520,7 +527,6 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
         console.error("Error exporting Excel:", error);
       }
     }, [filteredData, selectedDate]);
-    
 
     useImperativeHandle(ref, () => ({
       exportExcel,
