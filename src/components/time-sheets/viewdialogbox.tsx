@@ -41,6 +41,15 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
     }
   }, [isOpen, timesheetId]);
 
+  const formatDateTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
+
   const fetchTimesheetDetails = async () => {
     setLoading(true);
     try {
@@ -57,27 +66,21 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         }
       );
       const data = response.data.data;
-      
-      // Helper function to extract time from ISO timestamp
-      const extractTimeFromISO = (isoString: string) => {
-        const date = new Date(isoString);
-        return date.toTimeString().substring(0, 5); // Returns HH:MM format
-      };
-      
+
       // Helper function to calculate time difference in hours
       const calculateTimeDifference = (startISO: string, endISO: string) => {
         const startTime = new Date(startISO).getTime();
         const endTime = new Date(endISO).getTime();
         return (endTime - startTime) / (1000 * 60 * 60);
       };
-      
+
       // Calculate travel times
       const travelTimeInHours1 = calculateTimeDifference(data.onsiteTravelStart, data.onsiteTravelEnd);
       const travelTimeInHours2 = calculateTimeDifference(data.offsiteTravelStart, data.offsiteTravelEnd);
       const totalTravelTimeInHours = travelTimeInHours1 + travelTimeInHours2;
       const totalTravelMinutes = (totalTravelTimeInHours % 1) * 60;
       const travelTime = `${Math.floor(totalTravelTimeInHours)}:${Math.floor(totalTravelMinutes).toString().padStart(2, "0")}`;
-      
+
       // Calculate break time
       const breakTimeInHours = calculateTimeDifference(data.onsiteBreakStart, data.onsiteBreakEnd);
       const breakMinutes = (breakTimeInHours % 1) * 60;
@@ -96,8 +99,8 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
         project: data.project.name,
         location: data.location,
         date: formatDate(data.timesheetDate),
-        checkIn: extractTimeFromISO(data.onsiteSignIn),
-        checkOut: extractTimeFromISO(data.onsiteSignOut),
+        checkIn: formatDateTime(data.onsiteSignIn),
+        checkOut: formatDateTime(data.onsiteSignOut),
         totalHours: data.totalDutyHrs,
         overtime: data.overtime,
         travelTime: travelTime,
@@ -121,7 +124,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
   };
 
   if (!isOpen) return null;
-
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -131,7 +133,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
       </div>
     );
   }
-
   if (!employee) {
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -171,7 +172,6 @@ export const ViewDialogBox: React.FC<ViewDialogBoxProps> = ({ isOpen, onClose, t
               {employee.type === "employee" ? employee.designationType : "Supervisor"}
             </span>
           </div>
-          {/* Rest of your JSX remains unchanged */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Project</p>
