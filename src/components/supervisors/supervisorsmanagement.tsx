@@ -1,8 +1,8 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
 import { Eye, Users, Plus, Search } from 'lucide-react';
 import SupervisorDialog from './dialog';
+import { getSession } from 'next-auth/react';
 
 export interface Supervisor {
   id: string;
@@ -15,6 +15,7 @@ export interface Supervisor {
   experience: string;
   assignedProject: string;
   password: string;
+  eligibleLeaveDays?: string;
 }
 
 interface Project {
@@ -29,18 +30,23 @@ const SupervisorList = () => {
   const [selectedProject, setSelectedProject] = useState('All Projects');
   const [projectOptions, setProjectOptions] = useState<Project[]>([{ id: 'all', name: 'All Projects' }]);
   const [searchTerm, setSearchTerm] = useState('');
-
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
-  // Fetch supervisors
   useEffect(() => {
     const fetchSupervisors = async () => {
       try {
-        const response = await fetch(`${cleanBaseUrl}/api/supervisors/all`);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error('No access token found');
+        }
+        const response = await fetch(`${cleanBaseUrl}/api/supervisors/all`, {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+        });
         if (!response.ok) throw new Error('Failed to fetch supervisors');
         const result = await response.json();
-        
         if (result.success && result.data) {
           setSupervisors(result.data);
         } else {
@@ -50,18 +56,23 @@ const SupervisorList = () => {
         console.error('Failed to fetch supervisors:', error);
       }
     };
-
     fetchSupervisors();
   }, [cleanBaseUrl]);
 
-  // Fetch project options
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch(`${cleanBaseUrl}/api/projects/all`);
+        const session = await getSession();
+        if (!session?.accessToken) {
+          throw new Error('No access token found');
+        }
+        const response = await fetch(`${cleanBaseUrl}/api/projects/all`, {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+        });
         if (!response.ok) throw new Error('Failed to fetch projects');
         const result = await response.json();
-        
         if (result.success && result.data) {
           setProjectOptions([
             { id: 'all', name: 'All Projects' },
@@ -77,22 +88,20 @@ const SupervisorList = () => {
         console.error('Failed to fetch projects:', error);
       }
     };
-
     fetchProjects();
   }, [cleanBaseUrl]);
 
- // Filter supervisors by search term and selected project
-const filteredSupervisors = supervisors.filter(supervisor => 
-  (
-    supervisor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supervisor.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-  ) &&
-  (
-    selectedProject === 'All Projects' || 
-    supervisor.assignedProject === selectedProject
-  )
-);
+  const filteredSupervisors = supervisors.filter(supervisor =>
+    (
+      supervisor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supervisor.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supervisor.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+    ) &&
+    (
+      selectedProject === 'All Projects' ||
+      supervisor.assignedProject === selectedProject
+    )
+  );
 
   const handleAddSupervisor = () => {
     setIsDialogOpen(true);
@@ -102,7 +111,6 @@ const filteredSupervisors = supervisors.filter(supervisor =>
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="px-6 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -116,11 +124,8 @@ const filteredSupervisors = supervisors.filter(supervisor =>
             <span>Add Supervisor</span>
           </button>
         </div>
-
-        {/* Search and Filter Controls */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between space-x-4">
-            {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300 w-4 h-4" />
               <input
@@ -131,8 +136,6 @@ const filteredSupervisors = supervisors.filter(supervisor =>
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
-            {/* Project Filter */}
             <div className="flex items-center space-x-2">
               <label className="font-medium text-sm">Filter by Project:</label>
               <select
@@ -149,13 +152,9 @@ const filteredSupervisors = supervisors.filter(supervisor =>
             </div>
           </div>
         </div>
-
-        {/* Results Count */}
         <div className="mb-4">
           <h3 className="text-lg font-medium">Supervisors ({filteredSupervisors.length})</h3>
         </div>
-
-        {/* Supervisor Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -212,23 +211,19 @@ const filteredSupervisors = supervisors.filter(supervisor =>
               </tbody>
             </table>
           </div>
-          
-          {/* Empty State */}
           {filteredSupervisors.length === 0 && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No supervisors found</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {searchTerm || selectedProject !== 'All Projects' 
-                  ? 'Try adjusting your search or filter criteria.' 
+                {searchTerm || selectedProject !== 'All Projects'
+                  ? 'Try adjusting your search or filter criteria.'
                   : 'No supervisors have been added yet.'
                 }
               </p>
             </div>
           )}
         </div>
-
-        {/* Dialog for viewing/editing supervisor details */}
         <SupervisorDialog
           isOpen={isDialogOpen}
           onClose={() => {
@@ -244,15 +239,70 @@ const filteredSupervisors = supervisors.filter(supervisor =>
             address: selectedSupervisor.address,
             dateOfJoining: selectedSupervisor.dateOfJoining,
             experience: selectedSupervisor.experience,
-            assignedProject: selectedSupervisor.assignedProject,
-            password: selectedSupervisor.password
+            password: selectedSupervisor.password,
+            eligibleLeaveDays: selectedSupervisor.eligibleLeaveDays,
           } : undefined}
-          onSubmit={(data, mode) => {
+          onSubmit={async (data, mode) => {
             console.log('Form submitted:', data, mode);
-            setIsDialogOpen(false);
-            setSelectedSupervisor(null);
-            // Here you would typically call an API to update/add the supervisor
-            // and then refresh the supervisor list
+            try {
+              const session = await getSession();
+              if (!session?.accessToken) {
+                throw new Error('No access token found');
+              }
+              const payload = {
+                fullName: data.fullName,
+                emailAddress: data.emailAddress,
+                specialization: data.specialization,
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+                dateOfJoining: data.dateOfJoining,
+                experience: data.experience,
+                password: data.password,
+                assignedProjectId: data.assignedProjectId,
+                perHourRate: data.perHourRate ? parseFloat(data.perHourRate) : undefined,
+                overtimeRate: data.overtimeRate ? parseFloat(data.overtimeRate) : undefined,
+                eligibleLeaveDays: data.eligibleLeaveDays ? parseInt(data.eligibleLeaveDays, 10) : undefined,
+              };
+              const url = mode === 'add'
+                ? `${cleanBaseUrl}/api/supervisors/create`
+                : `${cleanBaseUrl}/api/supervisors/update/${selectedSupervisor?.id}`;
+              const method = mode === 'add' ? 'POST' : 'PUT';
+              const response = await fetch(url, {
+                method,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.accessToken}`,
+                },
+                body: JSON.stringify(payload),
+              });
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+              }
+              const result = await response.json();
+              if (result.success) {
+                const fetchUpdatedSupervisors = async () => {
+                  const res = await fetch(`${cleanBaseUrl}/api/supervisors/all`, {
+                    headers: {
+                      'Authorization': `Bearer ${session.accessToken}`,
+                    },
+                  });
+                  if (res.ok) {
+                    const updatedResult = await res.json();
+                    if (updatedResult.success && updatedResult.data) {
+                      setSupervisors(updatedResult.data);
+                    }
+                  }
+                };
+                await fetchUpdatedSupervisors();
+                setIsDialogOpen(false);
+                setSelectedSupervisor(null);
+              } else {
+                console.error('Failed to submit:', result.message);
+              }
+            } catch (error) {
+              console.error('Error during form submission:', error);
+            }
           }}
           projects={projectOptions.filter(p => p.id !== 'all')}
         />

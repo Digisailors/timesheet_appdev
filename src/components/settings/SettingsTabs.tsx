@@ -12,7 +12,7 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({
   onTabChange
 }) => {
   const [activeTab, setActiveTab] = useState<string>(propActiveTab);
-  const tabs: string[] = ['Company', 'Theme', 'Policies', 'Rules', 'Designations', 'System'];
+  const tabs: string[] = ['Company', 'Theme', 'Policies', 'Rules', 'Designations', 'Calendar'];
 
   useEffect(() => {
     setActiveTab(propActiveTab);

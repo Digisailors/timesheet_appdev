@@ -8,7 +8,7 @@ import ThemeSettings from "./ThemeSettings";
 import PoliciesSettings from "./PoliciesSettings";
 import RulesSettings from "./RulesSettings";
 import DesignationSettings from "./DesignationSettings";
-import SystemSettings from "./SystemSettings"; // ✅ System tab
+import SystemSettings from "./Calendar"; // ✅ System tab
 
 const SettingsPage: React.FC = () => {
 
@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
     phoneNumber: string;
     email: string;
     website: string;
-    taxId: string;
+    taxID: string;
   }) => {
     console.log("Saving company data:", companyData);
     // 🔧 Future: integrate backend API call here
@@ -48,7 +48,7 @@ const SettingsPage: React.FC = () => {
         return <RulesSettings />;
       case "Designations":
         return <DesignationSettings />;
-      case "System":
+      case "Calendar":
         return <SystemSettings />;
       default:
         return (
@@ -71,7 +71,7 @@ const SettingsPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
+        <div className="flex-1 p-6">
           <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
           {renderActiveTab()}
         </div>

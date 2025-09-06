@@ -4,6 +4,7 @@ export interface TimeCalculations {
 }
 
 export interface TimeSheet {
+  id: string;
   remarks: string;
   supervisorName: string;
   timeCalculations: TimeCalculations;
@@ -23,4 +24,16 @@ export interface TimeSheet {
   overtimeRate: string;
   regularTimeSalary: string;
   overTimeSalary: string;
+  type: string;
+  isSupervisor: boolean;
+  designationType: string;
+  // Original time fields for editing
+  onsiteTravelStart: string;
+  onsiteTravelEnd: string;
+  onsiteSignIn: string;
+  onsiteBreakStart: string;
+  onsiteBreakEnd: string;
+  onsiteSignOut: string;
+  offsiteTravelStart: string;
+  offsiteTravelEnd: string;
 }

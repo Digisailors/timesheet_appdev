@@ -6,15 +6,113 @@ import { useTheme } from 'next-themes';
 
 const ThemeSettings: React.FC = () => {
   const [color, setColor] = useState("#1849D6");
+  const [fontSize, setFontSize] = useState("Medium");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Load saved font size from localStorage
+    const savedFontSize = localStorage.getItem('fontSize');
+    if (savedFontSize) {
+      setFontSize(savedFontSize);
+      applyFontSize(savedFontSize);
+    }
+
+    // Load saved primary color from localStorage
+    const savedColor = localStorage.getItem('primaryColor');
+    if (savedColor) {
+      setColor(savedColor);
+      applyPrimaryColor(savedColor);
+    } else {
+      // Apply default color on first load
+      applyPrimaryColor(color);
+    }
   }, []);
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setColor(e.target.value);
+    const newColor = e.target.value;
+    setColor(newColor);
+    applyPrimaryColor(newColor);
+    localStorage.setItem('primaryColor', newColor);
+  };
+
+  const handleResetColor = () => {
+    const defaultColor = "#1849D6";
+    setColor(defaultColor);
+    applyPrimaryColor(defaultColor);
+    localStorage.setItem('primaryColor', defaultColor);
+  };
+
+  const applyPrimaryColor = (color: string) => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', color);
+    
+    // Create lighter and darker variations for hover states
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    };
+
+    const rgb = hexToRgb(color);
+    if (rgb) {
+      // Create a darker version for hover (reduce each RGB value by 20)
+      const darkerR = Math.max(0, rgb.r - 20);
+      const darkerG = Math.max(0, rgb.g - 20);
+      const darkerB = Math.max(0, rgb.b - 20);
+      const darkerColor = `rgb(${darkerR}, ${darkerG}, ${darkerB})`;
+      
+      root.style.setProperty('--primary-color-hover', darkerColor);
+    }
+  };
+
+  const handleFontSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFontSize = e.target.value;
+    setFontSize(newFontSize);
+    applyFontSize(newFontSize);
+    localStorage.setItem('fontSize', newFontSize);
+  };
+
+  const applyFontSize = (size: string) => {
+    const root = document.documentElement;
+    
+    let baseSize = '16px';
+    switch (size) {
+      case 'Small':
+        baseSize = '14px';
+        break;
+      case 'Medium':
+        baseSize = '16px';
+        break;
+      case 'Large':
+        baseSize = '18px';
+        break;
+      default:
+        baseSize = '16px';
+    }
+    
+    // Set both the root font-size and the CSS variable
+    root.style.fontSize = baseSize;
+    root.style.setProperty('--app-font-size', baseSize);
+  };
+
+  const applySidebarTheme = () => {
+    const sidebar = document.querySelector('[data-sidebar="sidebar"]') || 
+                   document.querySelector('.sidebar') || 
+                   document.querySelector('[class*="sidebar"]');
+    
+    if (sidebar) {
+      // Keep sidebar in light/blue theme regardless of dark mode
+      sidebar.classList.remove('dark');
+      // Ensure sidebar maintains its original styling
+      (sidebar as HTMLElement).style.backgroundColor = 'var(--primary-color, #1849D6)';
+      (sidebar as HTMLElement).style.color = 'white';
+    }
   };
 
   if (!mounted) return null;
@@ -55,6 +153,12 @@ const ThemeSettings: React.FC = () => {
               className="flex-1 h-10 px-3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
             />
           </div>
+          <button
+            onClick={handleResetColor}
+            className="mt-2 px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            Reset to Default
+          </button>
         </div>
 
         {/* Font Size */}
@@ -63,7 +167,8 @@ const ThemeSettings: React.FC = () => {
           <div className="relative">
             <select
               className="w-full h-10 px-3 pr-10 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              defaultValue="Medium"
+              value={fontSize}
+              onChange={handleFontSizeChange}
             >
               <option>Small</option>
               <option>Medium</option>
@@ -110,7 +215,11 @@ const ThemeSettings: React.FC = () => {
             <input
               type="checkbox"
               checked={theme === 'dark'}
-              onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onChange={() => {
+                const newTheme = theme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+                applySidebarTheme();
+              }}
               className="w-5 h-5 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -120,27 +229,26 @@ const ThemeSettings: React.FC = () => {
         </div>
 
         {/* Compact View (future expansion placeholder) */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">Compact View</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Reduce spacing for more content on screen</p>
-          </div>
-          <input
-            type="radio"
-            id="compactView"
-            name="themeOptions"
-            className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 focus:ring-blue-500"
-            disabled // You can make this functional later
-          />
-        </div>
+       
       </div>
 
       {/* Save Button */}
-      <div className="mt-8 flex justify-end">
-        <button className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+      {/* <div className="mt-8 flex justify-end">
+        <button 
+          className="px-6 py-2 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          style={{ 
+            backgroundColor: 'var(--primary-color, #1849D6)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary-color-hover, #1632B0)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary-color, #1849D6)';
+          }}
+        >
           Save Theme Settings
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

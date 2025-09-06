@@ -1,9 +1,10 @@
+/* eslint-disable */
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 
 interface SupervisorData {
+  id?: string;
   fullName: string;
   emailAddress: string;
   specialization?: string;
@@ -11,9 +12,14 @@ interface SupervisorData {
   address?: string;
   dateOfJoining?: string;
   experience?: string;
-  assignedProject?: string; // project name for display
-  assignedProjectId?: string; // project id for backend
   password?: string;
+  perHourRate?: string;
+  overtimeRate?: string;
+  eligibleLeaveDays?: string;
+  remainingLeaveDays?: string;
+  unpaidLeaveDays?: string;
+  assignedProject?: string;
+  assignedProjectId?: string;
 }
 
 interface SupervisorDialogProps {
@@ -22,8 +28,8 @@ interface SupervisorDialogProps {
   mode?: 'add' | 'edit';
   initialData?: SupervisorData;
   onSubmit?: (data: SupervisorData, mode: 'add' | 'edit') => void;
-  projects?: { id: string; name: string }[]; // list of projects
-  selectedProjectId?: string | null; // selected project id
+  projects?: { id: string; name: string }[];
+  selectedProjectId?: string | null;
   setSelectedProjectId?: (id: string | null) => void;
 }
 
@@ -35,9 +41,12 @@ const defaultFormData: SupervisorData = {
   address: '',
   dateOfJoining: '',
   experience: '',
-  assignedProject: '',
-  assignedProjectId: '',
-  password: ''
+  password: '',
+  perHourRate: '',
+  overtimeRate: '',
+  eligibleLeaveDays: '',
+  remainingLeaveDays: '',
+  unpaidLeaveDays: '',
 };
 
 export default function SupervisorDialog({
@@ -47,46 +56,27 @@ export default function SupervisorDialog({
   initialData,
   onSubmit,
   projects = [],
-  selectedProjectId,
   setSelectedProjectId,
 }: SupervisorDialogProps) {
   const [formData, setFormData] = useState<SupervisorData>(defaultFormData);
   const [errors, setErrors] = useState<Partial<SupervisorData>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [localProjects, setLocalProjects] = useState<{ id: string; name: string }[]>(projects);
-
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
 
   useEffect(() => {
-    if (projects.length > 0) setLocalProjects(projects);
-    else {
-      // fetch projects if needed
-      const fetchProjects = async () => {
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5088';
-          const response = await fetch(`${baseUrl}/projects/all`);
-          if (!response.ok) throw new Error('Failed to fetch projects');
-          const data = await response.json();
-          const projectList = Array.isArray(data)
-            ? data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))
-            : Array.isArray(data.data)
-            ? data.data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name }))
-            : [];
-          setLocalProjects(projectList);
-        } catch (error) {
-          console.error('Error fetching projects:', error);
-        }
-      };
-      fetchProjects();
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
+  useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
-      setSelectedProjectId?.(initialData.assignedProjectId || null);
+      setSelectedProjectId?.(null);
     } else {
       setFormData(defaultFormData);
       setSelectedProjectId?.(null);
@@ -99,39 +89,61 @@ export default function SupervisorDialog({
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Clear error on change
     if (errors[name as keyof SupervisorData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const nameRegex = /^[a-zA-Z\s]*$/;
+    if (nameRegex.test(value)) {
+      setFormData(prev => ({ ...prev, fullName: value }));
+    }
+    if (errors.fullName) {
+      setErrors(prev => ({ ...prev, fullName: '' }));
+    }
+  };
+
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and limit to 10 digits
     const numericValue = value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, phoneNumber: numericValue }));
-
-    // Clear error on change
     if (errors.phoneNumber) {
       setErrors(prev => ({ ...prev, phoneNumber: '' }));
     }
   };
 
-  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, assignedProject: localProjects.find(p => p.id === value)?.name || '', assignedProjectId: value }));
-    setSelectedProjectId?.(value);
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    const parts = numericValue.split('.');
+    const formattedValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+    setFormData(prev => ({ ...prev, [name]: formattedValue }));
+    if (errors[name as keyof SupervisorData]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SupervisorData> = {};
-
-    // Validation for required fields
-    if (!formData.fullName?.trim()) newErrors.fullName = 'Name is required';
-    if (!formData.emailAddress?.trim()) {
-      newErrors.emailAddress = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
+    if (!formData.fullName?.trim()) {
+      newErrors.fullName = 'Name is required';
+    } else {
+      const nameRegex = /^[a-zA-Z\s]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /\d/;
+      if (!nameRegex.test(formData.fullName.trim())) {
+        if (emailRegex.test(formData.fullName.trim())) {
+          newErrors.fullName = 'Name cannot be an email address';
+        } else if (phoneRegex.test(formData.fullName.trim())) {
+          newErrors.fullName = 'Name cannot contain numbers';
+        } else {
+          newErrors.fullName = 'Name can only contain letters and spaces';
+        }
+      }
+    }
+    if (formData.emailAddress?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
       newErrors.emailAddress = 'Invalid email format';
     }
     if (formData.specialization !== undefined && !formData.specialization.trim()) {
@@ -151,8 +163,20 @@ export default function SupervisorDialog({
     if (formData.experience !== undefined && !formData.experience.trim()) {
       newErrors.experience = 'Experience is required';
     }
-    if (!formData.assignedProject?.trim()) {
-      newErrors.assignedProject = 'Project is required';
+    if (formData.perHourRate !== undefined && !formData.perHourRate.trim()) {
+      newErrors.perHourRate = 'Per hour rate is required';
+    } else if (formData.perHourRate !== undefined && formData.perHourRate.trim() && isNaN(Number(formData.perHourRate))) {
+      newErrors.perHourRate = 'Please enter a valid rate';
+    }
+    if (formData.overtimeRate !== undefined && !formData.overtimeRate.trim()) {
+      newErrors.overtimeRate = 'Overtime rate is required';
+    } else if (formData.overtimeRate !== undefined && formData.overtimeRate.trim() && isNaN(Number(formData.overtimeRate))) {
+      newErrors.overtimeRate = 'Please enter a valid overtime rate';
+    }
+    if (formData.eligibleLeaveDays !== undefined && !formData.eligibleLeaveDays.trim()) {
+      newErrors.eligibleLeaveDays = 'Eligible leave days is required';
+    } else if (formData.eligibleLeaveDays !== undefined && formData.eligibleLeaveDays.trim() && isNaN(Number(formData.eligibleLeaveDays))) {
+      newErrors.eligibleLeaveDays = 'Please enter a valid number';
     }
     if (mode === 'add') {
       if (!formData.password?.trim()) {
@@ -161,7 +185,6 @@ export default function SupervisorDialog({
         newErrors.password = 'Min 6 characters';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -169,8 +192,7 @@ export default function SupervisorDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    const dataToSend: SupervisorData = {
+    const dataToSend: any = {
       fullName: formData.fullName,
       emailAddress: formData.emailAddress,
       specialization: formData.specialization,
@@ -178,11 +200,17 @@ export default function SupervisorDialog({
       address: formData.address,
       dateOfJoining: formData.dateOfJoining,
       experience: formData.experience,
-      assignedProject: formData.assignedProject,
-      assignedProjectId: formData.assignedProjectId,
       password: formData.password,
+      perHourRate: formData.perHourRate ? Number(formData.perHourRate) : undefined,
+      overtimeRate: formData.overtimeRate ? Number(formData.overtimeRate) : undefined,
+      eligibleLeaveDays: formData.eligibleLeaveDays ? Number(formData.eligibleLeaveDays) : undefined,
+      assignedProjectId: formData.assignedProjectId,
     };
-
+    Object.keys(dataToSend).forEach(key => {
+      if (dataToSend[key] === undefined || dataToSend[key] === '') {
+        delete dataToSend[key];
+      }
+    });
     onSubmit?.(dataToSend, mode);
     onClose?.();
   };
@@ -190,7 +218,7 @@ export default function SupervisorDialog({
   const handleCancel = () => {
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
-      setSelectedProjectId?.(initialData.assignedProjectId || null);
+      setSelectedProjectId?.(null);
     } else {
       setFormData(defaultFormData);
       setSelectedProjectId?.(null);
@@ -204,50 +232,57 @@ export default function SupervisorDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-semibold">{mode === 'add' ? 'Add New Supervisor' : 'Edit Supervisor'}</h2>
           <button onClick={handleCancel} className="text-gray-500 hover:text-red-500">
             <X size={24} />
           </button>
         </div>
-
-        {/* Form */}
         <div className="overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name & Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Full Name"
-                name="fullName"
-                value={formData.fullName}
-                error={errors.fullName}
-                onChange={handleInputChange}
-                placeholder="Enter full name"
-                required
-              />
-              <FormInput
-                label="Email Address"
-                name="emailAddress"
-                type="email"
-                value={formData.emailAddress}
-                error={errors.emailAddress}
-                onChange={handleInputChange}
-                placeholder="Enter email address"
-                required
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleFullNameChange}
+                  placeholder="Enter full name"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email Address</label>
+                <input
+                  type="email"
+                  name="emailAddress"
+                  value={formData.emailAddress}
+                  onChange={handleInputChange}
+                  placeholder="Enter email address"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.emailAddress && <p className="text-red-500 text-sm">{errors.emailAddress}</p>}
+              </div>
             </div>
-
-            {/* Specialization & Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Specialization"
-                name="specialization"
-                value={formData.specialization || ''}
-                error={errors.specialization}
-                onChange={handleInputChange}
-                placeholder="Enter specialization"
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Specialization <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="specialization"
+                  value={formData.specialization || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter specialization"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.specialization && <p className="text-red-500 text-sm">{errors.specialization}</p>}
+              </div>
               <div>
                 <label className="text-sm font-medium">Phone Number</label>
                 <input
@@ -262,8 +297,70 @@ export default function SupervisorDialog({
                 {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
               </div>
             </div>
-
-            {/* Password (only in add mode) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Per Hour Rate</label>
+                <input
+                  type="text"
+                  name="perHourRate"
+                  value={formData.perHourRate || ''}
+                  onChange={handleRateChange}
+                  placeholder="Enter per hour rate"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.perHourRate && <p className="text-red-500 text-sm">{errors.perHourRate}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Overtime Rate</label>
+                <input
+                  type="text"
+                  name="overtimeRate"
+                  value={formData.overtimeRate || ''}
+                  onChange={handleRateChange}
+                  placeholder="Enter overtime rate"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.overtimeRate && <p className="text-red-500 text-sm">{errors.overtimeRate}</p>}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                Eligible Leave Days <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="eligibleLeaveDays"
+                value={formData.eligibleLeaveDays || ''}
+                onChange={handleInputChange}
+                placeholder="Enter eligible leave days"
+                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+              />
+              {errors.eligibleLeaveDays && <p className="text-red-500 text-sm">{errors.eligibleLeaveDays}</p>}
+            </div>
+            {mode === 'edit' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Remaining Leave Days</label>
+                  <input
+                    type="text"
+                    name="remainingLeaveDays"
+                    value={formData.remainingLeaveDays || ''}
+                    readOnly
+                    className="w-full mt-1 p-2 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Unpaid Leave Days</label>
+                  <input
+                    type="text"
+                    name="unpaidLeaveDays"
+                    value={formData.unpaidLeaveDays || ''}
+                    readOnly
+                    className="w-full mt-1 p-2 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            )}
             {mode === 'add' && (
               <div>
                 <label className="text-sm font-medium">
@@ -289,8 +386,6 @@ export default function SupervisorDialog({
                 {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
               </div>
             )}
-
-            {/* Address */}
             <div>
               <label className="text-sm font-medium">Address</label>
               <textarea
@@ -303,50 +398,36 @@ export default function SupervisorDialog({
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
             </div>
-
-            {/* Date of Joining & Experience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormInput
-                label="Date of Joining"
-                name="dateOfJoining"
-                type="date"
-                value={formData.dateOfJoining || ''}
-                error={errors.dateOfJoining}
-                onChange={handleInputChange}
-                placeholder=""
-                min={getTodayDate()}
-              />
-              <FormInput
-                label="Experience"
-                name="experience"
-                value={formData.experience || ''}
-                error={errors.experience}
-                onChange={handleInputChange}
-                placeholder="Enter experience (e.g., 5 years)"
-              />
+              <div>
+                <label className="text-sm font-medium">
+                  Date of Joining <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="dateOfJoining"
+                  value={formData.dateOfJoining || ''}
+                  onChange={handleInputChange}
+                  onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker()}
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.dateOfJoining && <p className="text-red-500 text-sm">{errors.dateOfJoining}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Experience <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="experience"
+                  value={formData.experience || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter experience (e.g., 5 years)"
+                  className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                />
+                {errors.experience && <p className="text-red-500 text-sm">{errors.experience}</p>}
+              </div>
             </div>
-
-            {/* Assigned Project */}
-            <div>
-              <label className="text-sm font-medium">Assigned Project</label>
-              <select
-                value={selectedProjectId || ''}
-                onChange={handleProjectChange}
-                className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
-              >
-                <option value="">Select project</option>
-                {localProjects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-              {errors.assignedProject && (
-                <p className="text-red-500 text-sm">{errors.assignedProject}</p>
-              )}
-            </div>
-
-            {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
@@ -368,41 +449,3 @@ export default function SupervisorDialog({
     </div>
   );
 }
-
-const FormInput = ({
-  label,
-  name,
-  type = 'text',
-  value,
-  error,
-  onChange,
-  placeholder,
-  required = false,
-  min
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  value: string;
-  error?: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  required?: boolean;
-  min?: string;
-}) => (
-  <div>
-    <label className="text-sm font-medium">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      min={min}
-      className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-    />
-    {error && <p className="text-red-500 text-sm">{error}</p>}
-  </div>
-);

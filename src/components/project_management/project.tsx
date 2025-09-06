@@ -6,26 +6,32 @@ import SupervisorDialog from "@/components/supervisors/dialog";
 import ProjectManagement from "@/components/project_management/ProjectManagement";
 import type { Project } from "@/components/project_management/ProjectManagement";
 import type { ProjectFormData } from "@/components/project_management/ProjectDialog";
+import { getSession } from "next-auth/react";
 
 interface SupervisorData {
   emailAddress: string;
   fullName: string;
 }
 
-interface RawProject {
+interface ProjectDetail {
+  projectcode: string;
+  locations: string;
+  typesOfWork: string;
+}
+
+interface ApiProject {
   id: string;
   name: string;
-  code: string;
-  location: string;
-  employees?: number;
+  projectDetails: ProjectDetail[];
+  description: string;
   startDate: string;
-  endDate?: string;
-  budget?: string;
-  description?: string;
+  endDate: string;
+  budget: string;
   status: "active" | "completed" | "pending" | "cancelled";
-  workHours?: number;
-  otHours?: number;
-  lastUpdated?: string;
+  clientName: string | null;
+  PoContractNumber: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ProjectsPage = () => {
@@ -35,6 +41,8 @@ const ProjectsPage = () => {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [confirmDeleteProject, setConfirmDeleteProject] = useState<Project | null>(null);
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
+  const [fetchedProjectData, setFetchedProjectData] = useState<ProjectFormData | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5088";
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
@@ -67,24 +75,42 @@ const ProjectsPage = () => {
     ];
 
     try {
-      const response = await fetch(`${cleanBaseUrl}/projects/all`);
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      const response = await fetch(`${cleanBaseUrl}/projects/all`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+
       if (!response.ok) throw new Error("Failed to fetch projects");
       const result = await response.json();
+
       if (result.success) {
-        const loadedProjects: Project[] = result.data.map((p: RawProject) => ({
-          id: p.id,
-          name: p.name,
-          code: p.code,
-          location: p.location,
-          startDate: p.startDate,
-          endDate: p.endDate,
-          budget: p.budget,
-          description: p.description,
-          status: p.status,
-          workHours: p.workHours || 160,
-          otHours: p.otHours || 20,
-          lastUpdated: p.lastUpdated || new Date().toISOString(),
-        }));
+        const loadedProjects: Project[] = result.data.map((p: ApiProject) => {
+          // Get the first project detail for display purposes
+          const firstDetail = p.projectDetails && p.projectDetails.length > 0 ? p.projectDetails[0] : null;
+
+          return {
+            id: p.id,
+            name: p.name,
+            code: firstDetail?.projectcode || p.id, // Use first project code or fallback to ID
+            // Convert project details to display format
+            location: firstDetail?.locations || 'No location specified',
+            startDate: p.startDate,
+            endDate: p.endDate,
+            budget: p.budget,
+            description: p.description,
+            status: p.status,
+            workHours: 160, // Default values since API doesn't provide these
+            otHours: 20,
+            lastUpdated: p.updatedAt || new Date().toISOString(),
+            employees: 0, // Default value since API doesn't provide this
+          };
+        });
         setProjects(loadedProjects);
       } else {
         throw new Error(result.message || "No project data");
@@ -96,6 +122,57 @@ const ProjectsPage = () => {
     }
   }, [cleanBaseUrl]);
 
+  const fetchProjectById = async (projectId: string): Promise<ProjectFormData | null> => {
+    try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      setIsLoadingProject(true);
+      const response = await fetch(`${cleanBaseUrl}/projects/${projectId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch project details");
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        const projectData: ApiProject = result.data;
+        // Convert projectDetails to the format expected by the form
+        const locations = projectData.projectDetails?.map(detail => detail.locations) || [''];
+        const typesOfWork = projectData.projectDetails?.map(detail => detail.typesOfWork) || [''];
+        const projectCodes = projectData.projectDetails?.map(detail => detail.projectcode) || [''];
+        const firstProjectCode = projectData.projectDetails?.[0]?.projectcode || projectData.id;
+
+        return {
+          name: projectData.name,
+          code: firstProjectCode,
+          locations: locations,
+          typesOfWork: typesOfWork,
+          projectCodes: projectCodes,
+          description: projectData.description || '',
+          startDate: projectData.startDate,
+          endDate: projectData.endDate || '',
+          budget: projectData.budget || '',
+          status: projectData.status,
+          clientName: projectData.clientName || '',
+          PoContractNumber: projectData.PoContractNumber || '',
+        };
+      } else {
+        throw new Error(result.message || "Failed to fetch project details");
+      }
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      toast.error("❌ Error loading project details");
+      return null;
+    } finally {
+      setIsLoadingProject(false);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
@@ -103,19 +180,28 @@ const ProjectsPage = () => {
   const handleCreateProject = () => {
     setEditingProject(null);
     setViewingProject(null);
+    setFetchedProjectData(null);
     setIsDialogOpen(true);
   };
 
-  const handleViewDetails = (project: Project) => {
+  const handleViewDetails = async (project: Project) => {
     setViewingProject(project);
     setEditingProject(null);
-    setIsDialogOpen(true);
+    const projectData = await fetchProjectById(project.id);
+    if (projectData) {
+      setFetchedProjectData(projectData);
+      setIsDialogOpen(true);
+    }
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = async (project: Project) => {
     setEditingProject(project);
     setViewingProject(null);
-    setIsDialogOpen(true);
+    const projectData = await fetchProjectById(project.id);
+    if (projectData) {
+      setFetchedProjectData(projectData);
+      setIsDialogOpen(true);
+    }
   };
 
   const handleDeleteProject = (project: Project) => {
@@ -126,6 +212,7 @@ const ProjectsPage = () => {
     setIsDialogOpen(false);
     setEditingProject(null);
     setViewingProject(null);
+    setFetchedProjectData(null);
   };
 
   const handleDialogSubmit = async (formData: ProjectFormData) => {
@@ -135,11 +222,38 @@ const ProjectsPage = () => {
     }
 
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      // Transform formData to match the new API structure
+      const projectDetails = formData.locations.map((location, index) => ({
+        projectcode: formData.projectCodes?.[index] || formData.code || `PROJ-${Date.now()}-${index + 1}`,
+        locations: location,
+        typesOfWork: formData.typesOfWork[index] || ''
+      }));
+
+      const apiFormData = {
+        name: formData.name,
+        projectDetails: projectDetails,
+        description: formData.description,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        budget: formData.budget,
+        status: formData.status,
+        clientName: formData.clientName,
+        PoContractNumber: formData.PoContractNumber,
+      };
+
       if (editingProject) {
         const response = await fetch(`${cleanBaseUrl}/projects/update/${editingProject.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify(apiFormData),
         });
 
         if (!response.ok) {
@@ -149,22 +263,40 @@ const ProjectsPage = () => {
 
         const result = await response.json();
         if (result.success) {
+          // Update the project in the list with the new data
+          const updatedProject: Project = {
+            id: editingProject.id,
+            name: result.data.name,
+            code: result.data.projectDetails?.[0]?.projectcode || editingProject.id,
+            location: result.data.projectDetails?.[0]?.locations || "No location specified",
+            description: result.data.description || "",
+            startDate: result.data.startDate,
+            endDate: result.data.endDate || "",
+            budget: result.data.budget?.toString() || "",
+            status: result.data.status,
+            workHours: 160,
+            otHours: 20,
+            lastUpdated: result.data.updatedAt || new Date().toISOString(),
+            employees: 0,
+          };
+
           setProjects((prev) =>
             prev.map((proj) =>
-              proj.id === editingProject.id
-                ? { ...proj, ...formData, lastUpdated: result.data?.updatedAt || new Date().toISOString() }
-                : proj
+              proj.id === editingProject.id ? updatedProject : proj
             )
           );
-          toast.success("✅ Project updated successfully");
+          toast.success("Project updated successfully");
         } else {
           throw new Error(result.message || "Failed to update project");
         }
       } else {
         const response = await fetch(`${cleanBaseUrl}/projects/create`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify(apiFormData),
         });
 
         if (!response.ok) {
@@ -177,8 +309,8 @@ const ProjectsPage = () => {
           const newProject: Project = {
             id: result.data.id,
             name: result.data.name,
-            code: result.data.code,
-            location: result.data.location,
+            code: result.data.projectDetails?.[0]?.projectcode || result.data.id,
+            location: result.data.projectDetails?.[0]?.locations || "No location specified",
             description: result.data.description || "",
             startDate: result.data.startDate,
             endDate: result.data.endDate || "",
@@ -190,7 +322,7 @@ const ProjectsPage = () => {
             employees: 0,
           };
           setProjects((prev) => [...prev, newProject]);
-          toast.success("✅ Project created successfully");
+          toast.success("Project created successfully");
         } else {
           throw new Error(result.message || "Failed to create project");
         }
@@ -209,14 +341,23 @@ const ProjectsPage = () => {
 
   const handleSupervisorSubmit = async (data: SupervisorData, mode: "add" | "edit") => {
     try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error("No access token found");
+      }
+
       const response = await fetch(
         `${cleanBaseUrl}/supervisors/${mode === "add" ? "create" : `update/${data.emailAddress}`}`,
         {
           method: mode === "add" ? "POST" : "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
           body: JSON.stringify(data),
         }
       );
+
       if (!response.ok) throw new Error("Failed to save supervisor");
       toast.success(`✅ Supervisor ${mode === "add" ? "created" : "updated"} successfully`);
     } catch (error) {
@@ -226,53 +367,64 @@ const ProjectsPage = () => {
   };
 
   const getDialogProps = () => {
-  if (viewingProject) {
+    if (isLoadingProject) {
+      return {
+        initialData: {
+          name: "Loading...",
+          code: "",
+          locations: [],
+          projectCodes: [],
+          description: "",
+          startDate: "",
+          status: "pending" as ProjectFormData['status'],
+          endDate: "",
+          budget: "",
+          clientName: "",
+          PoContractNumber: "",
+          typesOfWork: [],
+        },
+        title: "Loading Project Details...",
+        submitLabel: undefined,
+        isViewMode: true,
+      };
+    }
+
+    if (viewingProject && fetchedProjectData) {
+      return {
+        initialData: fetchedProjectData,
+        title: `View Project Details - ${fetchedProjectData.name}`,
+        submitLabel: undefined,
+        isViewMode: true,
+      };
+    } else if (editingProject && fetchedProjectData) {
+      return {
+        initialData: fetchedProjectData,
+        title: "Edit Project",
+        submitLabel: "Update Project",
+        isViewMode: false,
+      };
+    }
+
     return {
       initialData: {
-        ...viewingProject,
-        description: viewingProject.description || "",
-        endDate: viewingProject.endDate || "",
-        budget: viewingProject.budget || "",
-        status: viewingProject.status as ProjectFormData['status'], // Explicitly cast to the correct type
+        name: "",
+        code: "",
+        locations: [],
+        projectCodes: [],
+        description: "",
+        startDate: "",
+        status: "pending" as ProjectFormData['status'],
+        endDate: "",
+        budget: "",
+        clientName: "",
+        PoContractNumber: "",
+        typesOfWork: [],
       },
-      title: `View Project Details - ${viewingProject.name}`,
-      submitLabel: undefined,
-      isViewMode: true,
-    };
-  } else if (editingProject) {
-    return {
-      initialData: {
-        ...editingProject,
-        description: editingProject.description || "",
-        endDate: editingProject.endDate || "",
-        budget: editingProject.budget || "",
-        status: editingProject.status as ProjectFormData['status'], // Explicitly cast to the correct type
-      },
-      title: "Edit Project",
-      submitLabel: "Update Project",
+      title: "Create New Project",
+      submitLabel: "Create Project",
       isViewMode: false,
     };
-  }
-  return {
-    initialData: {
-      name: "",
-      code: "",
-      locations: [],
-      description: "",
-      startDate: "",
-      status: "pending" as ProjectFormData['status'],
-      endDate: "",
-      budget: "",
-      clientName: "",
-      PoContractNumber: "",
-      typesOfWork: [],
-    },
-    title: "Create New Project",
-    submitLabel: "Create Project",
-    isViewMode: false,
   };
-};
-
 
   const dialogProps = getDialogProps();
 
@@ -326,16 +478,42 @@ const ProjectsPage = () => {
                 </button>
                 <button
                   onClick={async () => {
+                    const projectToDelete = confirmDeleteProject; // Store reference before clearing state
                     try {
-                      const response = await fetch(`${cleanBaseUrl}/projects/delete/${confirmDeleteProject.id}`, {
+                      const session = await getSession();
+                      if (!session?.accessToken) {
+                        throw new Error("No access token found");
+                      }
+
+                      console.log("Attempting to delete project:", projectToDelete.id);
+                      console.log("Delete URL:", `${cleanBaseUrl}/projects/delete/${projectToDelete.id}`);
+
+                      const response = await fetch(`${cleanBaseUrl}/projects/delete/${projectToDelete.id}`, {
                         method: "DELETE",
+                        headers: {
+                          "Content-Type": "application/json",
+                          'Authorization': `Bearer ${session.accessToken}`,
+                        },
                       });
-                      if (!response.ok) throw new Error("Failed to delete");
-                      setProjects((prev) => prev.filter((p) => p.id !== confirmDeleteProject.id));
-                      toast.success("✅ Project deleted successfully");
+
+                      console.log("Delete response status:", response.status);
+
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: "Failed to delete project" }));
+                        console.error("Delete error response:", errorData);
+                        throw new Error(errorData.message || `HTTP ${response.status}: Failed to delete project`);
+                      }
+
+                      const result = await response.json().catch(() => ({ success: true }));
+                      console.log("Delete response:", result);
+
+                      // Remove from local state using the stored reference
+                      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
+                      toast.success("Project deleted successfully");
                     } catch (err) {
-                      console.error(err);
-                      toast.error("❌ Failed to delete project");
+                      console.error("Delete operation failed:", err);
+                      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+                      toast.error(`❌ Failed to delete project: ${errorMessage}`);
                     } finally {
                       setConfirmDeleteProject(null);
                     }

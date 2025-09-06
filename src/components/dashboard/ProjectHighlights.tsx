@@ -1,7 +1,7 @@
 "use client";
-
 import React, { useEffect, useState } from 'react';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
+import { getSession } from 'next-auth/react'; // Import getSession
 
 interface ProjectData {
   name: string;
@@ -12,7 +12,6 @@ interface ProjectData {
   otHours: number;
   lastUpdated: string;
 }
-
 
 interface ProjectHighlightsProps {
   projects: ProjectData[];
@@ -25,11 +24,18 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://localhost:5088/api/projects/all', {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error('No access token found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`, {
         headers: {
-          'Accept': 'application/json'
-        }
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`, // Add the token
+        },
       });
+
       if (!response.ok) throw new Error('Failed to fetch projects');
 
       const result = await response.json();
@@ -59,10 +65,9 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
           Project Highlights
         </h2>
       </div>
-      <div className="p-6">
+      <div className="py-6">
         {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading projects...</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
-
         <div className="space-y-6">
           {projects.map((project, index) => (
             <div

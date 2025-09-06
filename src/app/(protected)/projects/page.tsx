@@ -1,32 +1,13 @@
 'use client';
-
-import Sidebar from "@/components/ui/sidebar";
-import Navbar from "@/components/ui/navbar";
 import ProjectsPage from "@/components/project_management/project";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import PageTitle from "@/components/PageTitle";
 
-export default function DashboardPage() {
+export default function ProjectPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
-      {/* Fixed Sidebar */}
-      <Sidebar />
-      
-      {/* Main Content Area */}
-      <div className="ml-64 flex flex-col min-h-screen">
-        {/* Fixed Navbar */}
-        <div className="sticky top-0 z-30">
-          <Navbar
-            title="Project"
-            userName="Admin User"
-            userRole="Site Manager"
-            userInitial="A"
-          />
-        </div>
-        
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <ProjectsPage />
-        </div>
-      </div>
-    </div>
+    <ProtectedRoute>
+      <PageTitle title="Project" />
+      <ProjectsPage />
+    </ProtectedRoute>
   );
 }

@@ -1,48 +1,63 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+
+interface UpdatedEmployee {
+  name: string;
+  travelStart: string;
+  travelEnd: string;
+  signIn: string;
+  breakStart: string;
+  breakEnd: string;
+  signOut: string;
+  offsiteTravelStart: string;
+  offsiteTravelEnd: string;
+  remarks: string;
+}
 
 interface EditDialogBoxProps {
   isOpen: boolean;
   onClose: () => void;
-  employee: {
-    name: string;
-    project: string;
-    location: string;
-    date: string;
-    checkIn: string;
-    checkOut: string;
-    totalHours: string;
-    overtime: string;
-    travelTime: string;
-    breakTime: string;
-    supervisorName: string;
-    remarks: string;
-  };
-  onSave: (updatedEmployee: {
-    name: string;
-    project: string;
-    location: string;
-    date: string;
-    checkIn: string;
-    checkOut: string;
-    totalHours: string;
-    overtime: string;
-    travelTime: string;
-    breakTime: string;
-    supervisorName: string;
-    remarks: string;
-    status: string;
-  }) => void;
+  employee: UpdatedEmployee;
+  onSave: (updatedEmployee: UpdatedEmployee) => void;
 }
 
 export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, employee, onSave }) => {
-  const [editedEmployee, setEditedEmployee] = useState({ ...employee, status: 'draft' });
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
 
-  useEffect(() => {
-    setEditedEmployee({ ...employee, status: editedEmployee.status });
+  const [editedEmployee, setEditedEmployee] = useState<UpdatedEmployee>({
+    ...employee,
+    travelStart: formatDateTime(employee.travelStart),
+    travelEnd: formatDateTime(employee.travelEnd),
+    signIn: formatDateTime(employee.signIn),
+    breakStart: formatDateTime(employee.breakStart),
+    breakEnd: formatDateTime(employee.breakEnd),
+    signOut: formatDateTime(employee.signOut),
+    offsiteTravelStart: formatDateTime(employee.offsiteTravelStart),
+    offsiteTravelEnd: formatDateTime(employee.offsiteTravelEnd),
+  });
+
+  React.useEffect(() => {
+    setEditedEmployee({
+      ...employee,
+      travelStart: formatDateTime(employee.travelStart),
+      travelEnd: formatDateTime(employee.travelEnd),
+      signIn: formatDateTime(employee.signIn),
+      breakStart: formatDateTime(employee.breakStart),
+      breakEnd: formatDateTime(employee.breakEnd),
+      signOut: formatDateTime(employee.signOut),
+      offsiteTravelStart: formatDateTime(employee.offsiteTravelStart),
+      offsiteTravelEnd: formatDateTime(employee.offsiteTravelEnd),
+    });
   }, [employee]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditedEmployee(prev => ({ ...prev, [name]: value }));
   };
@@ -74,21 +89,21 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Project</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Travel Start</label>
               <input
                 type="text"
-                name="project"
-                value={editedEmployee.project}
+                name="travelStart"
+                value={editedEmployee.travelStart}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Location</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Travel End</label>
               <input
                 type="text"
-                name="location"
-                value={editedEmployee.location}
+                name="travelEnd"
+                value={editedEmployee.travelEnd}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
@@ -96,21 +111,35 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Date</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Sign In</label>
               <input
                 type="text"
-                name="date"
-                value={editedEmployee.date}
+                name="signIn"
+                value={editedEmployee.signIn}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Supervisor Name</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Break Start</label>
+              <div className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700">
+                {editedEmployee.breakStart}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Break End</label>
+              <div className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700">
+                {editedEmployee.breakEnd}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Sign Out</label>
               <input
                 type="text"
-                name="supervisorName"
-                value={editedEmployee.supervisorName}
+                name="signOut"
+                value={editedEmployee.signOut}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
@@ -118,96 +147,35 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Check In</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Offsite Travel Start</label>
               <input
                 type="text"
-                name="checkIn"
-                value={editedEmployee.checkIn}
+                name="offsiteTravelStart"
+                value={editedEmployee.offsiteTravelStart}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Check Out</label>
+              <label className="text-sm text-gray-500 dark:text-gray-400">Offsite Travel End</label>
               <input
                 type="text"
-                name="checkOut"
-                value={editedEmployee.checkOut}
+                name="offsiteTravelEnd"
+                value={editedEmployee.offsiteTravelEnd}
                 onChange={handleChange}
                 className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
               />
-            </div>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-4">
-            <h3 className="text-lg font-bold text-center mb-2">Hours Breakdown</h3>
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400">Total Hours</label>
-                <input
-                  type="text"
-                  name="totalHours"
-                  value={editedEmployee.totalHours}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400">Overtime</label>
-                <input
-                  type="text"
-                  name="overtime"
-                  value={editedEmployee.overtime}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400">Travel Time</label>
-                <input
-                  type="text"
-                  name="travelTime"
-                  value={editedEmployee.travelTime}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400">Break Time</label>
-                <input
-                  type="text"
-                  name="breakTime"
-                  value={editedEmployee.breakTime}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
             </div>
           </div>
           <div className="mb-4">
-            <label className="text-sm text-gray-500 dark:text-gray-400">Status</label>
-            <select
-              name="status"
-              value={editedEmployee.status}
+            <label className="text-sm text-gray-500 dark:text-gray-400">Remarks</label>
+            <input
+              type="text"
+              name="remarks"
+              value={editedEmployee.remarks}
               onChange={handleChange}
               className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-            >
-              <option value="draft">Draft</option>
-              <option value="submitted">Submitted</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-          <div className="gap-4 mb-4">
-            <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400">Remarks</label>
-              <input
-                type="text"
-                name="remarks"
-                value={editedEmployee.remarks}
-                onChange={handleChange}
-                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-              />
-            </div>
+            />
           </div>
           <div className="flex justify-end space-x-2">
             <button
@@ -228,3 +196,67 @@ export const EditDialogBox: React.FC<EditDialogBoxProps> = ({ isOpen, onClose, e
     </div>
   );
 };
+
+const App = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [employee] = useState({
+    id: '', // Make sure to set an appropriate ID
+    name: 'John Doe',
+    travelStart: '2025-09-03T15:30:00.000Z',
+    travelEnd: '2025-09-03T16:30:00.000Z',
+    signIn: '2025-09-03T16:30:00.000Z',
+    breakStart: '2025-09-03T20:30:00.000Z',
+    breakEnd: '2025-09-03T21:30:00.000Z',
+    signOut: '2025-09-04T00:30:00.000Z',
+    offsiteTravelStart: '2025-09-04T00:30:00.000Z',
+    offsiteTravelEnd: '2025-09-04T01:30:00.000Z',
+    remarks: 'Normal day',
+  });
+
+  const handleSave = async (updatedEmployee: UpdatedEmployee) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/timesheet/update/${employee.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          onsiteTravelStart: updatedEmployee.travelStart,
+          onsiteTravelEnd: updatedEmployee.travelEnd,
+          onsiteSignIn: updatedEmployee.signIn,
+          onsiteBreakStart: updatedEmployee.breakStart,
+          onsiteBreakEnd: updatedEmployee.breakEnd,
+          onsiteSignOut: updatedEmployee.signOut,
+          offsiteTravelStart: updatedEmployee.offsiteTravelStart,
+          offsiteTravelEnd: updatedEmployee.offsiteTravelEnd,
+          isHoliday: false,
+          remarks: updatedEmployee.remarks,
+          status: 'draft',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+      console.log('Success:', result);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => setIsDialogOpen(true)}>Open Dialog</button>
+      <EditDialogBox
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        employee={employee}
+        onSave={handleSave}
+      />
+    </div>
+  );
+};
+
+export default App;
