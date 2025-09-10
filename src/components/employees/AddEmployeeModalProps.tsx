@@ -13,7 +13,7 @@ interface Employee {
   address?: string;
   experience?: string;
   dateOfJoining?: string;
-  specialization?: string;
+  employeeId?: string;
   project: string;
   workHours: string;
   workingHours?: string;
@@ -39,7 +39,7 @@ interface EmployeeFormData {
   address: string;
   experience: string;
   dateOfJoining: string;
-  specialization: string;
+  employeeId: string;
   workingHours: string;
   normalHours: string;
   otHours: string;
@@ -58,7 +58,7 @@ interface EmployeeAPIPayload {
   address: string;
   experience: string;
   dateOfJoining: string;
-  specialization: string;
+  employeeId: string;
   perHourRate: number;
   overtimeRate: number;
   eligibleLeaveDays: number;
@@ -109,7 +109,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     address: "",
     experience: "",
     dateOfJoining: "",
-    specialization: "",
+    employeeId: "",
     workingHours: "",
     normalHours: "",
     otHours: "",
@@ -161,8 +161,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         dateOfJoining:
           editingEmployee.dateOfJoining ||
           new Date().toISOString().split("T")[0],
-        specialization:
-          editingEmployee.specialization || editingEmployee.project || "",
+        employeeId:
+          editingEmployee.id || "",
         workingHours: workingHoursValue,
         normalHours:
           editingEmployee.perHourRate || editingEmployee.normalHours || "",
@@ -182,7 +182,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         address: "",
         experience: "",
         dateOfJoining: new Date().toISOString().split("T")[0],
-        specialization: "",
+        employeeId: "",
         workingHours: "",
         normalHours: "",
         otHours: "",
@@ -273,7 +273,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         return !value.trim() ? "Please fill this field" : "";
       case "dateOfJoining":
         return !value.trim() ? "Please fill this field" : "";
-      case "specialization":
+      case "employeeId":
         return !value.trim() ? "Please fill this field" : "";
       case "workingHours":
         return !value.trim() ? "Please fill this field" : "";
@@ -403,7 +403,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       "address",
       "experience",
       "dateOfJoining",
-      "specialization",
+      "employeeId",
       "normalHours",
       "otHours",
       "eligibleLeaveDays",
@@ -436,7 +436,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       address: formData.address,
       experience: formData.experience,
       dateOfJoining: formData.dateOfJoining,
-      specialization: formData.specialization,
+      employeeId: formData.employeeId,
       perHourRate: parseFloat(formData.normalHours),
       overtimeRate: parseFloat(formData.otHours),
       eligibleLeaveDays: parseInt(formData.eligibleLeaveDays, 10),
@@ -725,24 +725,24 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Specialization/Skills *
+                  Employee ID *
                 </label>
                 <input
                   type="text"
-                  name="specialization"
-                  value={formData.specialization}
+                  name="employeeId"
+                  value={formData.employeeId}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="Enter Skills/Specialization (e.g., React, Node.js, Python)"
+                  placeholder="Enter Employee ID (e.g., EMP001, EMP002)"
                   className={getFieldClassName(
-                    "specialization",
+                    "employeeId",
                     "w-full px-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   )}
                   required
                 />
-                {errors.specialization && touched.specialization && (
+                {errors.employeeId && touched.employeeId && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                    {errors.specialization}
+                    {errors.employeeId}
                   </p>
                 )}
               </div>
