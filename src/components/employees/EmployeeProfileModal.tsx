@@ -23,7 +23,7 @@ interface Employee {
   firstName?: string;
   lastName?: string;
   address?: string;
-  specialization?: string;
+  employeeId?: string;
   workingHours?: string;
   perHourRate?: string;
   overtimeRate?: string;
@@ -74,7 +74,7 @@ interface CreateEmployeeData {
   address: string;
   experience: string;
   dateOfJoining: string;
-  specialization: string;
+  employeeId: string;
   perHourRate: string;
   overtimeRate: string;
 }
@@ -101,7 +101,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     address: '',
     experience: '',
     dateOfJoining: '',
-    specialization: '',
+    employeeId: '',
     perHourRate: '',
     overtimeRate: ''
   });
@@ -142,7 +142,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-          specialization: emp.specialization || emp.designation || "",
+          employeeId: emp.employeeId || "",
           currentProject: emp.specialization || emp.designation,
           perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
           overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
@@ -192,7 +192,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-          specialization: emp.specialization || emp.designation || "",
+          employeeId: emp.employeeId || "",
           currentProject: emp.specialization || emp.designation,
           perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
           overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
@@ -241,7 +241,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           address: '',
           experience: '',
           dateOfJoining: '',
-          specialization: '',
+          employeeId: '',
           perHourRate: '',
           overtimeRate: ''
         });
@@ -482,14 +482,15 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Specialization *
+                Employee ID *
               </label>
               <input
                 type="text"
-                name="specialization"
-                value={createFormData.specialization}
+                name="employeeId"
+                value={createFormData.employeeId}
                 onChange={handleInputChange}
                 required
+                placeholder="Enter Employee ID (e.g., EMP001, EMP002)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -607,8 +608,8 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                 <p className="text-sm text-gray-900 dark:text-white">{employee.designationType || 'Regular'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Specialization</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.specialization || 'Not specified'}</p>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Employee ID</label>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.employeeId || 'Not specified'}</p>
               </div>
             </div>
           </div>

@@ -139,36 +139,87 @@ const styles = StyleSheet.create({
   },
 });
 
-const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees }) => (
-  <Document>
-    <Page style={styles.page} size="A4" orientation="landscape">
-      <Text style={styles.title}>Employee Timesheet Report</Text>
-      <Text style={styles.employeeName}>
-        {selectedEmployees.map((id: string) => {
-          const person = employees.find((emp: Person) => emp.id === id);
-          return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
-        }).join(', ')}
-      </Text>
-      <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Date</Text>
-          <Text style={[styles.headerCell, { width: '10%' }]}>Name</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Location</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Project Code</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Work Type</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Onsite Travel Start</Text>
-          <Text style={[styles.headerCell, { width: '6%' }]}>Check-In</Text>
-          <Text style={[styles.headerCell, { width: '6%' }]}>Check-Out</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Onsite Travel End</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Offsite Travel Start</Text>
-          <Text style={[styles.headerCell, { width: '8%' }]}>Offsite Travel End</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Regular Hours</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>OT Hours</Text>
-          <Text style={[styles.headerCell, { width: '5%' }]}>Travel Time</Text>
-          <Text style={[styles.headerCell, { width: '7%' }]}>Supervisor</Text>
-          <Text style={[styles.headerCell, { width: '9%' }]}>Remarks</Text>
+const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees }) => {
+  // Calculate totals for summary
+  const calculateTotals = () => {
+    let regularHours = 0;
+    let overtimeHours = 0;
+    let daysWorked = 0;
+    
+    data.forEach((timesheet) => {
+      const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
+      const associatedEmployees = selectedEmployees.filter((empId: string) => timesheetEmployeeIds.includes(empId));
+      const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
+      
+      if (associatedEmployees.length > 0 || isSupervisorSelected) {
+        regularHours += parseFloat(timesheet.normalHrs) || 0;
+        overtimeHours += parseFloat(timesheet.overtime) || 0;
+        daysWorked += 1;
+      }
+    });
+    
+    return { regularHours, overtimeHours, daysWorked };
+  };
+
+  const { regularHours, overtimeHours, daysWorked } = calculateTotals();
+
+  return (
+    <Document>
+      <Page style={styles.page} size="A4" orientation="landscape">
+        <Text style={styles.title}>Employee Timesheet Report</Text>
+        <Text style={styles.employeeName}>
+          {selectedEmployees.length === 0
+            ? 'No Employees/Supervisors Selected'
+            : selectedEmployees.length === employees.length && employees.length > 0
+            ? `All Employees/Supervisors (${employees.length} total)`
+            : selectedEmployees.map((id: string) => {
+                const person = employees.find((emp: Person) => emp.id === id);
+                return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
+              }).join(', ')}
+        </Text>
+        
+        {/* Summary Section */}
+        <View style={[styles.table, { marginBottom: 10 }]}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.headerCell, { width: '25%' }]}>Summary</Text>
+            <Text style={[styles.headerCell, { width: '25%' }]}>Regular Hours</Text>
+            <Text style={[styles.headerCell, { width: '25%' }]}>OT Hours</Text>
+            <Text style={[styles.headerCell, { width: '25%' }]}>Days Worked</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>Total</Text>
+            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{regularHours.toFixed(2)}</Text>
+            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{overtimeHours.toFixed(2)}</Text>
+            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{daysWorked}</Text>
+          </View>
         </View>
-        {data.map((timesheet: Timesheet, index: number) => {
+
+        <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Date</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Name</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Location</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Project Code</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Work Type</Text>
+          <Text style={[styles.headerCell, { width: '9%' }]}>Onsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '9%' }]}>Onsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Check-In</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Check-Out</Text>
+          <Text style={[styles.headerCell, { width: '9%' }]}>Offsite Travel Start</Text>
+          <Text style={[styles.headerCell, { width: '9%' }]}>Offsite Travel End</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Regular Hours</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>OT Hours</Text>
+          <Text style={[styles.headerCell, { width: '6%' }]}>Travel Time</Text>
+          <Text style={[styles.headerCell, { width: '7%' }]}>Supervisor</Text>
+          <Text style={[styles.headerCell, { width: '8%' }]}>Remarks</Text>
+        </View>
+        {selectedEmployees.length === 0 ? (
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { width: '100%', textAlign: 'center' }]}>
+              No data available. Please select employees/supervisors to view data.
+            </Text>
+          </View>
+        ) : data.map((timesheet: Timesheet, index: number) => {
           const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
           const associatedEmployees = selectedEmployees.filter((empId: string) => timesheetEmployeeIds.includes(empId));
           const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
@@ -180,22 +231,22 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
                 const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
                 return (
                   <View key={`${index}-${empIndex}`} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.timesheetDate}</Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>{personName}</Text>
-                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
-                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
-                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
-                    <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
-                    <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
-                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
-                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
-                    <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
-                    <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.timesheetDate}</Text>
+                    <Text style={[styles.tableCell, { width: '8%' }]}>{personName}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.location}</Text>
+                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.projectcode}</Text>
+                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.typeofWork}</Text>
+                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
+                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
+                    <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
+                    <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
+                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
+                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
+                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.normalHrs}</Text>
+                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.overtime}</Text>
+                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.totalTravelHrs}</Text>
                     <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>{timesheet.remarks}</Text>
+                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.remarks}</Text>
                   </View>
                 );
               });
@@ -206,32 +257,33 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
               const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
               return (
                 <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.timesheetDate}</Text>
-                  <Text style={[styles.tableCell, { width: '10%' }]}>{personName}</Text>
-                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.location}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.projectcode}</Text>
-                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.typeofWork}</Text>
-                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
-                  <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
-                  <Text style={[styles.tableCell, { width: '6%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
-                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
-                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
-                  <Text style={[styles.tableCell, { width: '8%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.normalHrs}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.overtime}</Text>
-                  <Text style={[styles.tableCell, { width: '5%' }]}>{timesheet.totalTravelHrs}</Text>
+                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.timesheetDate}</Text>
+                  <Text style={[styles.tableCell, { width: '8%' }]}>{personName}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.location}</Text>
+                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.projectcode}</Text>
+                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.typeofWork}</Text>
+                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
+                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
+                  <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
+                  <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
+                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
+                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
+                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.normalHrs}</Text>
+                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.overtime}</Text>
+                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.totalTravelHrs}</Text>
                   <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
-                  <Text style={[styles.tableCell, { width: '9%' }]}>{timesheet.remarks}</Text>
+                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.remarks}</Text>
                 </View>
               );
             }
           }
           return null;
         }).flat().filter(Boolean)}
-      </View>
-    </Page>
-  </Document>
-);
+        </View>
+      </Page>
+    </Document>
+  );
+};
 
 const EmployeeReport: React.FC = () => {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
@@ -355,9 +407,13 @@ const EmployeeReport: React.FC = () => {
     const isSamePerson =
       selectedEmployees.length === 0
         ? true
+        : selectedEmployees.length === employees.length
+        ? true
         : timesheet.employees?.some((emp: any) => selectedEmployees.includes(emp.id)) ||
           (timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id));
-    const isSameProject = selectedProject
+    const isSameProject = selectedProject === 'all'
+      ? true
+      : selectedProject
       ? timesheet.project && timesheet.project.id === selectedProject
       : true;
     const isInDateRange =
@@ -382,7 +438,7 @@ const EmployeeReport: React.FC = () => {
   const { regularHours, overtimeHours, daysWorked } = calculateTotalHours(filteredTimesheets);
 
   const exportToExcel = () => {
-    if (filteredTimesheets.length === 0) {
+    if (filteredTimesheets.length === 0 || selectedEmployees.length === 0) {
       toast('No data to export', {
         style: {
           borderRadius: '10px',
@@ -392,6 +448,10 @@ const EmployeeReport: React.FC = () => {
       });
       return;
     }
+    
+    // Calculate totals for summary
+    const { regularHours, overtimeHours, daysWorked } = calculateTotalHours(filteredTimesheets);
+    
     const excelData = filteredTimesheets.map(timesheet => {
       const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
       const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
@@ -409,9 +469,9 @@ const EmployeeReport: React.FC = () => {
               'Project Code': timesheet.projectcode,
               'Work Type': timesheet.typeofWork,
               'Onsite Travel Start': formatDateTimeForPDF(timesheet.onsiteTravelStart),
+              'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
               'Check-In': formatDateTimeForPDF(timesheet.onsiteSignIn),
               'Check-Out': formatDateTimeForPDF(timesheet.onsiteSignOut),
-              'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
               'Offsite Travel Start': formatDateTimeForPDF(timesheet.offsiteTravelStart),
               'Offsite Travel End': formatDateTimeForPDF(timesheet.offsiteTravelEnd),
               'Regular Hours': timesheet.normalHrs,
@@ -433,9 +493,9 @@ const EmployeeReport: React.FC = () => {
             'Project Code': timesheet.projectcode,
             'Work Type': timesheet.typeofWork,
             'Onsite Travel Start': formatDateTimeForPDF(timesheet.onsiteTravelStart),
+            'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
             'Check-In': formatDateTimeForPDF(timesheet.onsiteSignIn),
             'Check-Out': formatDateTimeForPDF(timesheet.onsiteSignOut),
-            'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
             'Offsite Travel Start': formatDateTimeForPDF(timesheet.offsiteTravelStart),
             'Offsite Travel End': formatDateTimeForPDF(timesheet.offsiteTravelEnd),
             'Regular Hours': timesheet.normalHrs,
@@ -448,7 +508,29 @@ const EmployeeReport: React.FC = () => {
       }
       return [];
     }).flat().filter(Boolean);
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Add summary row at the beginning
+    const summaryRow = {
+      Date: 'SUMMARY',
+      Name: 'TOTALS',
+      Location: '',
+      'Project Code': '',
+      'Work Type': '',
+      'Onsite Travel Start': '',
+      'Onsite Travel End': '',
+      'Check-In': '',
+      'Check-Out': '',
+      'Offsite Travel Start': '',
+      'Offsite Travel End': '',
+      'Regular Hours': regularHours.toFixed(2),
+      'OT Hours': overtimeHours.toFixed(2),
+      'Travel Time': '',
+      Supervisor: '',
+      Remarks: `Total Days: ${daysWorked}`,
+    };
+    
+    const finalExcelData = [summaryRow, ...excelData];
+    const worksheet = XLSX.utils.json_to_sheet(finalExcelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
     XLSX.writeFile(workbook, "Timesheets.xlsx");
@@ -474,6 +556,8 @@ const EmployeeReport: React.FC = () => {
                 >
                   {selectedEmployees.length === 0 ? (
                     <span className="text-gray-500">Select employees/supervisors...</span>
+                  ) : selectedEmployees.length === employees.length && employees.length > 0 ? (
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">All Employees/Supervisors ({employees.length})</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {selectedEmployees.map((personId) => {
@@ -513,6 +597,29 @@ const EmployeeReport: React.FC = () => {
                           Clear All
                         </button>
                       </div>
+                      {/* All Employees/Supervisors Option */}
+                      <label className="flex items-center justify-between px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 mb-2">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedEmployees.length === employees.length && employees.length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedEmployees(employees.map(emp => emp.id));
+                              } else {
+                                setSelectedEmployees([]);
+                              }
+                            }}
+                            className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            All Employees/Supervisors
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {employees.length} total
+                        </span>
+                      </label>
                       <div className="mb-2">
                         <div className="relative">
                           <input
@@ -571,7 +678,9 @@ const EmployeeReport: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-left"
                   disabled={loading}
                 >
-                  {selectedProject ? (
+                  {selectedProject === 'all' ? (
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">All Projects</span>
+                  ) : selectedProject ? (
                     projects.find(p => p.id === selectedProject)?.name
                   ) : (
                     <span className="text-gray-500">Select a project...</span>
@@ -580,6 +689,35 @@ const EmployeeReport: React.FC = () => {
                 {showProjectDropdown && !loading && (
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
                     <div className="p-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Projects</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProject('')}
+                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                      {/* All Projects Option */}
+                      <div
+                        onClick={() => {
+                          setSelectedProject('all');
+                          setShowProjectDropdown(false);
+                        }}
+                        className={`px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 mb-2 ${
+                          selectedProject === 'all' ? 'bg-blue-50 dark:bg-blue-900' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            All Projects
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {projects.length} total
+                          </span>
+                        </div>
+                      </div>
                       <div className="mb-2">
                         <div className="relative">
                           <input
@@ -667,6 +805,8 @@ const EmployeeReport: React.FC = () => {
             <h2 className="text-xl font-semibold">
               {selectedEmployees.length === 0
                 ? 'Select Employees/Supervisors'
+                : selectedEmployees.length === employees.length && employees.length > 0
+                ? `All Employees/Supervisors Report (${employees.length} total)`
                 : selectedEmployees.map(id => {
                     const person = employees.find(emp => emp.id === id);
                     return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
@@ -681,7 +821,7 @@ const EmployeeReport: React.FC = () => {
                 <FileText size={16} />
                 Export Excel
               </button>
-              {filteredTimesheets.length > 0 ? (
+              {filteredTimesheets.length > 0 && selectedEmployees.length > 0 ? (
                 <PDFDownloadLink
                   document={
                     <MyDocument
@@ -722,11 +862,11 @@ const EmployeeReport: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Regular Hours</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">{selectedEmployees.length === 0 ? '0' : regularHours}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">{selectedEmployees.length === 0 ? '0.00' : regularHours.toFixed(2)}</p>
             </div>
             <div className="bg-orange-50 dark:bg-orange-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Overtime Hours</p>
-              <p className="text-3xl font-bold text-orange-600 dark:text-orange-300">{selectedEmployees.length === 0 ? '0' : overtimeHours}</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-300">{selectedEmployees.length === 0 ? '0.00' : overtimeHours.toFixed(2)}</p>
             </div>
             <div className="bg-green-50 dark:bg-green-900 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Days Worked</p>
@@ -738,8 +878,8 @@ const EmployeeReport: React.FC = () => {
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   {[
-                    'Date', 'Name', 'Location', 'Project Code', 'Work Type', 'Onsite Travel Start', 'Check-In', 'Check-Out',
-                    'Onsite Travel End', 'Offsite Travel Start', 'Offsite Travel End', 'Regular Hours', 'OT Hours',
+                    'Date', 'Name', 'Location', 'Project Code', 'Work Type', 'Onsite Travel Start', 'Onsite Travel End', 'Check-In', 'Check-Out',
+                    'Offsite Travel Start', 'Offsite Travel End', 'Regular Hours', 'OT Hours',
                     'Travel Time', 'Supervisor', 'Remarks'
                   ].map((header) => (
                     <th
@@ -776,9 +916,9 @@ const EmployeeReport: React.FC = () => {
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</td>
+                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignIn)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignOut)}</td>
-                                <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</td>
                                 <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
@@ -802,9 +942,9 @@ const EmployeeReport: React.FC = () => {
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.projectcode}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.typeofWork}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</td>
+                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignIn)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteSignOut)}</td>
-                              <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</td>
                               <td className="border border-gray-200 dark:border-gray-600 px-4 py-3 text-sm">{timesheet.normalHrs}</td>
