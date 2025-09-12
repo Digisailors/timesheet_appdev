@@ -37,6 +37,7 @@ interface RawEmployee {
   phoneNumber?: string;
   experience?: string;
   dateOfJoining?: string;
+  employeeId?: string;
 }
 
 interface Project {
@@ -117,7 +118,7 @@ const EmployeesPage: React.FC = () => {
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split("T")[0],
-          employeeId: emp.id || "",
+          employeeId: emp.employeeId || "",
         };
         return enrichedEmployee;
       } else {
@@ -186,7 +187,7 @@ const EmployeesPage: React.FC = () => {
             address: emp.address || "Some Address",
             experience: emp.experience || "0 years",
             dateOfJoining: emp.dateOfJoining || new Date().toISOString().split("T")[0],
-            employeeId: emp.id || "",
+            employeeId: emp.employeeId || "",
           };
         });
         setEmployees(enrichedEmployees);
@@ -234,7 +235,8 @@ const EmployeesPage: React.FC = () => {
       employee.designationType === selectedDesignation;
     const matchesSearch =
       searchTerm.trim() === "" ||
-      employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase());
+      employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+      (employee.employeeId && employee.employeeId.toLowerCase().includes(searchTerm.trim().toLowerCase()));
     const matchesJobTitle =
       selectedJobTitle === "All Job Titles" ||
       employee.designation === selectedJobTitle;
@@ -361,7 +363,7 @@ const EmployeesPage: React.FC = () => {
           address: newEmp.address || "Some Address",
           experience: newEmp.experience || "0 years",
           dateOfJoining: newEmp.dateOfJoining || new Date().toISOString().split("T")[0],
-          employeeId: newEmp.id || "",
+          employeeId: newEmp.employeeId || "",
         };
         setEmployees((prev) => {
           const filtered = prev.filter((emp) => emp.id !== enrichedEmp.id);

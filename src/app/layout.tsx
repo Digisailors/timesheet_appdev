@@ -29,7 +29,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 toastOptions={{
                   duration: 3000,
                   style: {
-                    background: 'darkgreen',
+                    background: '#3b82f6',
                     color: '#fff',
                   },
                 }}

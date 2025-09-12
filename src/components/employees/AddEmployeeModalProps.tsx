@@ -162,7 +162,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           editingEmployee.dateOfJoining ||
           new Date().toISOString().split("T")[0],
         employeeId:
-          editingEmployee.id || "",
+          editingEmployee.employeeId || "",
         workingHours: workingHoursValue,
         normalHours:
           editingEmployee.perHourRate || editingEmployee.normalHours || "",
@@ -244,6 +244,16 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     );
   };
 
+  const checkEmployeeIdExists = (employeeId: string): boolean => {
+    if (!employeeId.trim()) return false;
+    const employeesToCheck = editingEmployee
+      ? employees.filter((emp) => emp.id !== editingEmployee.id)
+      : employees;
+    return employeesToCheck.some(
+      (emp) => emp.employeeId?.toLowerCase() === employeeId.toLowerCase()
+    );
+  };
+
   const validateField = (name: string, value: string) => {
     switch (name) {
       case "firstName":
@@ -274,7 +284,15 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       case "dateOfJoining":
         return !value.trim() ? "Please fill this field" : "";
       case "employeeId":
-        return !value.trim() ? "Please fill this field" : "";
+        if (!value.trim()) return "Please fill this field";
+        if (checkEmployeeIdExists(value)) {
+          return "This Employee ID already exists";
+        }
+        // Optional: Add format validation (e.g., should start with EMP or similar pattern)
+        if (!/^[A-Za-z0-9\s\-_]+$/.test(value)) {
+          return "Employee ID can only contain letters, numbers, spaces, hyphens, and underscores";
+        }
+        return "";
       case "workingHours":
         return !value.trim() ? "Please fill this field" : "";
       case "normalHours":

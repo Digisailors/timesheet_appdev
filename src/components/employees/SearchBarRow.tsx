@@ -54,7 +54,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
             </div>
             <input
               type="text"
-              placeholder="Search Employees"
+              placeholder="Search by name or employee ID (e.g., EMP 1)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -69,7 +69,7 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
             onChange={(e) => setSelectedJobTitle(e.target.value)}
             className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
           >
-            <option value="All Job Titles">All Job Titles</option>
+            <option value="All Job Titles">All Designations</option>
             {availableJobTitles.map((jobTitle) => (
               <option key={jobTitle} value={jobTitle}>
                 {jobTitle}

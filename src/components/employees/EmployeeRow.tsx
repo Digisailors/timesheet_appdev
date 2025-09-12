@@ -44,7 +44,14 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         <span className="text-white font-medium text-xs sm:text-sm">{employee.avatar}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <h4 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base mb-1 truncate">{employee.name}</h4>
+        <div className="flex items-center gap-2 mb-1">
+          <h4 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">{employee.name}</h4>
+          {employee.employeeId && (
+            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-md font-medium">
+              {employee.employeeId}
+            </span>
+          )}
+        </div>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 truncate">{employee.email}</p>
         <div className="flex flex-wrap items-center gap-2">
           <span className={`px-2 py-1 text-xs rounded-full font-medium ${

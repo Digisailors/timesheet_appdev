@@ -142,7 +142,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-          employeeId: emp.id || "",
+          employeeId: emp.employeeId || "",
           currentProject: emp.specialization || emp.designation,
           perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
           overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
@@ -192,7 +192,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           address: emp.address || "Some Address",
           experience: emp.experience || "0 years",
           dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
-          employeeId: emp.id || "",
+          employeeId: emp.employeeId || "",
           currentProject: emp.specialization || emp.designation,
           perHourRate: emp.perHourRate ? `₹${emp.perHourRate}` : 'N/A',
           overtimeRate: emp.overtimeRate ? `₹${emp.overtimeRate}` : 'N/A',
@@ -609,7 +609,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Employee ID</label>
-                <p className="text-sm text-gray-900 dark:text-white">{employee.id || 'Not specified'}</p>
+                <p className="text-sm text-gray-900 dark:text-white">{employee.employeeId || 'Not specified'}</p>
               </div>
             </div>
           </div>
