@@ -454,6 +454,11 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
       columns: tableColumns,
       getCoreRowModel: getCoreRowModel(),
       getPaginationRowModel: getPaginationRowModel(),
+      initialState: {
+        pagination: {
+          pageSize: 10,
+        },
+      },
     });
 
     const exportExcel = useCallback(async () => {
@@ -631,6 +636,45 @@ export const DataTable = forwardRef<DataTableHandle, DataTableProps>(
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex justify-end mt-6">
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                !table.getCanPreviousPage()
+                  ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                  : "text-black border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              &#8249;
+            </button>
+            {Array.from({ length: table.getPageCount() }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => table.setPageIndex(page - 1)}
+                className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-medium transition ${
+                  table.getState().pagination.pageIndex + 1 === page
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "text-black border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                !table.getCanNextPage()
+                  ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                  : "text-black border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              &#8250;
+            </button>
+          </div>
         </div>
         <ViewDialogBox
           isOpen={isViewDialogOpen}

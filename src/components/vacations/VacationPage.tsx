@@ -140,6 +140,8 @@ export default function VacationManagement() {
   const [summaryData, setSummaryData] = useState<SummaryData[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const vacationsPerPage = 10;
 
   const fetchVacationData = async () => {
     try {
@@ -253,7 +255,12 @@ export default function VacationManagement() {
 
   useEffect(() => {
     fetchVacationData();
+    setCurrentPage(1);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, typeFilter]);
 
   const calculateDuration = (startDate: string, endDate: string): number => {
     const start = new Date(startDate);
@@ -274,6 +281,11 @@ export default function VacationManagement() {
       employee.leaveType.toLowerCase() === typeFilter.toLowerCase();
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  const indexOfLastVacation = currentPage * vacationsPerPage;
+  const indexOfFirstVacation = indexOfLastVacation - vacationsPerPage;
+  const paginatedVacations = filteredData.slice(indexOfFirstVacation, indexOfLastVacation);
+  const totalPages = Math.ceil(filteredData.length / vacationsPerPage);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -427,7 +439,7 @@ export default function VacationManagement() {
             Employees on Vacation ({filteredData.length})
           </h2>
           <div className="space-y-4">
-            {filteredData.map((employee) => {
+            {paginatedVacations.map((employee) => {
               const LeaveIcon = getLeaveTypeIcon(employee.leaveType);
               return (
                 <Card
@@ -525,7 +537,7 @@ export default function VacationManagement() {
               );
             })}
           </div>
-          {filteredData.length === 0 && (
+          {paginatedVacations.length === 0 ? (
             <Card className="dark:bg-gray-800">
               <CardContent className="p-12 text-center">
                 <p className="text-gray-500 dark:text-gray-300">
@@ -533,6 +545,46 @@ export default function VacationManagement() {
                 </p>
               </CardContent>
             </Card>
+          ) : (
+            <div className="flex justify-end mt-6">
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                    currentPage === 1
+                      ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                      : "text-black border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  &#8249;
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-medium transition ${
+                      currentPage === page
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "text-black border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`w-10 h-10 flex items-center justify-center rounded-lg border transition ${
+                    currentPage === totalPages
+                      ? "text-gray-400 border-gray-300 cursor-not-allowed"
+                      : "text-black border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  &#8250;
+                </button>
+              </div>
+            </div>
           )}
         </div>
         {selectedVacation && (
