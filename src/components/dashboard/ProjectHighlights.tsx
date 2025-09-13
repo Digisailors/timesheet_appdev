@@ -81,12 +81,12 @@ const ProjectHighlights: React.FC<ProjectHighlightsProps> = () => {
                     {project.code} • {project.location}
                   </p>
                 </div>
-                <button
+                {/* <button
                   className="border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-1 bg-white dark:bg-gray-700 text-sm font-medium text-black dark:text-white transition hover:border-gray-300 dark:hover:border-gray-500"
                 >
                   Details
-                </button>
-              </div>
+                </button> */}
+              </div>  
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-gray-600 dark:text-gray-300">Employees</p>
