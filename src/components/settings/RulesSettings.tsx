@@ -153,8 +153,8 @@ interface Rule {
   id: string;
   designation: Designation;
   breakTime: number;
-  allowedTravelHours: number;
-  normalHours: number;
+  allowedTravelHours: string;
+  normalHours: string;
 }
 
 interface RuleFormState {
@@ -335,8 +335,8 @@ const RulesSettings: React.FC = () => {
       }
 
       let payload: {
-        allowedTravelHours: number;
-        normalHours: number;
+        allowedTravelHours: string;
+        normalHours: string;
         designationId?: string;
       };
 
@@ -344,8 +344,8 @@ const RulesSettings: React.FC = () => {
 
       if (isEditing && currentRuleId) {
         payload = {
-          allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
-          normalHours: Number.parseFloat(newRule.normalHours),
+          allowedTravelHours: newRule.allowedTravelHours,
+          normalHours: newRule.normalHours,
         };
 
         console.log("Payload being sent for update:", payload);
@@ -361,9 +361,9 @@ const RulesSettings: React.FC = () => {
       } else {
         payload = {
           designationId: newRule.designationId,
-          allowedTravelHours: Number.parseFloat(newRule.allowedTravelHours),
-          normalHours: Number.parseFloat(newRule.normalHours),
-        };
+          allowedTravelHours: newRule.allowedTravelHours,
+          normalHours: newRule.normalHours,
+        };  
 
         console.log("Payload being sent for creation:", payload);
 
