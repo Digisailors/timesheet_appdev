@@ -58,6 +58,7 @@ interface EmployeeAPIPayload {
   employeeId: string;
   perHourRate: number;
   overtimeRate: number;
+  eligibleLeaveDays?: number;
 }
 
 const EmployeesPage: React.FC = () => {
