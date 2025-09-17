@@ -7,6 +7,7 @@ interface TimesheetEntry {
   totalDutyHrs: string;
   normalHrs: string;
   overtime: string;
+  location: string;
 }
 
 interface ProjectSummaryProps {
@@ -20,12 +21,19 @@ interface ProjectSummaryProps {
 }
 
 const ProjectSummary: React.FC<ProjectSummaryProps> = ({ timesheetData, selectedProject, selectedLocation, dateRange }) => {
-  // Filter timesheet data based on the selected date range
+  // Filter timesheet data based on the selected date range and location
   const filteredTimesheetData = timesheetData.filter(entry => {
     const entryDate = new Date(entry.timesheetDate);
     const startDate = new Date(dateRange.startDate);
     const endDate = new Date(dateRange.endDate);
-    return entryDate >= startDate && entryDate <= endDate;
+    
+    // Filter by date range
+    const isInDateRange = entryDate >= startDate && entryDate <= endDate;
+    
+    // Filter by location (if a specific location is selected)
+    const isSameLocation = selectedLocation === 'All Locations' || entry.location === selectedLocation;
+    
+    return isInDateRange && isSameLocation;
   });
 
   const totalHours = filteredTimesheetData.reduce((sum, entry) => sum + parseFloat(entry.totalDutyHrs), 0);

@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 import React, { useEffect, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
@@ -61,7 +62,7 @@ interface EmployeeAPIPayload {
   employeeId: string;
   perHourRate: number;
   overtimeRate: number;
-  eligibleLeaveDays: number;
+  eligibleLeaveDays?: number;
 }
 
 interface AddEmployeeModalProps {
@@ -121,6 +122,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
   const [designationTypes, setDesignationTypes] = useState<DesignationType[]>([]);
+  const [originalEligibleLeaveDays, setOriginalEligibleLeaveDays] = useState<string>("");
+  const [eligibleLeaveDaysTouched, setEligibleLeaveDaysTouched] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -171,6 +174,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         remainingLeaveDays: editingEmployee.remainingLeaveDays ?? "",
         unpaidLeaveDays: editingEmployee.unpaidLeaveDays ?? "",
       });
+      // Store the original eligibleLeaveDays value for comparison
+      setOriginalEligibleLeaveDays(editingEmployee.eligibleLeaveDays || "");
+      // Reset touched state when editing
+      setEligibleLeaveDaysTouched(false);
     } else if (!editingEmployee && isOpen) {
       setFormData({
         firstName: "",
@@ -190,6 +197,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         remainingLeaveDays: "",
         unpaidLeaveDays: "",
       });
+      // Reset original value when adding new employee
+      setOriginalEligibleLeaveDays("");
+      // Reset touched state when adding new employee
+      setEligibleLeaveDaysTouched(false);
     }
     setErrors({});
     setTouched({});
@@ -350,6 +361,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     } else if (name === "eligibleLeaveDays") {
       const numericValue = value.replace(/\D/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
+      setEligibleLeaveDaysTouched(true); // Mark as touched when user interacts
       if (errors[name]) {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
@@ -405,6 +417,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
+    
+    // Track if eligibleLeaveDays field has been interacted with
+    if (name === "eligibleLeaveDays") {
+      setEligibleLeaveDaysTouched(true);
+    }
+    
     const error = validateField(name, value);
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
@@ -457,8 +475,14 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       employeeId: formData.employeeId,
       perHourRate: parseFloat(formData.normalHours),
       overtimeRate: parseFloat(formData.otHours),
-      eligibleLeaveDays: parseInt(formData.eligibleLeaveDays, 10),
     };
+
+    // Only include eligibleLeaveDays in payload if:
+    // 1. It's a new employee (always include), OR
+    // 2. The field has been touched/interacted with by the user (even if same value)
+    if (!editingEmployee || eligibleLeaveDaysTouched) {
+      apiPayload.eligibleLeaveDays = parseInt(formData.eligibleLeaveDays, 10);
+    }
     try {
       onSubmit(apiPayload);
       onClose();

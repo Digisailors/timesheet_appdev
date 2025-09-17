@@ -61,6 +61,8 @@ export default function SupervisorDialog({
   const [formData, setFormData] = useState<SupervisorData>(defaultFormData);
   const [errors, setErrors] = useState<Partial<SupervisorData>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [originalEligibleLeaveDays, setOriginalEligibleLeaveDays] = useState<string>("");
+  const [eligibleLeaveDaysTouched, setEligibleLeaveDaysTouched] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,9 +79,17 @@ export default function SupervisorDialog({
     if (mode === 'edit' && initialData) {
       setFormData(initialData);
       setSelectedProjectId?.(null);
+      // Store the original eligibleLeaveDays value for comparison
+      setOriginalEligibleLeaveDays(initialData.eligibleLeaveDays || "");
+      // Reset touched state when editing
+      setEligibleLeaveDaysTouched(false);
     } else {
       setFormData(defaultFormData);
       setSelectedProjectId?.(null);
+      // Reset original value when adding new supervisor
+      setOriginalEligibleLeaveDays("");
+      // Reset touched state when adding new supervisor
+      setEligibleLeaveDaysTouched(false);
     }
     setErrors({});
   }, [mode, initialData, isOpen, projects, setSelectedProjectId]);
@@ -123,6 +133,20 @@ export default function SupervisorDialog({
     if (errors[name as keyof SupervisorData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleEligibleLeaveDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const numericValue = value.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, eligibleLeaveDays: numericValue }));
+    setEligibleLeaveDaysTouched(true); // Mark as touched when user interacts
+    if (errors.eligibleLeaveDays) {
+      setErrors(prev => ({ ...prev, eligibleLeaveDays: '' }));
+    }
+  };
+
+  const handleEligibleLeaveDaysBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setEligibleLeaveDaysTouched(true); // Mark as touched on blur as well
   };
 
   const validateForm = (): boolean => {
@@ -203,9 +227,16 @@ export default function SupervisorDialog({
       password: formData.password,
       perHourRate: formData.perHourRate ? Number(formData.perHourRate) : undefined,
       overtimeRate: formData.overtimeRate ? Number(formData.overtimeRate) : undefined,
-      eligibleLeaveDays: formData.eligibleLeaveDays ? Number(formData.eligibleLeaveDays) : undefined,
       assignedProjectId: formData.assignedProjectId,
     };
+
+    // Only include eligibleLeaveDays in payload if:
+    // 1. It's a new supervisor (always include), OR
+    // 2. The field has been touched/interacted with by the user (even if same value)
+    if (mode === 'add' || eligibleLeaveDaysTouched) {
+      dataToSend.eligibleLeaveDays = formData.eligibleLeaveDays ? Number(formData.eligibleLeaveDays) : undefined;
+    }
+
     Object.keys(dataToSend).forEach(key => {
       if (dataToSend[key] === undefined || dataToSend[key] === '') {
         delete dataToSend[key];
@@ -331,7 +362,8 @@ export default function SupervisorDialog({
                 type="text"
                 name="eligibleLeaveDays"
                 value={formData.eligibleLeaveDays || ''}
-                onChange={handleInputChange}
+                onChange={handleEligibleLeaveDaysChange}
+                onBlur={handleEligibleLeaveDaysBlur}
                 placeholder="Enter eligible leave days"
                 className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               />

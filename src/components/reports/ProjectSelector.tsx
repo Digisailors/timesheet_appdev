@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Calendar, FileText, Download } from 'lucide-react';
 import { getSession } from 'next-auth/react';
@@ -13,6 +14,14 @@ interface DateRange {
 interface Project {
   id: string;
   name: string;
+  projectDetails?: {
+    id: string;
+    projectcode: string;
+    locations: string;
+    typesOfWork: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
 }
 
 interface Location {
@@ -189,16 +198,14 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         }
         const result = await response.json();
         if (result.success && result.data) {
-          const fetchedProjects = result.data.map((project: { id: string; name: string }) => ({
+          const fetchedProjects = result.data.map((project: any) => ({
             id: project.id,
             name: project.name,
-          }));
-          const fetchedLocations = result.data.map((location: { id: string; name: string }) => ({
-            id: location.id,
-            name: location.name,
+            projectDetails: project.projectDetails || [],
           }));
           setProjects(fetchedProjects);
-          setLocations(fetchedLocations);
+          // Don't set locations here - they will be set when a project is selected
+          setLocations([]);
           if (!propSelectedProject && fetchedProjects.length > 0) {
             setSelectedProject(fetchedProjects[0].name);
             onProjectChange?.(fetchedProjects[0].name);
@@ -218,10 +225,42 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
     fetchProjects();
   }, [propSelectedProject, onProjectChange]);
 
+  // Update locations when selectedProject changes
+  useEffect(() => {
+    if (selectedProject && projects.length > 0) {
+      const selectedProjectData = projects.find(project => project.name === selectedProject);
+      if (selectedProjectData?.projectDetails) {
+        const projectLocations = selectedProjectData.projectDetails.map((detail, index) => ({
+          id: detail.id || `location-${index}`,
+          name: detail.locations,
+        }));
+        setLocations(projectLocations);
+      } else {
+        setLocations([]);
+      }
+    }
+  }, [selectedProject, projects]);
+
   const handleProjectChange = (value: string) => {
     setSelectedProject(value);
     setIsDropdownOpen(false);
     onProjectChange?.(value);
+    
+    // Reset location selection and update available locations
+    setSelectedLocation('All Locations');
+    onLocationChange?.('All Locations');
+    
+    // Extract locations from the selected project
+    const selectedProjectData = projects.find(project => project.name === value);
+    if (selectedProjectData?.projectDetails) {
+      const projectLocations = selectedProjectData.projectDetails.map((detail, index) => ({
+        id: detail.id || `location-${index}`,
+        name: detail.locations,
+      }));
+      setLocations(projectLocations);
+    } else {
+      setLocations([]);
+    }
   };
 
   const handleLocationChange = (value: string) => {

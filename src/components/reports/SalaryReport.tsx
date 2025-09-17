@@ -18,6 +18,14 @@ interface Employee {
 interface Project {
   id: string;
   name: string;
+  projectDetails?: {
+    id: string;
+    projectcode: string;
+    locations: string;
+    typesOfWork: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
 }
 
 interface Timesheet {
@@ -238,6 +246,31 @@ const SalaryReport: React.FC = () => {
         if (employeesResult.success && employeesResult.data) {
           setEmployees(employeesResult.data);
         }
+        // Fetch projects with their details
+        const projectsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/all`,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.accessToken}`,
+            }
+          }
+        );
+        if (!projectsResponse.ok) {
+          throw new Error(`HTTP error! status: ${projectsResponse.status}`);
+        }
+        const projectsResult = await projectsResponse.json();
+        if (projectsResult.success && projectsResult.data) {
+          const fetchedProjects = projectsResult.data.map((project: any) => ({
+            id: project.id,
+            name: project.name,
+            projectDetails: project.projectDetails || [],
+          }));
+          setProjects(fetchedProjects);
+          // Don't set locations here - they will be set when a project is selected
+          setLocations([]);
+        }
+
+        // Fetch timesheets
         const timesheetsResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/timesheet/all`,
           {
@@ -252,18 +285,6 @@ const SalaryReport: React.FC = () => {
         const timesheetsResult = await timesheetsResponse.json();
         if (timesheetsResult.success && timesheetsResult.data) {
           setTimesheets(timesheetsResult.data);
-          const uniqueProjects = Array.from(
-            new Map(
-              timesheetsResult.data
-                .filter((ts: Timesheet) => ts.project)
-                .map((ts: Timesheet) => [ts.project!.id, ts.project!])
-            ).values()
-          ) as Project[];
-          setProjects(uniqueProjects);
-          const uniqueLocations = Array.from(
-            new Set(timesheetsResult.data.map((ts: Timesheet) => ts.location).filter(Boolean))
-          ) as string[];
-          setLocations(uniqueLocations);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -274,6 +295,21 @@ const SalaryReport: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  // Update locations when selectedProject changes
+  useEffect(() => {
+    if (selectedProject && projects.length > 0) {
+      const selectedProjectData = projects.find(project => project.name === selectedProject);
+      if (selectedProjectData?.projectDetails) {
+        const projectLocations = selectedProjectData.projectDetails.map((detail, index) => detail.locations);
+        setLocations(projectLocations);
+      } else {
+        setLocations([]);
+      }
+    } else {
+      setLocations([]);
+    }
+  }, [selectedProject, projects]);
 
   const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(projectSearchTerm.toLowerCase())
@@ -497,6 +533,7 @@ const SalaryReport: React.FC = () => {
                     <button
                       onClick={() => {
                         setSelectedProject('');
+                        setSelectedLocation('All Locations'); // Reset location when project changes
                         setShowProjectDropdown(false);
                       }}
                       className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -508,6 +545,7 @@ const SalaryReport: React.FC = () => {
                         key={project.id}
                         onClick={() => {
                           setSelectedProject(project.name);
+                          setSelectedLocation('All Locations'); // Reset location when project changes
                           setShowProjectDropdown(false);
                         }}
                         className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
