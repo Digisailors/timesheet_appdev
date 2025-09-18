@@ -1,5 +1,6 @@
 import React from "react";
 import { MagnifyingGlassIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import SearchableDropdown from "../ui/SearchableDropdown";
 
 interface Project {
   id: string;
@@ -64,41 +65,25 @@ const SearchBarRow: React.FC<SearchBarRowProps> = ({
 
         {/* Job Titles Filter */}
         <div className="relative min-w-[150px] flex-1">
-          <select
+          <SearchableDropdown
+            options={["All Designations", ...availableJobTitles]}
             value={selectedJobTitle}
-            onChange={(e) => setSelectedJobTitle(e.target.value)}
-            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
-          >
-            <option value="All Job Titles">All Designations</option>
-            {availableJobTitles.map((jobTitle) => (
-              <option key={jobTitle} value={jobTitle}>
-                {jobTitle}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-          </div>
+            onChange={setSelectedJobTitle}
+            placeholder="All Designations"
+            className="w-full"
+          />
         </div>
 
         {/* Designation Types Filter */}
         {showDesignationFilter && (
           <div className="relative min-w-[150px] flex-1">
-            <select
+            <SearchableDropdown
+              options={["All Designations Types", ...availableDesignations]}
               value={selectedDesignation}
-              onChange={(e) => setSelectedDesignation(e.target.value)}
-              className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm text-gray-700 dark:text-gray-100 cursor-pointer"
-            >
-              <option value="All Designations Types">All Designations Types</option>
-              {availableDesignations.map((designationType) => (
-                <option key={designationType} value={designationType}>
-                  {designationType}
-                </option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <ChevronDownIcon className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-            </div>
+              onChange={setSelectedDesignation}
+              placeholder="All Designations Types"
+              className="w-full"
+            />
           </div>
         )}
 

@@ -20,6 +20,7 @@ interface SupervisorData {
   unpaidLeaveDays?: string;
   assignedProject?: string;
   assignedProjectId?: string;
+  applyOvertime?: boolean;
 }
 
 interface SupervisorDialogProps {
@@ -47,6 +48,7 @@ const defaultFormData: SupervisorData = {
   eligibleLeaveDays: '',
   remainingLeaveDays: '',
   unpaidLeaveDays: '',
+  applyOvertime: true,
 };
 
 export default function SupervisorDialog({
@@ -77,7 +79,10 @@ export default function SupervisorDialog({
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        applyOvertime: initialData.applyOvertime !== undefined ? initialData.applyOvertime : true, // Ensure applyOvertime is always set
+      });
       setSelectedProjectId?.(null);
       // Store the original eligibleLeaveDays value for comparison
       setOriginalEligibleLeaveDays(initialData.eligibleLeaveDays || "");
@@ -228,6 +233,7 @@ export default function SupervisorDialog({
       perHourRate: formData.perHourRate ? Number(formData.perHourRate) : undefined,
       overtimeRate: formData.overtimeRate ? Number(formData.overtimeRate) : undefined,
       assignedProjectId: formData.assignedProjectId,
+      applyOvertime: formData.applyOvertime ?? true,
     };
 
     // Only include eligibleLeaveDays in payload if:
@@ -429,6 +435,23 @@ export default function SupervisorDialog({
                 className="w-full mt-1 p-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               />
               {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+            </div>
+
+            {/* OT Calculation Checkbox */}
+            <div>
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="applyOvertime"
+                  name="applyOvertime"
+                  checked={formData.applyOvertime ?? true}
+                  onChange={(e) => setFormData(prev => ({ ...prev, applyOvertime: e.target.checked }))}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                />
+                <label htmlFor="applyOvertime" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  If you don't want to calculate OT then Uncheck this
+                </label>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

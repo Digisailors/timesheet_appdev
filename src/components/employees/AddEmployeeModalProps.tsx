@@ -28,6 +28,7 @@ interface Employee {
   eligibleLeaveDays?: string;
   remainingLeaveDays?: string;
   unpaidLeaveDays?: string;
+  applyOvertime?: boolean;
 }
 
 interface EmployeeFormData {
@@ -47,6 +48,7 @@ interface EmployeeFormData {
   eligibleLeaveDays: string;
   remainingLeaveDays: string;
   unpaidLeaveDays: string;
+  applyOvertime: boolean;
 }
 
 interface EmployeeAPIPayload {
@@ -63,6 +65,7 @@ interface EmployeeAPIPayload {
   perHourRate: number;
   overtimeRate: number;
   eligibleLeaveDays?: number;
+  applyOvertime: boolean;
 }
 
 interface AddEmployeeModalProps {
@@ -117,6 +120,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     eligibleLeaveDays: "",
     remainingLeaveDays: "",
     unpaidLeaveDays: "",
+    applyOvertime: true,
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -173,6 +177,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         eligibleLeaveDays: editingEmployee.eligibleLeaveDays || "",
         remainingLeaveDays: editingEmployee.remainingLeaveDays ?? "",
         unpaidLeaveDays: editingEmployee.unpaidLeaveDays ?? "",
+        applyOvertime: editingEmployee.applyOvertime !== undefined ? editingEmployee.applyOvertime : true, // Use existing value or default to true
       });
       // Store the original eligibleLeaveDays value for comparison
       setOriginalEligibleLeaveDays(editingEmployee.eligibleLeaveDays || "");
@@ -196,6 +201,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         eligibleLeaveDays: "",
         remainingLeaveDays: "",
         unpaidLeaveDays: "",
+        applyOvertime: true,
       });
       // Reset original value when adding new employee
       setOriginalEligibleLeaveDays("");
@@ -445,12 +451,13 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       "eligibleLeaveDays",
     ];
     allFields.forEach((field) => {
-      const error = validateField(
-        field,
-        formData[field as keyof EmployeeFormData]
-      );
-      if (error) {
-        newErrors[field] = error;
+      const value = formData[field as keyof EmployeeFormData];
+      // Only validate string fields, skip boolean fields like applyOvertime
+      if (typeof value === 'string') {
+        const error = validateField(field, value);
+        if (error) {
+          newErrors[field] = error;
+        }
       }
     });
     const newTouched: { [key: string]: boolean } = {};
@@ -475,6 +482,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       employeeId: formData.employeeId,
       perHourRate: parseFloat(formData.normalHours),
       overtimeRate: parseFloat(formData.otHours),
+      applyOvertime: formData.applyOvertime,
     };
 
     // Only include eligibleLeaveDays in payload if:
@@ -864,6 +872,23 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     {errors.address}
                   </p>
                 )}
+              </div>
+
+              {/* OT Calculation Checkbox */}
+              <div className="col-span-1 md:col-span-2">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="applyOvertime"
+                    name="applyOvertime"
+                    checked={formData.applyOvertime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, applyOvertime: e.target.checked }))}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                  />
+                  <label htmlFor="applyOvertime" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                    If you don't want to calculate OT then Uncheck this
+                  </label>
+                </div>
               </div>
             </div>
           </div>
