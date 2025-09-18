@@ -25,6 +25,7 @@ interface Supervisor {
   eligibleLeaveDays?: string;
   remainingLeaveDays?: string;
   unpaidLeaveDays?: string;
+  applyOvertime?: boolean;
 }
 
 interface SupervisorData {
@@ -43,6 +44,7 @@ interface SupervisorData {
   eligibleLeaveDays?: string;
   remainingLeaveDays?: string;
   unpaidLeaveDays?: string;
+  applyOvertime?: boolean;
 }
 
 interface Project {
@@ -66,6 +68,7 @@ interface SupervisorApiResponse {
   eligibleLeaveDays?: string;
   remainingLeaveDays?: string;
   unpaidLeaveDays?: string;
+  applyOvertime?: boolean;
   assignedProject?: {
     id: string;
     name: string;
@@ -147,6 +150,7 @@ export default function SupervisorPage() {
           eligibleLeaveDays: s.eligibleLeaveDays || '',
           remainingLeaveDays: s.remainingLeaveDays || '',
           unpaidLeaveDays: s.unpaidLeaveDays || '',
+          applyOvertime: s.applyOvertime !== undefined ? s.applyOvertime : true,
         }));
         setSupervisorList(loadedSupervisors);
       } else {
@@ -264,6 +268,7 @@ export default function SupervisorPage() {
     eligibleLeaveDays: supervisor.eligibleLeaveDays ?? '',
     remainingLeaveDays: supervisor.remainingLeaveDays ?? '',
     unpaidLeaveDays: supervisor.unpaidLeaveDays ?? '',
+    applyOvertime: supervisor.applyOvertime !== undefined ? supervisor.applyOvertime : true,
   });
 
   const handleAction = async (action: string, supervisor: Supervisor) => {
@@ -352,6 +357,7 @@ export default function SupervisorPage() {
             eligibleLeaveDays: data.eligibleLeaveDays || '',
             remainingLeaveDays: data.remainingLeaveDays || '',
             unpaidLeaveDays: data.unpaidLeaveDays || '',
+            applyOvertime: data.applyOvertime !== undefined ? data.applyOvertime : true,
           };
           setSelectedSupervisor(fullSupervisor);
           setSelectedProjectId(fullSupervisor.assignedProjectId || null);
@@ -448,6 +454,7 @@ export default function SupervisorPage() {
         perHourRate: formData.perHourRate ? parseFloat(formData.perHourRate) : undefined,
         overtimeRate: formData.overtimeRate ? parseFloat(formData.overtimeRate) : undefined,
         eligibleLeaveDays: formData.eligibleLeaveDays ? parseInt(formData.eligibleLeaveDays, 10) : undefined,
+        applyOvertime: formData.applyOvertime ?? true,
       };
       const url = mode === 'add' ? `${baseUrl}/supervisors/create` : `${baseUrl}/supervisors/update/${selectedSupervisor?.id}`;
       const method = mode === 'add' ? 'POST' : 'PUT';

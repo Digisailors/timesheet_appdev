@@ -22,6 +22,7 @@ export interface Employee {
   experience?: string;
   dateOfJoining?: string;
   employeeId?: string;
+  applyOvertime?: boolean;
 }
 
 
@@ -89,13 +90,13 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         >
           <PencilIcon className="w-4 h-4" />
         </button>
-        {/* <button
+        <button
           onClick={() => onDelete(employee.id)}
           title="Delete Employee"
           className="p-2 border border-red-300 dark:border-red-600 rounded-lg text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-gray-700 hover:border-red-400 dark:hover:border-red-500 transition-colors duration-200"
         >
           <TrashIcon className="w-4 h-4" />
-        </button> */}
+        </button>
       </div>
     </div>
   </div>

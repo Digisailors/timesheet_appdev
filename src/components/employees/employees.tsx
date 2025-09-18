@@ -38,6 +38,7 @@ interface RawEmployee {
   experience?: string;
   dateOfJoining?: string;
   employeeId?: string;
+  applyOvertime?: boolean;
 }
 
 interface Project {
@@ -59,6 +60,7 @@ interface EmployeeAPIPayload {
   perHourRate: number;
   overtimeRate: number;
   eligibleLeaveDays?: number;
+  applyOvertime: boolean;
 }
 
 const EmployeesPage: React.FC = () => {
@@ -69,7 +71,7 @@ const EmployeesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState("All Designations Types");
   const [selectedProject, setSelectedProject] = useState("All Projects");
-  const [selectedJobTitle, setSelectedJobTitle] = useState("All Job Titles");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("All Designations");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -239,7 +241,7 @@ const EmployeesPage: React.FC = () => {
       employee.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
       (employee.employeeId && employee.employeeId.toLowerCase().includes(searchTerm.trim().toLowerCase()));
     const matchesJobTitle =
-      selectedJobTitle === "All Job Titles" ||
+      selectedJobTitle === "All Designations" ||
       employee.designation === selectedJobTitle;
     return matchesDesignation && matchesSearch && matchesJobTitle;
   });

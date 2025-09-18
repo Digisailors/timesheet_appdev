@@ -16,6 +16,7 @@ export interface Supervisor {
   assignedProject: string;
   password: string;
   eligibleLeaveDays?: string;
+  applyOvertime?: boolean;
 }
 
 interface Project {
@@ -241,6 +242,7 @@ const SupervisorList = () => {
             experience: selectedSupervisor.experience,
             password: selectedSupervisor.password,
             eligibleLeaveDays: selectedSupervisor.eligibleLeaveDays,
+            applyOvertime: selectedSupervisor.applyOvertime !== undefined ? selectedSupervisor.applyOvertime : true,
           } : undefined}
           onSubmit={async (data, mode) => {
             console.log('Form submitted:', data, mode);
@@ -262,6 +264,7 @@ const SupervisorList = () => {
                 perHourRate: data.perHourRate ? parseFloat(data.perHourRate) : undefined,
                 overtimeRate: data.overtimeRate ? parseFloat(data.overtimeRate) : undefined,
                 eligibleLeaveDays: data.eligibleLeaveDays ? parseInt(data.eligibleLeaveDays, 10) : undefined,
+                applyOvertime: data.applyOvertime ?? true,
               };
               const url = mode === 'add'
                 ? `${cleanBaseUrl}/api/supervisors/create`
