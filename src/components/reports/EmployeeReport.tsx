@@ -13,6 +13,7 @@ interface Person {
   lastName: string;
   role: 'employee' | 'supervisor';
   fullName?: string;
+  employeeId?: string;
 }
 
 interface Project {
@@ -52,6 +53,18 @@ interface MyDocumentProps {
   data: Timesheet[];
   selectedEmployees: string[];
   employees: Person[];
+  selectedProject: string;
+  dateRange: DateRange;
+  projects: Project[];
+}
+
+interface EmployeePageProps {
+  employee: Person;
+  employeeData: Timesheet[];
+  allEmployees: Person[];
+  selectedProject: string;
+  dateRange: DateRange;
+  projects: Project[];
 }
 
 // Utility function to format datetime strings for PDF
@@ -139,19 +152,20 @@ const styles = StyleSheet.create({
   },
 });
 
-const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees }) => {
-  // Calculate totals for summary
-  const calculateTotals = () => {
+// Individual Employee Page Component
+const EmployeePage: React.FC<EmployeePageProps> = ({ employee, employeeData, allEmployees, selectedProject, dateRange, projects }) => {
+  // Calculate totals for this specific employee
+  const calculateEmployeeTotals = () => {
     let regularHours = 0;
     let overtimeHours = 0;
     let daysWorked = 0;
     
-    data.forEach((timesheet) => {
+    employeeData.forEach((timesheet) => {
       const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
-      const associatedEmployees = selectedEmployees.filter((empId: string) => timesheetEmployeeIds.includes(empId));
-      const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
+      const isEmployeeInTimesheet = timesheetEmployeeIds.includes(employee.id);
+      const isSupervisorTimesheet = timesheet.supervisor && timesheet.supervisor.id === employee.id;
       
-      if (associatedEmployees.length > 0 || isSupervisorSelected) {
+      if (isEmployeeInTimesheet || isSupervisorTimesheet) {
         regularHours += parseFloat(timesheet.normalHrs) || 0;
         overtimeHours += parseFloat(timesheet.overtime) || 0;
         daysWorked += 1;
@@ -161,40 +175,69 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
     return { regularHours, overtimeHours, daysWorked };
   };
 
-  const { regularHours, overtimeHours, daysWorked } = calculateTotals();
+  const { regularHours, overtimeHours, daysWorked } = calculateEmployeeTotals();
+
+  // Get project name
+  const projectName = selectedProject === 'all' 
+    ? 'All Projects' 
+    : selectedProject 
+    ? projects.find(p => p.id === selectedProject)?.name || 'Unknown Project'
+    : 'No Project Selected';
+
+  // Format date range
+  const formatDateRange = () => {
+    if (dateRange.startDate && dateRange.endDate) {
+      const startDate = new Date(dateRange.startDate).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric' 
+      });
+      const endDate = new Date(dateRange.endDate).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric' 
+      });
+      return `${startDate} - ${endDate}`;
+    }
+    return 'No Date Range Selected';
+  };
 
   return (
-    <Document>
-      <Page style={styles.page} size="A4" orientation="landscape">
-        <Text style={styles.title}>Employee Timesheet Report</Text>
-        <Text style={styles.employeeName}>
-          {selectedEmployees.length === 0
-            ? 'No Employees/Supervisors Selected'
-            : selectedEmployees.length === employees.length && employees.length > 0
-            ? `All Employees/Supervisors (${employees.length} total)`
-            : selectedEmployees.map((id: string) => {
-                const person = employees.find((emp: Person) => emp.id === id);
-                return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
-              }).join(', ')}
-        </Text>
-        
-        {/* Summary Section */}
-        <View style={[styles.table, { marginBottom: 10 }]}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, { width: '25%' }]}>Summary</Text>
-            <Text style={[styles.headerCell, { width: '25%' }]}>Regular Hours</Text>
-            <Text style={[styles.headerCell, { width: '25%' }]}>OT Hours</Text>
-            <Text style={[styles.headerCell, { width: '25%' }]}>Days Worked</Text>
-          </View>
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>Total</Text>
-            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{regularHours.toFixed(2)}</Text>
-            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{overtimeHours.toFixed(2)}</Text>
-            <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{daysWorked}</Text>
-          </View>
+    <Page style={styles.page} size="A4" orientation="landscape">
+      <Text style={styles.title}>Employee Timesheet Report</Text>
+      <Text style={styles.employeeName}>
+        {employee.fullName || `${employee.firstName} ${employee.lastName}`}{employee.role === 'supervisor' ? ' (Supervisor)' : ''}
+      </Text>
+      
+      {/* Report Information Section */}
+      <View style={[styles.table, { marginBottom: 5 }]}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerCell, { width: '50%' }]}>Project</Text>
+          <Text style={[styles.headerCell, { width: '50%' }]}>Date Range</Text>
         </View>
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { width: '50%' }]}>{projectName}</Text>
+          <Text style={[styles.tableCell, { width: '50%' }]}>{formatDateRange()}</Text>
+        </View>
+      </View>
+      
+      {/* Individual Employee Summary Section */}
+      <View style={[styles.table, { marginBottom: 10 }]}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerCell, { width: '25%' }]}>Summary</Text>
+          <Text style={[styles.headerCell, { width: '25%' }]}>Regular Hours</Text>
+          <Text style={[styles.headerCell, { width: '25%' }]}>OT Hours</Text>
+          <Text style={[styles.headerCell, { width: '25%' }]}>Days Worked</Text>
+        </View>
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>Total</Text>
+          <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{regularHours.toFixed(2)}</Text>
+          <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{overtimeHours.toFixed(2)}</Text>
+          <Text style={[styles.tableCell, { width: '25%', fontWeight: 'bold' }]}>{daysWorked}</Text>
+        </View>
+      </View>
 
-        <View style={styles.table}>
+      <View style={styles.table}>
         <View style={styles.tableHeader}>
           <Text style={[styles.headerCell, { width: '6%' }]}>Date</Text>
           <Text style={[styles.headerCell, { width: '8%' }]}>Name</Text>
@@ -213,74 +256,82 @@ const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employ
           <Text style={[styles.headerCell, { width: '7%' }]}>Supervisor</Text>
           <Text style={[styles.headerCell, { width: '8%' }]}>Remarks</Text>
         </View>
-        {selectedEmployees.length === 0 ? (
+        {employeeData.length === 0 ? (
           <View style={styles.tableRow}>
             <Text style={[styles.tableCell, { width: '100%', textAlign: 'center' }]}>
-              No data available. Please select employees/supervisors to view data.
+              No data available for this employee.
             </Text>
           </View>
-        ) : data.map((timesheet: Timesheet, index: number) => {
+        ) : employeeData.map((timesheet: Timesheet, index: number) => {
           const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
-          const associatedEmployees = selectedEmployees.filter((empId: string) => timesheetEmployeeIds.includes(empId));
-          const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
-          if (associatedEmployees.length > 0 || isSupervisorSelected) {
-            if (associatedEmployees.length > 1) {
-              return associatedEmployees.map((empId: string, empIndex: number) => {
-                const person = employees.find((emp: Person) => emp.id === empId);
-                const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
-                const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
-                return (
-                  <View key={`${index}-${empIndex}`} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.timesheetDate}</Text>
-                    <Text style={[styles.tableCell, { width: '8%' }]}>{personName}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.location}</Text>
-                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.projectcode}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.typeofWork}</Text>
-                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
-                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
-                    <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
-                    <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
-                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
-                    <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
-                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.normalHrs}</Text>
-                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.overtime}</Text>
-                    <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.totalTravelHrs}</Text>
-                    <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
-                    <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.remarks}</Text>
-                  </View>
-                );
-              });
-            } else {
-              const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
-              const person = employees.find((emp: Person) => emp.id === empId);
-              const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
-              const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
-              return (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.timesheetDate}</Text>
-                  <Text style={[styles.tableCell, { width: '8%' }]}>{personName}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.location}</Text>
-                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.projectcode}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.typeofWork}</Text>
-                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
-                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
-                  <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
-                  <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
-                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
-                  <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
-                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.normalHrs}</Text>
-                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.overtime}</Text>
-                  <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.totalTravelHrs}</Text>
-                  <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
-                  <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.remarks}</Text>
-                </View>
-              );
-            }
+          const isEmployeeInTimesheet = timesheetEmployeeIds.includes(employee.id);
+          const isSupervisorTimesheet = timesheet.supervisor && timesheet.supervisor.id === employee.id;
+          
+          if (isEmployeeInTimesheet || isSupervisorTimesheet) {
+            const personName = employee.fullName || `${employee.firstName} ${employee.lastName}`;
+            const supervisorName = isSupervisorTimesheet ? '' : timesheet.supervisorName;
+            
+            return (
+              <View key={index} style={styles.tableRow}>
+                <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.timesheetDate}</Text>
+                <Text style={[styles.tableCell, { width: '8%' }]}>{personName}</Text>
+                <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.location}</Text>
+                <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.projectcode}</Text>
+                <Text style={[styles.tableCell, { width: '7%' }]}>{timesheet.typeofWork}</Text>
+                <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelStart)}</Text>
+                <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteTravelEnd)}</Text>
+                <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignIn)}</Text>
+                <Text style={[styles.tableCell, { width: '7%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.onsiteSignOut)}</Text>
+                <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelStart)}</Text>
+                <Text style={[styles.tableCell, { width: '9%', fontSize: 5 }]}>{formatDateTimeForPDF(timesheet.offsiteTravelEnd)}</Text>
+                <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.normalHrs}</Text>
+                <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.overtime}</Text>
+                <Text style={[styles.tableCell, { width: '6%' }]}>{timesheet.totalTravelHrs}</Text>
+                <Text style={[styles.tableCell, { width: '7%' }]}>{supervisorName}</Text>
+                <Text style={[styles.tableCell, { width: '8%' }]}>{timesheet.remarks}</Text>
+              </View>
+            );
           }
           return null;
-        }).flat().filter(Boolean)}
-        </View>
-      </Page>
+        }).filter(Boolean)}
+      </View>
+    </Page>
+  );
+};
+
+const MyDocument: React.FC<MyDocumentProps> = ({ data, selectedEmployees, employees, selectedProject, dateRange, projects }) => {
+  // Get unique employees from selectedEmployees
+  const selectedEmployeeObjects = employees.filter(emp => selectedEmployees.includes(emp.id));
+  
+  // Filter data for each employee
+  const getEmployeeData = (employee: Person) => {
+    return data.filter(timesheet => {
+      const timesheetEmployeeIds = timesheet.employees?.map((emp: { id: string }) => emp.id) || [];
+      const isEmployeeInTimesheet = timesheetEmployeeIds.includes(employee.id);
+      const isSupervisorTimesheet = timesheet.supervisor && timesheet.supervisor.id === employee.id;
+      return isEmployeeInTimesheet || isSupervisorTimesheet;
+    });
+  };
+
+  // Only create pages for employees who have timesheet data
+  const employeesWithData = selectedEmployeeObjects.filter(employee => {
+    const employeeData = getEmployeeData(employee);
+    return employeeData.length > 0;
+  });
+
+  return (
+    <Document>
+      {employeesWithData.map((employee) => (
+        <EmployeePage
+          key={employee.id}
+          employee={employee}
+          employeeData={getEmployeeData(employee)}
+          allEmployees={employees}
+          selectedProject={selectedProject}
+          dateRange={dateRange}
+          projects={projects}
+        />
+      ))}
     </Document>
   );
 };
@@ -343,6 +394,7 @@ const EmployeeReport: React.FC = () => {
           lastName: emp.lastName || emp.fullName.split(' ')[1] || '',
           role: 'employee',
           fullName: emp.fullName,
+          employeeId: emp.employeeId,
         }));
         // Fetch timesheets to extract supervisors
         const timesheetsResponse = await fetch(
@@ -366,6 +418,7 @@ const EmployeeReport: React.FC = () => {
                   lastName: ts.supervisor.fullName.split(' ')[1] || '',
                   role: 'supervisor',
                   fullName: ts.supervisor.fullName,
+                  employeeId: ts.supervisor.employeeId || '',
                 }
               ])
           ).values()
@@ -393,10 +446,19 @@ const EmployeeReport: React.FC = () => {
     fetchData();
   }, []);
 
-  const filteredEmployees = employees.filter((person) =>
-    person.fullName?.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-    `${person.firstName} ${person.lastName}`.toLowerCase().includes(employeeSearchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter((person) => {
+    const searchTerm = employeeSearchTerm.toLowerCase();
+    const fullName = person.fullName?.toLowerCase() || '';
+    const firstName = person.firstName?.toLowerCase() || '';
+    const lastName = person.lastName?.toLowerCase() || '';
+    const employeeId = person.employeeId?.toLowerCase() || '';
+    
+    return (
+      fullName.includes(searchTerm) ||
+      `${firstName} ${lastName}`.includes(searchTerm) ||
+      employeeId.includes(searchTerm)
+    );
+  });
 
   const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(projectSearchTerm.toLowerCase())
@@ -449,43 +511,30 @@ const EmployeeReport: React.FC = () => {
       return;
     }
     
-    // Calculate totals for summary
-    const { regularHours, overtimeHours, daysWorked } = calculateTotalHours(filteredTimesheets);
+    const workbook = XLSX.utils.book_new();
     
-    const excelData = filteredTimesheets.map(timesheet => {
-      const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
-      const associatedEmployees = selectedEmployees.filter(empId => timesheetEmployeeIds.includes(empId));
-      const isSupervisorSelected = timesheet.supervisor && selectedEmployees.includes(timesheet.supervisor.id);
-      if (associatedEmployees.length > 0 || isSupervisorSelected) {
-        if (associatedEmployees.length > 1) {
-          return associatedEmployees.map(empId => {
-            const person = employees.find(emp => emp.id === empId);
-            const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
-            const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
-            return {
-              Date: timesheet.timesheetDate,
-              Name: personName,
-              Location: timesheet.location,
-              'Project Code': timesheet.projectcode,
-              'Work Type': timesheet.typeofWork,
-              'Onsite Travel Start': formatDateTimeForPDF(timesheet.onsiteTravelStart),
-              'Onsite Travel End': formatDateTimeForPDF(timesheet.onsiteTravelEnd),
-              'Check-In': formatDateTimeForPDF(timesheet.onsiteSignIn),
-              'Check-Out': formatDateTimeForPDF(timesheet.onsiteSignOut),
-              'Offsite Travel Start': formatDateTimeForPDF(timesheet.offsiteTravelStart),
-              'Offsite Travel End': formatDateTimeForPDF(timesheet.offsiteTravelEnd),
-              'Regular Hours': timesheet.normalHrs,
-              'OT Hours': timesheet.overtime,
-              'Travel Time': timesheet.totalTravelHrs,
-              Supervisor: supervisorName,
-              Remarks: timesheet.remarks,
-            };
-          });
-        } else {
-          const empId = associatedEmployees[0] || (timesheet.supervisor ? timesheet.supervisor.id : selectedEmployees[0]);
-          const person = employees.find(emp => emp.id === empId);
-          const personName = person ? `${person.fullName || `${person.firstName} ${person.lastName}`}` : 'Unknown';
-          const supervisorName = isSupervisorSelected ? '' : timesheet.supervisorName;
+    // Get unique employees from selectedEmployees
+    const selectedEmployeeObjects = employees.filter(emp => selectedEmployees.includes(emp.id));
+    
+    // Create a sheet for each employee
+    selectedEmployeeObjects.forEach(employee => {
+      // Filter timesheets for this specific employee
+      const employeeTimesheets = filteredTimesheets.filter(timesheet => {
+        const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
+        const isEmployeeInTimesheet = timesheetEmployeeIds.includes(employee.id);
+        const isSupervisorTimesheet = timesheet.supervisor && timesheet.supervisor.id === employee.id;
+        return isEmployeeInTimesheet || isSupervisorTimesheet;
+      });
+      
+      if (employeeTimesheets.length > 0) {
+        // Calculate totals for this employee
+        const { regularHours, overtimeHours, daysWorked } = calculateTotalHours(employeeTimesheets);
+        
+        // Create data for this employee
+        const employeeData = employeeTimesheets.map(timesheet => {
+          const personName = employee.fullName || `${employee.firstName} ${employee.lastName}`;
+          const supervisorName = (timesheet.supervisor && timesheet.supervisor.id === employee.id) ? '' : timesheet.supervisorName;
+          
           return {
             Date: timesheet.timesheetDate,
             Name: personName,
@@ -504,36 +553,119 @@ const EmployeeReport: React.FC = () => {
             Supervisor: supervisorName,
             Remarks: timesheet.remarks,
           };
-        }
+        });
+        
+        // Get project name
+        const projectName = selectedProject === 'all' 
+          ? 'All Projects' 
+          : selectedProject 
+          ? projects.find(p => p.id === selectedProject)?.name || 'Unknown Project'
+          : 'No Project Selected';
+
+        // Format date range
+        const formatDateRange = () => {
+          if (dateRange.startDate && dateRange.endDate) {
+            const startDate = new Date(dateRange.startDate).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: '2-digit', 
+              year: 'numeric' 
+            });
+            const endDate = new Date(dateRange.endDate).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: '2-digit', 
+              year: 'numeric' 
+            });
+            return `${startDate} - ${endDate}`;
+          }
+          return 'No Date Range Selected';
+        };
+
+        // Add report information rows at the beginning
+        const reportInfoRow1 = {
+          Date: 'REPORT INFO',
+          Name: 'Project',
+          Location: projectName,
+          'Project Code': '',
+          'Work Type': '',
+          'Onsite Travel Start': '',
+          'Onsite Travel End': '',
+          'Check-In': '',
+          'Check-Out': '',
+          'Offsite Travel Start': '',
+          'Offsite Travel End': '',
+          'Regular Hours': '',
+          'OT Hours': '',
+          'Travel Time': '',
+          Supervisor: '',
+          Remarks: '',
+        };
+
+        const reportInfoRow2 = {
+          Date: '',
+          Name: 'Date Range',
+          Location: formatDateRange(),
+          'Project Code': '',
+          'Work Type': '',
+          'Onsite Travel Start': '',
+          'Onsite Travel End': '',
+          'Check-In': '',
+          'Check-Out': '',
+          'Offsite Travel Start': '',
+          'Offsite Travel End': '',
+          'Regular Hours': '',
+          'OT Hours': '',
+          'Travel Time': '',
+          Supervisor: '',
+          Remarks: '',
+        };
+
+        // Add summary row
+        const summaryRow = {
+          Date: 'SUMMARY',
+          Name: 'TOTALS',
+          Location: '',
+          'Project Code': '',
+          'Work Type': '',
+          'Onsite Travel Start': '',
+          'Onsite Travel End': '',
+          'Check-In': '',
+          'Check-Out': '',
+          'Offsite Travel Start': '',
+          'Offsite Travel End': '',
+          'Regular Hours': regularHours.toFixed(2),
+          'OT Hours': overtimeHours.toFixed(2),
+          'Travel Time': '',
+          Supervisor: '',
+          Remarks: `Total Days: ${daysWorked}`,
+        };
+        
+        const finalEmployeeData = [reportInfoRow1, reportInfoRow2, summaryRow, ...employeeData];
+        
+        // Create worksheet for this employee
+        const worksheet = XLSX.utils.json_to_sheet(finalEmployeeData);
+        
+        // Clean sheet name (remove special characters and limit length)
+        const sheetName = (employee.fullName || `${employee.firstName} ${employee.lastName}`)
+          .replace(/[^\w\s-]/g, '')
+          .substring(0, 31); // Excel sheet name limit
+        
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
       }
-      return [];
-    }).flat().filter(Boolean);
+    });
     
-    // Add summary row at the beginning
-    const summaryRow = {
-      Date: 'SUMMARY',
-      Name: 'TOTALS',
-      Location: '',
-      'Project Code': '',
-      'Work Type': '',
-      'Onsite Travel Start': '',
-      'Onsite Travel End': '',
-      'Check-In': '',
-      'Check-Out': '',
-      'Offsite Travel Start': '',
-      'Offsite Travel End': '',
-      'Regular Hours': regularHours.toFixed(2),
-      'OT Hours': overtimeHours.toFixed(2),
-      'Travel Time': '',
-      Supervisor: '',
-      Remarks: `Total Days: ${daysWorked}`,
-    };
+    // If no sheets were created, show error
+    if (workbook.SheetNames.length === 0) {
+      toast('No data to export for selected employees', {
+        style: {
+          borderRadius: '10px',
+          background: 'red',
+          color: '#fff',
+        },
+      });
+      return;
+    }
     
-    const finalExcelData = [summaryRow, ...excelData];
-    const worksheet = XLSX.utils.json_to_sheet(finalExcelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
-    XLSX.writeFile(workbook, "Timesheets.xlsx");
+    XLSX.writeFile(workbook, "Employee_Timesheets.xlsx");
   };
 
   return (
@@ -567,7 +699,7 @@ const EmployeeReport: React.FC = () => {
                             key={personId}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           >
-                            {person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown'}
+                            {person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.employeeId ? ` (${person.employeeId})` : ''}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown'}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -652,6 +784,11 @@ const EmployeeReport: React.FC = () => {
                             />
                             <span className="text-sm text-gray-900 dark:text-gray-100">
                               {person.fullName || `${person.firstName} ${person.lastName}`}
+                              {person.employeeId && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                  ({person.employeeId})
+                                </span>
+                              )}
                             </span>
                           </div>
                           {person.role === 'supervisor' && (
@@ -809,7 +946,7 @@ const EmployeeReport: React.FC = () => {
                 ? `All Employees/Supervisors Report (${employees.length} total)`
                 : selectedEmployees.map(id => {
                     const person = employees.find(emp => emp.id === id);
-                    return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
+                    return person ? `${person.fullName || `${person.firstName} ${person.lastName}`}${person.employeeId ? ` (${person.employeeId})` : ''}${person.role === 'supervisor' ? ' (S)' : ''}` : 'Unknown';
                   }).join(', ') + ' Report'
               }
             </h2>
@@ -821,42 +958,62 @@ const EmployeeReport: React.FC = () => {
                 <FileText size={16} />
                 Export Excel
               </button>
-              {filteredTimesheets.length > 0 && selectedEmployees.length > 0 ? (
-                <PDFDownloadLink
-                  document={
-                    <MyDocument
-                      data={filteredTimesheets}
-                      selectedEmployees={selectedEmployees}
-                      employees={employees}
-                    />
-                  }
-                  fileName="Timesheets.pdf"
-                >
-                  {({ loading }) => (
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                      disabled={loading}
-                    >
-                      <Download size={16} />
-                      {loading ? 'Generating PDF...' : 'Export PDF'}
-                    </button>
-                  )}
-                </PDFDownloadLink>
-              ) : (
-                <button
-                  onClick={() => toast('No data to export', {
-                    style: {
-                      borderRadius: '10px',
-                      background: 'blue',
-                      color: '#fff',
-                    },
-                  })}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Download size={16} />
-                  Export PDF
-                </button>
-              )}
+              {(() => {
+                // Check if any selected employees have timesheet data
+                const employeesWithData = selectedEmployees.filter(empId => {
+                  const employee = employees.find(emp => emp.id === empId);
+                  if (!employee) return false;
+                  
+                  const employeeTimesheets = filteredTimesheets.filter(timesheet => {
+                    const timesheetEmployeeIds = timesheet.employees?.map(emp => emp.id) || [];
+                    const isEmployeeInTimesheet = timesheetEmployeeIds.includes(employee.id);
+                    const isSupervisorTimesheet = timesheet.supervisor && timesheet.supervisor.id === employee.id;
+                    return isEmployeeInTimesheet || isSupervisorTimesheet;
+                  });
+                  
+                  return employeeTimesheets.length > 0;
+                });
+                
+                return employeesWithData.length > 0 ? (
+                  <PDFDownloadLink
+                    document={
+                      <MyDocument
+                        data={filteredTimesheets}
+                        selectedEmployees={selectedEmployees}
+                        employees={employees}
+                        selectedProject={selectedProject}
+                        dateRange={dateRange}
+                        projects={projects}
+                      />
+                    }
+                    fileName="Employee_Timesheets.pdf"
+                  >
+                    {({ loading }) => (
+                      <button
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        disabled={loading}
+                      >
+                        <Download size={16} />
+                        {loading ? 'Generating PDF...' : 'Export PDF'}
+                      </button>
+                    )}
+                  </PDFDownloadLink>
+                ) : (
+                  <button
+                    onClick={() => toast('No timesheet data found for selected employees', {
+                      style: {
+                        borderRadius: '10px',
+                        background: 'red',
+                        color: '#fff',
+                      },
+                    })}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Download size={16} />
+                    Export PDF
+                  </button>
+                );
+              })()}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

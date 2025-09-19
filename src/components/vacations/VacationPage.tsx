@@ -165,9 +165,9 @@ export default function VacationManagement() {
             ? item.supervisor.fullName
             : "Unknown";
           const location = item.employee
-            ? item.employee.specialization
+            ? item.employee.designationType?.name || "Regular Employee"
             : item.supervisor
-            ? item.supervisor.specialization
+            ? "supervisor"
             : "Unknown";
           const role = item.employee
             ? item.employee.designation || "Unknown"
@@ -464,7 +464,7 @@ export default function VacationManagement() {
                             {employee.name}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-300">
-                            {employee.leaveType} • {employee.duration}
+                            {employee.leaveType}
                           </p>
                           <p className="text-sm font-bold text-gray-500 border border-gray-300 rounded-full px-3 py-1 inline-block dark:text-white dark:border-gray-600">
                             {employee.location}

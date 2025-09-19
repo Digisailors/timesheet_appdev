@@ -614,13 +614,13 @@ export default function SupervisorPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {/* <buttonss
+                      <button
                         onClick={() => handleAction('delete', supervisor)}
                         className="p-2 border border-red-500 text-red-500 hover:text-red-600 hover:bg-red-50 dark:border-red-400 dark:hover:bg-red-900 transition-colors rounded-lg"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button> */}
+                      </button>
                     </div>
                   </div>
                 </div>
