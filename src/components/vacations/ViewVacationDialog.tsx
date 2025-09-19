@@ -138,7 +138,7 @@ const ViewVacationDialog: React.FC<VacationDetailsProps> = ({ isOpen, onClose, o
               </span>
             </div>
             <div>
-              <p className="text-gray-400 dark:text-gray-500">Specialization</p>
+              <p className="text-gray-400 dark:text-gray-500">Type</p>
               <p>{data.specialization}</p>
             </div>
           </div>
