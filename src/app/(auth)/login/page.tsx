@@ -54,20 +54,24 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        const errorMessage = result.error;
-        setError(errorMessage);
-        if (errorMessage.toLowerCase().includes("email")) {
-          toast.error("Incorrect email");
-        } else if (errorMessage.toLowerCase().includes("password")) {
-          toast.error("Incorrect password");
-        } else if (errorMessage.toLowerCase().includes("phone")) {
-          toast.error("Incorrect phone number");
+        // Handle specific NextAuth errors
+        if (result.error === "CredentialsSignin") {
+          const errorMessage = "Invalid email/phone number or password. Please check your credentials and try again.";
+          setError(errorMessage);
+          toast.error("Invalid email/phone number or password");
         } else {
+          const errorMessage = result.error;
+          setError(errorMessage);
           toast.error(errorMessage);
         }
-      } else {
+      } else if (result?.ok) {
         toast.success("Login successful!");
         router.push("/dashboard");
+      } else {
+        // Handle case where no error but also no success
+        const errorMessage = "Invalid email/phone number or password. Please check your credentials and try again.";
+        setError(errorMessage);
+        toast.error("Invalid email/phone number or password");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -226,12 +230,12 @@ export default function LoginPage() {
                   Remember me
                 </Label>
               </div>
-              {/* <Link
+              <Link
                 href="/forgot-password"
                 className="text-sm text-blue-600 hover:underline"
               >
                 Forgot Password?
-              </Link> */}
+              </Link>
             </div>
             {/* Sign up link */}
             <div className="text-center mt-2">
