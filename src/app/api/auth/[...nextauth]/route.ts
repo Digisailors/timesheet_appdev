@@ -38,6 +38,8 @@ const handler = NextAuth({
               token: data.data.token, // Store the JWT token
             };
           }
+          // Return null for invalid credentials - NextAuth will handle this as CredentialsSignin
+          console.log("Login failed:", data.message || "Invalid credentials");
           return null;
         } catch (error) {
           console.error("Auth error:", error);
